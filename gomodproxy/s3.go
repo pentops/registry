@@ -25,9 +25,9 @@ type S3API interface {
 }
 
 type S3PackageSrc struct {
-	Bucket string
-	Prefix string
-	Client S3API
+	bucket string
+	prefix string
+	client S3API
 }
 
 func NewS3PackageSrc(ctx context.Context, client S3API, location string) (*S3PackageSrc, error) {
@@ -53,19 +53,20 @@ func NewS3PackageSrc(ctx context.Context, client S3API, location string) (*S3Pac
 	}).Info("initializing s3 package source")
 
 	return &S3PackageSrc{
-		Bucket: bucketName,
-		Prefix: keyPrefix,
-		Client: client,
+		bucket: bucketName,
+		prefix: keyPrefix,
+		client: client,
 	}, nil
 }
 
 const (
 	S3MetadataAlias      = "x-gomod-alias"
+	S3MetadataCommitHash = "x-gomod-commit-hash"
 	S3MetadataCommitTime = "x-gomod-commit-time"
 )
 
 func (src S3PackageSrc) s3Key(packageName, version, ext string) string {
-	return path.Join(src.Prefix, packageName, fmt.Sprintf("%s.%s", version, ext))
+	return path.Join(src.prefix, packageName, fmt.Sprintf("%s.%s", version, ext))
 }
 
 func (src *S3PackageSrc) Info(ctx context.Context, packageName, version string) (*Info, error) {
@@ -73,17 +74,17 @@ func (src *S3PackageSrc) Info(ctx context.Context, packageName, version string) 
 	key := src.s3Key(packageName, version, "zip")
 
 	log.WithFields(ctx, map[string]interface{}{
-		"s3Bucket": src.Bucket,
+		"s3Bucket": src.bucket,
 		"s3Key":    key,
 	}).Info("fetching object")
 
-	head, err := src.Client.HeadObject(ctx, &s3.HeadObjectInput{
-		Bucket: &src.Bucket,
+	head, err := src.client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: &src.bucket,
 		Key:    &key,
 	})
 	if err != nil {
 		log.WithFields(ctx, map[string]interface{}{
-			"s3Bucket": src.Bucket,
+			"s3Bucket": src.bucket,
 			"s3Key":    key,
 			"error":    err.Error(),
 		}).Error("fetching object")
@@ -123,20 +124,20 @@ func (src *S3PackageSrc) Latest(ctx context.Context, packageName string) (*Info,
 
 func (src *S3PackageSrc) List(ctx context.Context, packageName string) ([]string, error) {
 
-	keyPrefix := path.Join(src.Prefix, packageName)
+	keyPrefix := path.Join(src.prefix, packageName)
 
 	versions := make([]string, 0)
 
 	var continuationToken *string
 
 	for {
-		listOutput, err := src.Client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
-			Bucket:            &src.Bucket,
+		listOutput, err := src.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+			Bucket:            &src.bucket,
 			Prefix:            &keyPrefix,
 			ContinuationToken: continuationToken,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("s3 list %s %s: %w", src.Bucket, keyPrefix, err)
+			return nil, fmt.Errorf("s3 list %s %s: %w", src.bucket, keyPrefix, err)
 		}
 
 		for _, obj := range listOutput.Contents {
@@ -212,8 +213,8 @@ func (src *S3PackageSrc) Mod(ctx context.Context, packageName, version string) (
 	}
 
 	key := src.s3Key(packageName, canonical.Version, "mod")
-	obj, err := src.Client.GetObject(ctx, &s3.GetObjectInput{
-		Bucket: &src.Bucket,
+	obj, err := src.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: &src.bucket,
 		Key:    &key,
 	})
 	if err != nil {
@@ -226,13 +227,9 @@ func (src *S3PackageSrc) Mod(ctx context.Context, packageName, version string) (
 			return nil, err
 		}
 
-		_, err = src.Client.PutObject(ctx, &s3.PutObjectInput{
-			Bucket:   &src.Bucket,
-			Key:      &key,
-			Body:     bytes.NewReader(modBytes),
-			Metadata: map[string]string{S3MetadataCommitTime: canonical.Time.Format(time.RFC3339)},
-		})
-		if err != nil {
+		if err := src.put(ctx, key, bytes.NewReader(modBytes), map[string]string{
+			S3MetadataCommitTime: canonical.Time.Format(time.RFC3339),
+		}); err != nil {
 			return nil, err
 		}
 
@@ -266,8 +263,8 @@ func (src *S3PackageSrc) Zip(ctx context.Context, packageName, version string) (
 func (src *S3PackageSrc) getZip(ctx context.Context, packageName string, canonicalVersion string) (io.ReadCloser, int64, error) {
 
 	key := src.s3Key(packageName, canonicalVersion, "zip")
-	obj, err := src.Client.GetObject(ctx, &s3.GetObjectInput{
-		Bucket: &src.Bucket,
+	obj, err := src.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: &src.bucket,
 		Key:    &key,
 	})
 	if err != nil {
@@ -275,4 +272,57 @@ func (src *S3PackageSrc) getZip(ctx context.Context, packageName string, canonic
 	}
 
 	return obj.Body, *obj.ContentLength, nil
+}
+
+func (src *S3PackageSrc) put(ctx context.Context, subPath string, body io.Reader, metadata map[string]string) error {
+	key := path.Join(src.prefix, subPath)
+	_, err := src.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:   &src.bucket,
+		Key:      &key,
+		Body:     body,
+		Metadata: metadata,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to upload to s3: 's3://%s/%s' : %w", src.bucket, key, err)
+	}
+	return nil
+}
+
+type FullInfo struct {
+	Version            string
+	Time               time.Time
+	OriginalCommitHash string
+	Package            string
+}
+
+func (src *S3PackageSrc) UploadGoModule(ctx context.Context, version FullInfo, goModData []byte, zipFile io.ReadCloser) error {
+	defer zipFile.Close()
+
+	log.WithFields(ctx, map[string]interface{}{
+		"package": version.Package,
+		"version": version.Version,
+	}).Info("uploading go module")
+
+	metadata := map[string]string{
+		S3MetadataCommitTime: version.Time.Format(time.RFC3339),
+		S3MetadataCommitHash: version.OriginalCommitHash,
+	}
+
+	if err := src.put(ctx,
+		path.Join(version.Package, fmt.Sprintf("%s.mod", version.Version)),
+		strings.NewReader(string(goModData)),
+		metadata,
+	); err != nil {
+		return err
+	}
+
+	if err := src.put(ctx,
+		path.Join(version.Package, fmt.Sprintf("%s.zip", version.Version)),
+		zipFile,
+		metadata,
+	); err != nil {
+		return err
+	}
+
+	return nil
 }

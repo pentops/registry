@@ -22,7 +22,7 @@ import (
 
 func RunUploadCommand(ctx context.Context, cfg struct {
 	SrcDir     string   `env:"SRC_DIR" flag:"src" default:"."`
-	DstDir     string   `env:"GOMOD_REGISTRY" flag:"dest"`
+	DstDir     string   `env:"GOMOD_REMOTE" flag:"remote"`
 	CommitHash string   `env:"COMMIT_HASH" flag:"commit-hash" default:""`
 	CommitTime string   `env:"COMMIT_TIME" flag:"commit-time" default:""`
 	Alias      []string `env:"ALIAS" flag:"alias" default:""`
