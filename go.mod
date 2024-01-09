@@ -6,12 +6,13 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.26.3
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.48.0
 	github.com/docker/docker v24.0.7+incompatible
-	github.com/pentops/jsonapi v0.0.0-20240105004945-273ef0c8bbc6
-	github.com/pentops/log.go v0.0.0-20230815045424-6ebbd9ef2576
+	github.com/pentops/jsonapi v0.0.0-20240109215105-44e83180a422
+	github.com/pentops/log.go v0.0.0-20231218074934-67aedcab3fa4
 	github.com/pentops/runner v0.0.0-20231219070819-c4878d5565d8
 	github.com/rs/cors v1.10.1
 	golang.org/x/mod v0.14.0
 	google.golang.org/protobuf v1.31.1-0.20231027082548-f4a6c1f6e5c1
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -56,7 +57,7 @@ require (
 	github.com/pentops/sugar-go v0.0.0-20231029194349-ec12ec0132c5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
-	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb // indirect
+	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc // indirect
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
@@ -65,8 +66,5 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20231127180814-3a041ad873d4 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231127180814-3a041ad873d4 // indirect
 	google.golang.org/grpc v1.59.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )
-
-replace github.com/pentops/jsonapi => /Users/daemonl/pentops/jsonapi
