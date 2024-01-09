@@ -1,0 +1,37 @@
+---
+name: "registry"
+
+blobstores:
+  - name: images
+
+runtimes:
+  - name: main
+    routes:
+      - prefix: "/registry/v1/"
+        protocol: ROUTE_PROTOCOL_HTTP
+        bypass_ingress: true
+        port: 8080
+      - prefix: "/gopkg/"
+        protocol: ROUTE_PROTOCOL_HTTP
+        bypass_ingress: true
+        port: 8080
+
+    containers:
+      - name: main
+        demand: DEMAND_LIGHT
+        image:
+            name: registry
+            registry: ghcr.io/pentops
+        command: [serve]
+        envVars:
+          - name: GOMOD_REMOTE
+            blobstore:
+              name: images
+              s3_direct: true
+              subPath: "gomod"
+          - name: JAPI_REMOTE
+            blobstore:
+              name: images
+              s3_direct: true
+              subPath: "japi"
+
