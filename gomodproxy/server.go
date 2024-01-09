@@ -45,11 +45,11 @@ func (rr RawResponse) HTTPResponse(r *http.Request, w http.ResponseWriter) {
 
 	if rr.Reader != nil {
 		defer rr.Reader.Close()
-		io.Copy(w, rr.Reader)
+		io.Copy(w, rr.Reader) // nolint: errcheck
 		return
 	}
 
-	w.Write(rr.Body)
+	w.Write(rr.Body) // nolint: errcheck
 }
 
 type ModProvider interface {
@@ -156,7 +156,7 @@ func Handler(mods ModProvider) http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Write(dataJSON)
+		w.Write(dataJSON) // nolint: errcheck
 	}
 
 	sendError := func(w http.ResponseWriter, r *http.Request, err error) {
@@ -165,7 +165,6 @@ func Handler(mods ModProvider) http.Handler {
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -209,7 +208,7 @@ func Handler(mods ModProvider) http.Handler {
 			}
 
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(strings.Join(versions, "\n")))
+			w.Write([]byte(strings.Join(versions, "\n"))) // nolint: errcheck
 			return
 
 		case InfoCommand:
@@ -233,7 +232,7 @@ func Handler(mods ModProvider) http.Handler {
 
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusOK)
-			w.Write(mod)
+			w.Write(mod) // nolint: errcheck
 			return
 
 		case ZipCommand:
@@ -246,7 +245,7 @@ func Handler(mods ModProvider) http.Handler {
 
 			w.Header().Set("Content-Type", "application/zip")
 			w.WriteHeader(http.StatusOK)
-			io.Copy(w, zip)
+			io.Copy(w, zip) // nolint: errcheck
 			return
 
 		default:

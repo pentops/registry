@@ -13,7 +13,7 @@ runtimes:
         port: 8080
       - prefix: "/gopkg/"
         protocol: ROUTE_PROTOCOL_HTTP
-        bypass_ingreee: true
+        bypass_ingress: true
         port: 8080
 
     containers:

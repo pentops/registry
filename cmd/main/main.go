@@ -39,6 +39,7 @@ func main() {
 
 	japiGroup := commander.NewCommandSet()
 	japiGroup.Add("serve", commander.NewCommand(runJapiRegistry))
+	japiGroup.Add("push", commander.NewCommand(runPushAPI))
 	cmdGroup.Add("japi", japiGroup)
 
 	protoGroup := commander.NewCommandSet()
@@ -173,7 +174,7 @@ func runProtoBuild(ctx context.Context, cfg struct {
 	}, input, remote)
 }
 
-func runPush(ctx context.Context, cfg struct {
+func runPushAPI(ctx context.Context, cfg struct {
 	Source  string `flag:"src" default:"." description:"Source directory containing jsonapi.yaml and buf.lock.yaml"`
 	Version string `flag:"version" default:"" description:"Version to push"`
 	Latest  bool   `flag:"latest" description:"Push as latest"`

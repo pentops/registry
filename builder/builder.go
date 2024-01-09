@@ -212,7 +212,9 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 			if _, err := hj.Conn.Write(reqBytes); err != nil {
 				return err
 			}
-			hj.CloseWrite()
+			if err := hj.CloseWrite(); err != nil {
+				return err
+			}
 
 			_, err = stdcopy.StdCopy(outBuffer, os.Stderr, hj.Reader)
 			if err != nil {
@@ -232,7 +234,9 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 		for _, f := range resp.File {
 			name := f.GetName()
 			fullPath := filepath.Join(packageRoot, name)
-			os.MkdirAll(filepath.Dir(fullPath), 0755)
+			if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+				return err
+			}
 			if err := os.WriteFile(fullPath, []byte(f.GetContent()), 0644); err != nil {
 				return err
 			}
@@ -251,7 +255,7 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 
 		defer outWriter.Close()
 
-		zip.CreateFromDir(outWriter, module.Version{
+		err = zip.CreateFromDir(outWriter, module.Version{
 			Path:    packageName,
 			Version: canonicalVersion,
 		}, packageRoot)
@@ -278,22 +282,6 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 
 	return uploader.UploadGoModule(ctx, info, spec.GoModFile, zipReader)
 
-}
-
-type wrappedFile struct {
-	f *pluginpb.CodeGeneratorResponse_File
-}
-
-func (f wrappedFile) Path() string {
-	return *f.f.Name
-}
-
-func (f wrappedFile) Open() (io.ReadCloser, error) {
-	return io.NopCloser(bytes.NewReader([]byte(*f.f.Content))), nil
-}
-
-func (f wrappedFile) Lstat() (os.FileInfo, error) {
-	return nil, nil
 }
 
 func DockerRun(ctx context.Context, spec DockerSpec, pull bool, callback func(hj types.HijackedResponse) error) error {
