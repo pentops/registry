@@ -34,4 +34,6 @@ Where format is one of:
 Based on a config file very similar to buf.gen.yaml, generates go modules from
 source, and adds them to the proxy store.
 
+Currently this works only as a local command, however this will be linked to a github action / remote builder.
 
+![pipeline](./ext/images/pipeline.svg)
