@@ -3,8 +3,6 @@ Registry
 
 A central registry for API versions.
 
-- A local builder for protoc-gen- output into go modules
-
 
 Server
 ------

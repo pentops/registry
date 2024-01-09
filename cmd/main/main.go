@@ -46,6 +46,8 @@ func main() {
 	protoGroup.Add("request", commander.NewCommand(runProtoBuildRequest))
 	cmdGroup.Add("proto", protoGroup)
 
+	cmdGroup.Add("serve", commander.NewCommand(runCombinedServer))
+
 	cmdGroup.RunMain("registry", Version)
 }
 
