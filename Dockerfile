@@ -16,4 +16,4 @@ COPY --from=builder /main /main
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 
-CMD ["/main"]
+ENTRYPOINT ["/main"]
