@@ -92,6 +92,10 @@ func ConvertBufGenerateSpec(src *BufGenerateConfig) ([]DockerSpec, error) {
 			Entrypoint: plugin.Docker.Entrypoint,
 		}
 
+		if len(spec.Command) == 0 && len(spec.Entrypoint) == 0 {
+			spec.Command = []string{fmt.Sprintf("protoc-gen-%s", plugin.Name)}
+		}
+
 		if str, ok := plugin.Opt.(string); ok {
 			spec.Parameters = []string{str}
 		} else if str, ok := plugin.Opt.([]interface{}); ok {
@@ -135,9 +139,10 @@ type PullConfig struct {
 }
 
 type BuildSpec struct {
-	GoModFile  []byte
-	CommitTime time.Time
-	CommitHash string
+	GoModFile     []byte
+	CommitTime    time.Time
+	CommitHash    string
+	CommitAliases []string
 
 	Builders []DockerSpec
 }
@@ -202,7 +207,7 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 		resp := pluginpb.CodeGeneratorResponse{}
 
 		pull := false
-		if !pulledImages[builder.Image] {
+		if builder.Pull != nil && !pulledImages[builder.Image] {
 			pull = true
 			pulledImages[builder.Image] = true
 		}
@@ -270,6 +275,7 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 
 	info := gomodproxy.FullInfo{
 		Version:            canonicalVersion,
+		VersionAliases:     spec.CommitAliases,
 		Time:               spec.CommitTime,
 		OriginalCommitHash: spec.CommitHash,
 		Package:            packageName,
@@ -293,6 +299,9 @@ func DockerRun(ctx context.Context, spec DockerSpec, pull bool, callback func(hj
 	defer cli.Close()
 
 	if pull && spec.Pull != nil {
+
+		log.Info(ctx, "pulling image")
+
 		username := spec.Pull.Username
 		password := os.Getenv(spec.Pull.PasswordEnvVarName)
 		cred, _ := json.Marshal(struct {
@@ -319,6 +328,8 @@ func DockerRun(ctx context.Context, spec DockerSpec, pull bool, callback func(hj
 		}
 	}
 
+	log.Info(ctx, "creating container")
+
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		AttachStdin:  true,
 		AttachStdout: true,
@@ -336,6 +347,14 @@ func DockerRun(ctx context.Context, spec DockerSpec, pull bool, callback func(hj
 	if err != nil {
 		return err
 	}
+	defer func() {
+		log.Info(ctx, "removing container")
+		if err := cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{}); err != nil {
+			log.WithError(ctx, err).Error("failed to remove container")
+		}
+	}()
+
+	log.Info(ctx, "attaching to container")
 
 	hj, err := cli.ContainerAttach(ctx, resp.ID, types.ContainerAttachOptions{
 		Stdin:  true,
@@ -350,13 +369,19 @@ func DockerRun(ctx context.Context, spec DockerSpec, pull bool, callback func(hj
 
 	defer hj.Close()
 
+	log.Info(ctx, "starting container")
+
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		return err
 	}
 
+	log.Info(ctx, "run pipe callback")
+
 	if err := callback(hj); err != nil {
 		return err
 	}
+
+	log.Info(ctx, "waiting for container")
 
 	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
 
@@ -365,8 +390,14 @@ func DockerRun(ctx context.Context, spec DockerSpec, pull bool, callback func(hj
 		if err != nil {
 			return err
 		}
-	case <-statusCh:
+	case st := <-statusCh:
+		if st.StatusCode != 0 {
+			return fmt.Errorf("non-zero exit code: %d", st.StatusCode)
+		}
+
 	}
+
+	log.Info(ctx, "docker build done")
 
 	return nil
 }

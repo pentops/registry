@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	git "github.com/go-git/go-git/v5"
 	"github.com/pentops/jsonapi/structure"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/registry/builder"
@@ -80,16 +81,17 @@ func runProtoBuildRequest(ctx context.Context, cfg struct {
 }
 
 func runProtoBuild(ctx context.Context, cfg struct {
-	DockerBuildImage string `flag:"docker-build-image" env:"DOCKER_BUILD_IMAGE"`
-	Source           string `flag:"src" default:"." description:"Source directory containing jsonapi.yaml and buf.lock.yaml"`
-	GithubToken      string `env:"GITHUB_TOKEN" default:""`
-	PackagePrefix    string `flag:"package-prefix" env:"PACKAGE_PREFIX" default:""`
-	GoModFile        string `flag:"gomod-file" env:"GOMOD_FILE" default:"go.mod"`
-	CommitHash       string `flag:"commit-hash" env:"COMMIT_HASH"`
-	CommitTime       string `flag:"commit-time" env:"COMMIT_TIME"`
-	GomodRemote      string `env:"GOMOD_REMOTE"`
+	Source        string `flag:"src" default:"." env:"PROTO_SOURCE" description:"Source directory containing jsonapi.yaml and buf.lock.yaml"`
+	PackagePrefix string `flag:"package-prefix" env:"PACKAGE_PREFIX" default:""`
+	GoModFile     string `flag:"gomod-file" env:"GOMOD_FILE" default:"go.mod"`
 
-	BufGenFile string `flag:"buf-gen-file" env:"BUF_GEN_FILE" default:"buf.gen.yaml"`
+	CommitHash    string   `flag:"commit-hash" env:"COMMIT_HASH" default:""`
+	CommitTime    string   `flag:"commit-time" env:"COMMIT_TIME" default:""`
+	CommitAliases []string `flag:"commit-alias" env:"COMMIT_ALIAS" default:""`
+	GitAuto       bool     `flag:"git-auto" env:"COMMIT_INFO_GIT_AUTO" default:"false" description:"Automatically pull commit info from git"`
+
+	GomodRemote string `env:"GOMOD_REMOTE"`
+	BufGenFile  string `flag:"buf-gen-file" env:"BUF_GEN_FILE" default:"buf.gen.yaml"`
 }) error {
 
 	awsConfig, err := config.LoadDefaultConfig(ctx)
@@ -132,13 +134,59 @@ func runProtoBuild(ctx context.Context, cfg struct {
 		return err
 	}
 
-	/*
-		var authString string
+	var commitTime time.Time
+	var commitHash string
+	var commitAliases []string
 
-			if cfg.GithubToken != "" {
-				authString = fmt.Sprintf(`{"username":"%s","password":"%s"}`, "USERNAME", cfg.GithubToken)
-				authString = base64.URLEncoding.EncodeToString([]byte(authString))
-			}*/
+	if cfg.GitAuto {
+		repo, err := git.PlainOpen(cfg.Source)
+		if err != nil {
+			return err
+		}
+
+		head, err := repo.Head()
+		if err != nil {
+			return err
+		}
+
+		commit, err := repo.CommitObject(head.Hash())
+		if err != nil {
+			return err
+		}
+
+		commitTime = commit.Committer.When
+		commitHash = commit.Hash.String()
+
+		commitAliases = append(commitAliases, commitHash)
+
+		headName := head.Name()
+		if headName.IsBranch() {
+			commitAliases = append(commitAliases, headName.Short())
+			commitAliases = append(commitAliases, string(headName))
+
+			// TODO: Make this configurable
+			if headName == "refs/heads/main" {
+				commitAliases = append(commitAliases, "latest")
+			}
+		}
+
+		// TODO: Tags
+
+		log.WithFields(ctx, map[string]interface{}{
+			"commitHash":    commitHash,
+			"commitTime":    commitTime,
+			"commitAliases": commitAliases,
+		}).Info("Resolved Git Commit Info")
+	} else if cfg.CommitHash == "" || cfg.CommitTime == "" {
+		return fmt.Errorf("commit hash and time are required, or set --git-auto")
+	} else {
+		commitHash = cfg.CommitHash
+		commitTime, err = time.Parse(time.RFC3339, cfg.CommitTime)
+		if err != nil {
+			return fmt.Errorf("parsing commit time: %w", err)
+		}
+		commitAliases = cfg.CommitAliases
+	}
 
 	protoSource, err := structure.ReadFileDescriptorSet(ctx, cfg.Source)
 	if err != nil {
@@ -161,16 +209,12 @@ func runProtoBuild(ctx context.Context, cfg struct {
 		return err
 	}
 
-	commitTime, err := time.Parse(time.RFC3339, cfg.CommitTime)
-	if err != nil {
-		return fmt.Errorf("parsing commit time: %w", err)
-	}
-
 	return builder.BuildImage(ctx, builder.BuildSpec{
-		GoModFile:  gomodData,
-		CommitTime: commitTime,
-		CommitHash: cfg.CommitHash,
-		Builders:   builders,
+		GoModFile:     gomodData,
+		CommitTime:    commitTime,
+		CommitHash:    commitHash,
+		Builders:      builders,
+		CommitAliases: commitAliases,
 	}, input, remote)
 }
 

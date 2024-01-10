@@ -293,6 +293,7 @@ type FullInfo struct {
 	Time               time.Time
 	OriginalCommitHash string
 	Package            string
+	VersionAliases     []string
 }
 
 func (src *S3PackageSrc) UploadGoModule(ctx context.Context, version FullInfo, goModData []byte, zipFile io.ReadCloser) error {
@@ -322,6 +323,21 @@ func (src *S3PackageSrc) UploadGoModule(ctx context.Context, version FullInfo, g
 		metadata,
 	); err != nil {
 		return err
+	}
+
+	aliasMetadata := map[string]string{}
+	for k, v := range metadata {
+		aliasMetadata[k] = v
+	}
+	aliasMetadata[S3MetadataAlias] = version.Version
+	for _, alias := range version.VersionAliases {
+		if err := src.put(ctx,
+			path.Join(version.Package, fmt.Sprintf("%s.zip", alias)),
+			bytes.NewReader([]byte(version.Version)),
+			aliasMetadata,
+		); err != nil {
+			return err
+		}
 	}
 
 	return nil
