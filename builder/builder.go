@@ -92,6 +92,7 @@ func ConvertBufGenerateSpec(src *BufGenerateConfig) ([]DockerSpec, error) {
 			Env:        env,
 			Command:    plugin.Docker.Command,
 			Entrypoint: plugin.Docker.Entrypoint,
+			Pull:       plugin.Docker.Pull,
 		}
 
 		if len(spec.Command) == 0 && len(spec.Entrypoint) == 0 {
