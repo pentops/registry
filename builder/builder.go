@@ -3,6 +3,7 @@ package builder
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -135,6 +138,7 @@ type DockerSpec struct {
 type PullConfig struct {
 	Username           string
 	PasswordEnvVarName string
+	ECR                bool
 }
 
 type BuildSpec struct {
@@ -285,6 +289,72 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 
 }
 
+func dockerPull(ctx context.Context, cli *client.Client, spec DockerSpec) error {
+
+	log.Info(ctx, "pulling image")
+
+	var username, password string
+
+	if spec.Pull.ECR {
+		// TODO: This is a little too magic.
+		awsConfig, err := config.LoadDefaultConfig(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to load configuration: %w", err)
+		}
+
+		ecrClient := ecr.NewFromConfig(awsConfig)
+		resp, err := ecrClient.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{})
+		if err != nil {
+			return fmt.Errorf("failed to get authorization token: %w", err)
+		}
+
+		if len(resp.AuthorizationData) == 0 {
+			return fmt.Errorf("no authorization data returned")
+		}
+
+		authData := resp.AuthorizationData[0]
+
+		decoded, err := base64.StdEncoding.DecodeString(*authData.AuthorizationToken)
+		if err != nil {
+			return fmt.Errorf("failed to decode authorization token: %w", err)
+		}
+
+		parts := strings.SplitN(string(decoded), ":", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid authorization token")
+		}
+
+		username = parts[0]
+		password = parts[1]
+	} else {
+		username = spec.Pull.Username
+		password = os.Getenv(spec.Pull.PasswordEnvVarName)
+	}
+	cred, _ := json.Marshal(struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}{
+		Username: username,
+		Password: password,
+	})
+	reader, err := cli.ImagePull(ctx, spec.Image, types.ImagePullOptions{
+		RegistryAuth: string(cred),
+	})
+	if err != nil {
+		return err
+	}
+
+	// cli.ImagePull is asynchronous.
+	// The reader needs to be read completely for the pull operation to complete.
+	// If stdout is not required, consider using io.Discard instead of os.Stdout.
+	_, err = io.Copy(os.Stdout, reader)
+	reader.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func DockerRun(ctx context.Context, spec DockerSpec, pull bool, callback func(hj types.HijackedResponse) error) error {
 
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -294,33 +364,10 @@ func DockerRun(ctx context.Context, spec DockerSpec, pull bool, callback func(hj
 	defer cli.Close()
 
 	if pull && spec.Pull != nil {
-
-		log.Info(ctx, "pulling image")
-
-		username := spec.Pull.Username
-		password := os.Getenv(spec.Pull.PasswordEnvVarName)
-		cred, _ := json.Marshal(struct {
-			Username string `json:"username"`
-			Password string `json:"password"`
-		}{
-			Username: username,
-			Password: password,
-		})
-		reader, err := cli.ImagePull(ctx, spec.Image, types.ImagePullOptions{
-			RegistryAuth: string(cred),
-		})
-		if err != nil {
+		if err := dockerPull(ctx, cli, spec); err != nil {
 			return err
 		}
 
-		// cli.ImagePull is asynchronous.
-		// The reader needs to be read completely for the pull operation to complete.
-		// If stdout is not required, consider using io.Discard instead of os.Stdout.
-		_, err = io.Copy(os.Stdout, reader)
-		reader.Close()
-		if err != nil {
-			return err
-		}
 	}
 
 	log.Info(ctx, "creating container")

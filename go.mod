@@ -3,7 +3,10 @@ module github.com/pentops/registry
 go 1.21.4
 
 require (
+	buf.build/gen/go/bufbuild/buf/grpc/go v1.3.0-20231115173557-dd01b05daf25.2
+	buf.build/gen/go/bufbuild/buf/protocolbuffers/go v1.28.1-20231115173557-dd01b05daf25.4
 	github.com/aws/aws-sdk-go-v2/config v1.26.3
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.24.7
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.48.0
 	github.com/bradleyfalzon/ghinstallation v1.1.1
 	github.com/docker/docker v24.0.7+incompatible
@@ -19,13 +22,11 @@ require (
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.1-0.20231027082548-f4a6c1f6e5c1
 	gopkg.daemonl.com/envconf v0.0.0-20220909014755-d65ec77bd452
-	gopkg.in/yaml.v2 v2.2.4
+	gopkg.in/yaml.v2 v2.2.8
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	buf.build/gen/go/bufbuild/buf/grpc/go v1.3.0-20231115173557-dd01b05daf25.2 // indirect
-	buf.build/gen/go/bufbuild/buf/protocolbuffers/go v1.28.1-20231115173557-dd01b05daf25.4 // indirect
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20231115204500-e097f827e652.2 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
@@ -69,6 +70,7 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.4.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
