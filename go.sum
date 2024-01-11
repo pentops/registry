@@ -682,6 +682,8 @@ github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.0.2 h1:9yCKha/T5XdGtO0q9Q9a6T5NUCsTn/DrBg0D7ufOcFM=
 github.com/opencontainers/image-spec v1.0.2/go.mod h1:BtxoFyWECRxE4U/7sNtV5W15zMzWCbyJoFRP3s7yZA0=
+github.com/pentops/jsonapi v0.0.0-20240111215604-a55d2fbfa6c4 h1:wuqRTpmDwdtzthiaogsujizIiwyrNxe+JxZIsxLMaiQ=
+github.com/pentops/jsonapi v0.0.0-20240111215604-a55d2fbfa6c4/go.mod h1:z8e5qEcs15FVUQ6Zk9prdGraa2m20BZrI8boPcwmKmA=
 github.com/pentops/log.go v0.0.0-20231218074934-67aedcab3fa4 h1:7kPDmBAQxMxcFIYt1rEco/AipZmm1CUoND3wSDmIOeI=
 github.com/pentops/log.go v0.0.0-20231218074934-67aedcab3fa4/go.mod h1:UXhrs+VZ6cWZ7b/v8AtuvBZc5nwS5WFHP94JoFrZQA8=
 github.com/pentops/o5-runtime-sidecar v0.0.6 h1:PsaaMpTBlMsptQXcHH/6Z2a+p/8gxhs/fTZRYtgeiNg=
