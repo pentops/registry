@@ -15,7 +15,7 @@ import (
 
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/registry/gomodproxy"
+	"github.com/pentops/registry/builder"
 	"golang.org/x/oauth2"
 	"gopkg.daemonl.com/envconf"
 
@@ -104,7 +104,7 @@ func NewClient(tc *http.Client) (*Client, error) {
 	return cl, nil
 }
 
-func (cl Client) GetCommit(ctx context.Context, org string, repo string, ref string) (*gomodproxy.CommitInfo, error) {
+func (cl Client) GetCommit(ctx context.Context, org string, repo string, ref string) (*builder.CommitInfo, error) {
 
 	commit, _, err := cl.repositories.GetCommit(ctx, org, repo, ref, &github.ListOptions{})
 	if err != nil {
@@ -112,7 +112,7 @@ func (cl Client) GetCommit(ctx context.Context, org string, repo string, ref str
 	}
 
 	ts := commit.GetCommit().GetCommitter().GetDate()
-	info := &gomodproxy.CommitInfo{
+	info := &builder.CommitInfo{
 		Hash: commit.GetSHA(),
 		Time: ts.Time,
 	}
@@ -128,15 +128,6 @@ func (cl Client) GetCommit(ctx context.Context, org string, repo string, ref str
 	for _, ref := range refs {
 		refName := ref.GetRef()
 		info.Aliases = append(info.Aliases, refName)
-		if strings.HasPrefix(refName, "refs/tags/") {
-			info.Aliases = append(info.Aliases, strings.TrimPrefix(refName, "refs/tags/"))
-		} else if strings.HasPrefix(refName, "refs/heads/") {
-			branchName := strings.TrimPrefix(refName, "refs/heads/")
-			info.Aliases = append(info.Aliases, branchName)
-			if branchName == "master" || branchName == "main" {
-				info.Aliases = append(info.Aliases, "latest")
-			}
-		}
 	}
 
 	return info, nil

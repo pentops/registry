@@ -32,16 +32,10 @@ runtimes:
         mountDockerSocket: true
         command: [serve]
         envVars:
-          - name: GOMOD_REMOTE
+          - name: STORAGE
             blobstore:
               name: images
               s3_direct: true
-              subPath: "gomod"
-          - name: JAPI_REMOTE
-            blobstore:
-              name: images
-              s3_direct: true
-              subPath: "japi"
           - name: GH_PRIVATE_KEY
             secret:
               secretName: github

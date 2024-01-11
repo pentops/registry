@@ -2,13 +2,28 @@ package builder
 
 import (
 	"context"
+	"strings"
 
 	git "github.com/go-git/go-git/v5"
+	"github.com/pentops/jsonapi/gen/v1/jsonapi_pb"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/registry/gomodproxy"
 )
 
-func ExtractGitMetadata(ctx context.Context, dir string) (*gomodproxy.CommitInfo, error) {
+func expandGitAliases(gitConfig *jsonapi_pb.GitConfig, commitInfo *CommitInfo) {
+	for _, alias := range commitInfo.Aliases {
+		if strings.HasPrefix(alias, "refs/tags/") {
+			commitInfo.Aliases = append(commitInfo.Aliases, strings.TrimPrefix(alias, "refs/tags/"))
+		} else if strings.HasPrefix(alias, "refs/heads/") {
+			branchName := strings.TrimPrefix(alias, "refs/heads/")
+			commitInfo.Aliases = append(commitInfo.Aliases, branchName)
+		}
+		if globMatch(alias, commitInfo.Hash) {
+			commitInfo.Aliases = append(commitInfo.Aliases, alias)
+		}
+	}
+}
+
+func ExtractGitMetadata(ctx context.Context, gitConfig *jsonapi_pb.GitConfig, dir string) (*CommitInfo, error) {
 
 	repo, err := git.PlainOpen(dir)
 	if err != nil {
@@ -36,13 +51,13 @@ func ExtractGitMetadata(ctx context.Context, dir string) (*gomodproxy.CommitInfo
 		commitAliases = append(commitAliases, headName.Short())
 		commitAliases = append(commitAliases, string(headName))
 
-		// TODO: Make this configurable
-		if headName == "refs/heads/main" {
+		if globMatch(gitConfig.Main, string(headName)) {
 			commitAliases = append(commitAliases, "latest")
 		}
 	}
 
-	// TODO: Tags
+	// TODO: Tags, including latest match on /refs/tags/v* or whatever is
+	// configured
 
 	log.WithFields(ctx, map[string]interface{}{
 		"commitHash":    commitHash,
@@ -50,7 +65,7 @@ func ExtractGitMetadata(ctx context.Context, dir string) (*gomodproxy.CommitInfo
 		"commitAliases": commitAliases,
 	}).Info("Resolved Git Commit Info")
 
-	return &gomodproxy.CommitInfo{
+	return &CommitInfo{
 		Hash:    commitHash,
 		Time:    commitTime,
 		Aliases: commitAliases,

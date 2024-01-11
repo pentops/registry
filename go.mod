@@ -9,11 +9,13 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.24.7
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.48.0
 	github.com/bradleyfalzon/ghinstallation v1.1.1
+	github.com/bufbuild/protoyaml-go v0.1.6
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/google/go-github/v58 v58.0.0
+	github.com/google/uuid v1.4.0
 	github.com/jhump/protoreflect v1.15.3
-	github.com/pentops/jsonapi v0.0.0-20240109215105-44e83180a422
+	github.com/pentops/jsonapi v0.0.0-20240111180608-97e86c5163a7
 	github.com/pentops/log.go v0.0.0-20231218074934-67aedcab3fa4
 	github.com/pentops/runner v0.0.0-20231219070819-c4878d5565d8
 	github.com/rs/cors v1.10.1
@@ -23,7 +25,6 @@ require (
 	google.golang.org/protobuf v1.31.1-0.20231027082548-f4a6c1f6e5c1
 	gopkg.daemonl.com/envconf v0.0.0-20220909014755-d65ec77bd452
 	gopkg.in/yaml.v2 v2.2.8
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -50,7 +51,6 @@ require (
 	github.com/aws/smithy-go v1.19.0 // indirect
 	github.com/bufbuild/protocompile v0.6.1-0.20231108163138-146b831231f7 // indirect
 	github.com/bufbuild/protovalidate-go v0.4.1 // indirect
-	github.com/bufbuild/protoyaml-go v0.1.6 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
@@ -68,7 +68,6 @@ require (
 	github.com/google/cel-go v0.18.2 // indirect
 	github.com/google/go-github/v29 v29.0.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/google/uuid v1.4.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
@@ -95,5 +94,8 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20231127180814-3a041ad873d4 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231127180814-3a041ad873d4 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )
+
+replace github.com/pentops/jsonapi => /Users/daemonl/pentops/jsonapi

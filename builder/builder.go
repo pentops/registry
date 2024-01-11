@@ -3,22 +3,17 @@ package builder
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/ecr"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/google/uuid"
+	"github.com/pentops/jsonapi/gen/v1/jsonapi_pb"
+	"github.com/pentops/jsonapi/structure"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/registry/gomodproxy"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/zip"
@@ -26,135 +21,181 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-type BufGenerateConfig struct {
-	Version string                      `json:"version,omitempty" yaml:"version,omitempty"`
-	Plugins []BufGeneratePluginConfigV1 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
+type IUploader interface {
+	UploadGoModule(ctx context.Context, version FullInfo, goModData []byte, zipFile io.ReadCloser) error
+	UploadJsonAPI(ctx context.Context, version FullInfo, jsonapiData []byte) error
 }
 
-// ExternalPluginConfigV1 is an external plugin configuration.
-type BufGeneratePluginConfigV1 struct {
-	Plugin     string      `json:"plugin,omitempty" yaml:"plugin,omitempty"`
-	Revision   int         `json:"revision,omitempty" yaml:"revision,omitempty"`
-	Name       string      `json:"name,omitempty" yaml:"name,omitempty"`
-	Remote     string      `json:"remote,omitempty" yaml:"remote,omitempty"`
-	Out        string      `json:"out,omitempty" yaml:"out,omitempty"`
-	Opt        interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
-	Path       string      `json:"path,omitempty" yaml:"path,omitempty"`
-	ProtocPath string      `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
-	Strategy   string      `json:"strategy,omitempty" yaml:"strategy,omitempty"`
-
-	Docker *DockerConfig `json:"docker,omitempty" yaml:"docker,omitempty"`
+type IDockerWrapper interface {
+	Run(ctx context.Context, spec *jsonapi_pb.DockerSpec, input io.Reader, output io.Writer) error
 }
 
-type DockerConfig struct {
-	Image      string      `json:"image,omitempty" yaml:"image,omitempty"`
-	Env        []string    `json:"env,omitempty" yaml:"env,omitempty"`
-	Entrypoint []string    `json:"entrypoint,omitempty" yaml:"entrypoint,omitempty"`
-	Command    []string    `json:"command,omitempty" yaml:"command,omitempty"`
-	Pull       *PullConfig `json:"pull,omitempty" yaml:"pull,omitempty"`
+type Builder struct {
+	Docker   IDockerWrapper
+	Uploader IUploader
 }
 
-func ConvertBufGenerateSpec(src *BufGenerateConfig) ([]DockerSpec, error) {
+func NewBuilder(docker IDockerWrapper, uploader IUploader) *Builder {
+	return &Builder{
+		Docker:   docker,
+		Uploader: uploader,
+	}
+}
 
-	out := make([]DockerSpec, 0, len(src.Plugins))
-
-	for _, plugin := range src.Plugins {
-
-		if plugin.Docker == nil {
-			return nil, fmt.Errorf("plugins require Docker spec")
-		}
-
-		if plugin.Strategy != "" {
-			return nil, fmt.Errorf("unsupported strategy: %s", plugin.Strategy)
-		}
-
-		if plugin.ProtocPath != "" {
-			return nil, fmt.Errorf("unsupported protoc_path: %s", plugin.ProtocPath)
-		}
-
-		env := make([]string, len(plugin.Docker.Env))
-		for idx, src := range plugin.Docker.Env {
-			parts := strings.SplitN(src, "=", 1)
-			if len(parts) == 1 {
-				env[idx] = fmt.Sprintf("%s=%s", src, os.Getenv(src))
-				continue
-			}
-			if len(parts) != 2 {
-				return nil, fmt.Errorf("invalid env var: %s", src)
-			}
-			val := os.ExpandEnv(src)
-			env[idx] = fmt.Sprintf("%s=%s", parts[0], val)
-		}
-
-		spec := DockerSpec{
-			Image:      plugin.Docker.Image,
-			Name:       plugin.Name,
-			Env:        env,
-			Command:    plugin.Docker.Command,
-			Entrypoint: plugin.Docker.Entrypoint,
-			Pull:       plugin.Docker.Pull,
-		}
-
-		if len(spec.Command) == 0 && len(spec.Entrypoint) == 0 {
-			spec.Command = []string{fmt.Sprintf("protoc-gen-%s", plugin.Name)}
-		}
-
-		if str, ok := plugin.Opt.(string); ok {
-			spec.Parameters = []string{str}
-		} else if str, ok := plugin.Opt.([]interface{}); ok {
-			spec.Parameters = make([]string, len(str))
-			for i, v := range str {
-				str, ok := v.(string)
-				if !ok {
-					return nil, fmt.Errorf("unsupported opt type: %T", v)
-				}
-				spec.Parameters[i] = str
-			}
-		} else if plugin.Opt != nil {
-			return nil, fmt.Errorf("unsupported opt type: %T", plugin.Opt)
-		}
-
-		out = append(out, spec)
+func (b *Builder) BuildAll(ctx context.Context, spec *jsonapi_pb.Config, srcDir string, commitInfo *CommitInfo) error {
+	protoBuildRequest, err := CodeGeneratorRequestFromSource(ctx, srcDir)
+	if err != nil {
+		return err
 	}
 
-	return out, nil
+	if spec.Git != nil {
+		expandGitAliases(spec.Git, commitInfo)
+	}
+
+	for _, dockerBuild := range spec.ProtoBuilds {
+		if err := b.BuildProto(ctx, srcDir, dockerBuild, protoBuildRequest, commitInfo); err != nil {
+			return err
+		}
+	}
+
+	log.Info(ctx, "build json API")
+
+	image, err := structure.ReadImageFromSourceDir(ctx, srcDir)
+	if err != nil {
+		return err
+	}
+
+	bb, err := proto.Marshal(image)
+	if err != nil {
+		return err
+	}
+
+	if err := b.Uploader.UploadJsonAPI(ctx, FullInfo{
+		Package: path.Join(spec.Registry.Organization, spec.Registry.Name),
+		Commit:  commitInfo,
+	}, bb); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func copyFile(src, dst string) error {
+	sourceFileStat, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	if !sourceFileStat.Mode().IsRegular() {
+		return fmt.Errorf("%s is not a regular file", src)
+	}
+
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+	_, err = io.Copy(destination, source)
+	return err
+}
+
+func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *jsonapi_pb.ProtoBuildConfig, protoBuildRequest *pluginpb.CodeGeneratorRequest, commitInfo *CommitInfo) error {
+
+	dest, err := os.MkdirTemp("", uuid.NewString())
+	if err != nil {
+		return err
+	}
+	packageRoot := filepath.Join(dest, "package")
+
+	defer os.RemoveAll(dest)
+
+	for _, plugin := range dockerBuild.Plugins {
+		if err := b.RunProtocPlugin(ctx, packageRoot, plugin, protoBuildRequest); err != nil {
+			return err
+		}
+	}
+
+	switch pkg := dockerBuild.PackageType.(type) {
+	case *jsonapi_pb.ProtoBuildConfig_GoProxy_:
+		if err := copyFile(filepath.Join(srcDir, pkg.GoProxy.GoModFile), filepath.Join(packageRoot, "go.mod")); err != nil {
+			return err
+		}
+		if err := b.PushGoPackage(ctx, dest, commitInfo); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unsupported package type: %T", pkg)
+	}
+
+	return nil
 
 }
 
-type DockerSpec struct {
-	// Optional, defaults to $image/%entrypoint/%cmd
-	Name string
+func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *jsonapi_pb.ProtoBuildPlugin, sourceProto *pluginpb.CodeGeneratorRequest) error {
 
-	// Only pulls when set
-	Pull *PullConfig
+	if plugin.Label == "" {
+		// This is a pretty poor way to label it, prefer spetting label
+		// explicitly in config.
+		plugin.Label = strings.Join([]string{
+			plugin.Docker.Image, strings.Join(plugin.Docker.Entrypoint, ","), strings.Join(plugin.Docker.Command, ","),
+		}, "/")
+	}
 
-	Image      string
-	Env        []string
-	Entrypoint []string
-	Command    []string
+	ctx = log.WithField(ctx, "builder", plugin.Label)
+	log.Info(ctx, "running build plugin")
 
-	Parameters []string
+	parameter := strings.Join(plugin.Parameters, ",")
+	sourceProto.Parameter = &parameter
+
+	reqBytes, err := proto.Marshal(sourceProto)
+	if err != nil {
+		return err
+	}
+
+	resp := pluginpb.CodeGeneratorResponse{}
+
+	outBuffer := &bytes.Buffer{}
+	inBuffer := bytes.NewReader(reqBytes)
+	err = b.Docker.Run(ctx, plugin.Docker, inBuffer, outBuffer)
+	if err != nil {
+		return fmt.Errorf("running docker %s: %w", plugin.Label, err)
+	}
+
+	if err := proto.Unmarshal(outBuffer.Bytes(), &resp); err != nil {
+		return err
+	}
+
+	for _, f := range resp.File {
+		name := f.GetName()
+		fullPath := filepath.Join(dest, name)
+		if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(fullPath, []byte(f.GetContent()), 0644); err != nil {
+			return err
+		}
+	}
+
+	log.Info(ctx, "build complete")
+
+	return nil
 }
 
-type PullConfig struct {
-	Username           string
-	PasswordEnvVarName string
-	ECR                bool
-}
+func (b *Builder) PushGoPackage(ctx context.Context, root string, commitInfo *CommitInfo) error {
+	packageRoot := filepath.Join(root, "package")
 
-type BuildSpec struct {
-	GoModFile  []byte
-	CommitInfo *gomodproxy.CommitInfo
-	Builders   []DockerSpec
-}
+	gomodBytes, err := os.ReadFile(filepath.Join(packageRoot, "go.mod"))
+	if err != nil {
+		return err
+	}
 
-type Uploader interface {
-	UploadGoModule(ctx context.Context, version gomodproxy.FullInfo, goModData []byte, zipFile io.ReadCloser) error
-}
-
-func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeGeneratorRequest, uploader Uploader) error {
-
-	parsedGoMod, err := modfile.Parse("go.mod", spec.GoModFile, nil)
+	parsedGoMod, err := modfile.Parse("go.mod", gomodBytes, nil)
 	if err != nil {
 		return err
 	}
@@ -165,94 +206,14 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 
 	packageName := parsedGoMod.Module.Mod.Path
 
-	commitHashPrefix := spec.CommitInfo.Hash
+	commitHashPrefix := commitInfo.Hash
 	if len(commitHashPrefix) > 12 {
 		commitHashPrefix = commitHashPrefix[:12]
 	}
 
-	canonicalVersion := module.PseudoVersion("", "", spec.CommitInfo.Time, commitHashPrefix)
+	canonicalVersion := module.PseudoVersion("", "", commitInfo.Time, commitHashPrefix)
 
-	dest, err := os.MkdirTemp("", "docker")
-	if err != nil {
-		return err
-	}
-
-	defer os.RemoveAll(dest)
-
-	if err := os.WriteFile(filepath.Join(dest, "go.mod"), spec.GoModFile, 0644); err != nil {
-		return err
-	}
-
-	pulledImages := map[string]bool{}
-
-	packageRoot := filepath.Join(dest, "package")
-	for _, builder := range spec.Builders {
-
-		if builder.Name == "" {
-			builder.Name = strings.Join([]string{
-				builder.Image, strings.Join(builder.Entrypoint, ","), strings.Join(builder.Command, ","),
-			}, "/")
-		}
-
-		ctx := log.WithField(ctx, "builder", builder.Name)
-		log.Info(ctx, "running build")
-
-		parameter := strings.Join(builder.Parameters, ",")
-		sourceProto.Parameter = &parameter
-
-		reqBytes, err := proto.Marshal(sourceProto)
-		if err != nil {
-			return err
-		}
-
-		resp := pluginpb.CodeGeneratorResponse{}
-
-		pull := false
-		if builder.Pull != nil && !pulledImages[builder.Image] {
-			pull = true
-			pulledImages[builder.Image] = true
-		}
-
-		outBuffer := &bytes.Buffer{}
-		err = DockerRun(ctx, builder, pull, func(hj types.HijackedResponse) error {
-			if _, err := hj.Conn.Write(reqBytes); err != nil {
-				return err
-			}
-			if err := hj.CloseWrite(); err != nil {
-				return err
-			}
-
-			_, err = stdcopy.StdCopy(outBuffer, os.Stderr, hj.Reader)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		})
-		if err != nil {
-			return fmt.Errorf("running docker %s (%v) %w", builder.Image, builder.Command, err)
-		}
-
-		if err := proto.Unmarshal(outBuffer.Bytes(), &resp); err != nil {
-			return err
-		}
-
-		for _, f := range resp.File {
-			name := f.GetName()
-			fullPath := filepath.Join(packageRoot, name)
-			if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
-				return err
-			}
-			if err := os.WriteFile(fullPath, []byte(f.GetContent()), 0644); err != nil {
-				return err
-			}
-			log.WithField(ctx, "file", name).Info("wrote file")
-		}
-
-		log.Info(ctx, "build complete")
-	}
-
-	zipFilePath := filepath.Join(dest, canonicalVersion+".zip")
+	zipFilePath := filepath.Join(root, canonicalVersion+".zip")
 
 	if err := func() error {
 		outWriter, err := os.Create(zipFilePath)
@@ -275,10 +236,10 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 		return fmt.Errorf("creating zip file: %w", err)
 	}
 
-	info := gomodproxy.FullInfo{
+	info := FullInfo{
 		Version: canonicalVersion,
 		Package: packageName,
-		Commit:  spec.CommitInfo,
+		Commit:  commitInfo,
 	}
 
 	zipReader, err := os.Open(zipFilePath)
@@ -286,163 +247,6 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 		return err
 	}
 
-	return uploader.UploadGoModule(ctx, info, spec.GoModFile, zipReader)
+	return b.Uploader.UploadGoModule(ctx, info, gomodBytes, zipReader)
 
-}
-
-func dockerPull(ctx context.Context, cli *client.Client, spec DockerSpec) error {
-
-	pullOptions := types.ImagePullOptions{}
-
-	if spec.Pull.ECR {
-		// TODO: This is a little too magic.
-		awsConfig, err := config.LoadDefaultConfig(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to load configuration: %w", err)
-		}
-
-		ecrClient := ecr.NewFromConfig(awsConfig)
-		resp, err := ecrClient.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{})
-		if err != nil {
-			return fmt.Errorf("failed to get authorization token: %w", err)
-		}
-
-		if len(resp.AuthorizationData) == 0 {
-			return fmt.Errorf("no authorization data returned")
-		}
-
-		authData, err := base64.StdEncoding.DecodeString(*resp.AuthorizationData[0].AuthorizationToken)
-		if err != nil {
-			return fmt.Errorf("failed to decode authorization token: %w", err)
-		}
-
-		parts := strings.SplitN(string(authData), ":", 2)
-		if len(parts) != 2 {
-			return fmt.Errorf("invalid authorization token")
-		}
-
-		cred, _ := json.Marshal(struct {
-			Username string `json:"username"`
-			Password string `json:"password"`
-		}{
-			Username: parts[0],
-			Password: parts[1],
-		})
-		pullOptions.RegistryAuth = base64.StdEncoding.EncodeToString(cred)
-
-	} else {
-		cred, _ := json.Marshal(struct {
-			Username string `json:"username"`
-			Password string `json:"password"`
-		}{
-			Username: spec.Pull.Username,
-			Password: os.Getenv(spec.Pull.PasswordEnvVarName),
-		})
-		pullOptions.RegistryAuth = base64.StdEncoding.EncodeToString(cred)
-	}
-	reader, err := cli.ImagePull(ctx, spec.Image, pullOptions)
-	if err != nil {
-		return fmt.Errorf("image pull: %w", err)
-	}
-
-	// cli.ImagePull is asynchronous.
-	// The reader needs to be read completely for the pull operation to complete.
-	// If stdout is not required, consider using io.Discard instead of os.Stdout.
-	_, err = io.Copy(os.Stdout, reader)
-	reader.Close()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func DockerRun(ctx context.Context, spec DockerSpec, pull bool, callback func(hj types.HijackedResponse) error) error {
-
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-
-	if pull && spec.Pull != nil {
-		log.Info(ctx, "pulling image")
-		if err := dockerPull(ctx, cli, spec); err != nil {
-			log.WithError(ctx, err).Error("failed to pull image")
-			return err
-		}
-		log.Info(ctx, "image pulled")
-	}
-
-	log.Info(ctx, "creating container")
-
-	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		AttachStdin:  true,
-		AttachStdout: true,
-		AttachStderr: true,
-		StdinOnce:    true,
-		OpenStdin:    true,
-
-		Tty: false,
-
-		Image:      spec.Image,
-		Env:        spec.Env,
-		Entrypoint: spec.Entrypoint,
-		Cmd:        spec.Command,
-	}, nil, nil, nil, "")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		log.Info(ctx, "removing container")
-		if err := cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{}); err != nil {
-			log.WithError(ctx, err).Error("failed to remove container")
-		}
-	}()
-
-	log.Info(ctx, "attaching to container")
-
-	hj, err := cli.ContainerAttach(ctx, resp.ID, types.ContainerAttachOptions{
-		Stdin:  true,
-		Stdout: true,
-		Stderr: true,
-		Stream: true,
-		Logs:   true,
-	})
-	if err != nil {
-		return err
-	}
-
-	defer hj.Close()
-
-	log.Info(ctx, "starting container")
-
-	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		return err
-	}
-
-	log.Info(ctx, "run pipe callback")
-
-	if err := callback(hj); err != nil {
-		return err
-	}
-
-	log.Info(ctx, "waiting for container")
-
-	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
-
-	select {
-	case err := <-errCh:
-		if err != nil {
-			return err
-		}
-	case st := <-statusCh:
-		if st.StatusCode != 0 {
-			return fmt.Errorf("non-zero exit code: %d", st.StatusCode)
-		}
-
-	}
-
-	log.Info(ctx, "docker build done")
-
-	return nil
 }
