@@ -292,9 +292,7 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 
 func dockerPull(ctx context.Context, cli *client.Client, spec DockerSpec) error {
 
-	log.Info(ctx, "pulling image")
-
-	var username, password string
+	pullOptions := types.ImagePullOptions{}
 
 	if spec.Pull.ECR {
 		// TODO: This is a little too magic.
@@ -313,36 +311,38 @@ func dockerPull(ctx context.Context, cli *client.Client, spec DockerSpec) error 
 			return fmt.Errorf("no authorization data returned")
 		}
 
-		authData := resp.AuthorizationData[0]
-
-		decoded, err := base64.StdEncoding.DecodeString(*authData.AuthorizationToken)
+		authData, err := base64.StdEncoding.DecodeString(*resp.AuthorizationData[0].AuthorizationToken)
 		if err != nil {
 			return fmt.Errorf("failed to decode authorization token: %w", err)
 		}
 
-		parts := strings.SplitN(string(decoded), ":", 2)
+		parts := strings.SplitN(string(authData), ":", 2)
 		if len(parts) != 2 {
 			return fmt.Errorf("invalid authorization token")
 		}
 
-		username = parts[0]
-		password = parts[1]
+		cred, _ := json.Marshal(struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}{
+			Username: parts[0],
+			Password: parts[1],
+		})
+		pullOptions.RegistryAuth = base64.StdEncoding.EncodeToString(cred)
+
 	} else {
-		username = spec.Pull.Username
-		password = os.Getenv(spec.Pull.PasswordEnvVarName)
+		cred, _ := json.Marshal(struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}{
+			Username: spec.Pull.Username,
+			Password: os.Getenv(spec.Pull.PasswordEnvVarName),
+		})
+		pullOptions.RegistryAuth = base64.StdEncoding.EncodeToString(cred)
 	}
-	cred, _ := json.Marshal(struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}{
-		Username: username,
-		Password: password,
-	})
-	reader, err := cli.ImagePull(ctx, spec.Image, types.ImagePullOptions{
-		RegistryAuth: string(cred),
-	})
+	reader, err := cli.ImagePull(ctx, spec.Image, pullOptions)
 	if err != nil {
-		return err
+		return fmt.Errorf("image pull: %w", err)
 	}
 
 	// cli.ImagePull is asynchronous.
@@ -365,10 +365,12 @@ func DockerRun(ctx context.Context, spec DockerSpec, pull bool, callback func(hj
 	defer cli.Close()
 
 	if pull && spec.Pull != nil {
+		log.Info(ctx, "pulling image")
 		if err := dockerPull(ctx, cli, spec); err != nil {
+			log.WithError(ctx, err).Error("failed to pull image")
 			return err
 		}
-
+		log.Info(ctx, "image pulled")
 	}
 
 	log.Info(ctx, "creating container")
