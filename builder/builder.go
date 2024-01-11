@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -139,12 +138,9 @@ type PullConfig struct {
 }
 
 type BuildSpec struct {
-	GoModFile     []byte
-	CommitTime    time.Time
-	CommitHash    string
-	CommitAliases []string
-
-	Builders []DockerSpec
+	GoModFile  []byte
+	CommitInfo *gomodproxy.CommitInfo
+	Builders   []DockerSpec
 }
 
 type Uploader interface {
@@ -164,12 +160,12 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 
 	packageName := parsedGoMod.Module.Mod.Path
 
-	commitHashPrefix := spec.CommitHash
+	commitHashPrefix := spec.CommitInfo.Hash
 	if len(commitHashPrefix) > 12 {
 		commitHashPrefix = commitHashPrefix[:12]
 	}
 
-	canonicalVersion := module.PseudoVersion("", "", spec.CommitTime, commitHashPrefix)
+	canonicalVersion := module.PseudoVersion("", "", spec.CommitInfo.Time, commitHashPrefix)
 
 	dest, err := os.MkdirTemp("", "docker")
 	if err != nil {
@@ -245,6 +241,7 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 			if err := os.WriteFile(fullPath, []byte(f.GetContent()), 0644); err != nil {
 				return err
 			}
+			log.WithField(ctx, "file", name).Info("wrote file")
 		}
 
 		log.Info(ctx, "build complete")
@@ -274,11 +271,9 @@ func BuildImage(ctx context.Context, spec BuildSpec, sourceProto *pluginpb.CodeG
 	}
 
 	info := gomodproxy.FullInfo{
-		Version:            canonicalVersion,
-		VersionAliases:     spec.CommitAliases,
-		Time:               spec.CommitTime,
-		OriginalCommitHash: spec.CommitHash,
-		Package:            packageName,
+		Version: canonicalVersion,
+		Package: packageName,
+		Commit:  spec.CommitInfo,
 	}
 
 	zipReader, err := os.Open(zipFilePath)

@@ -289,11 +289,16 @@ func (src *S3PackageSrc) put(ctx context.Context, subPath string, body io.Reader
 }
 
 type FullInfo struct {
-	Version            string
-	Time               time.Time
-	OriginalCommitHash string
-	Package            string
-	VersionAliases     []string
+	Version string
+	Package string
+
+	Commit *CommitInfo
+}
+
+type CommitInfo struct {
+	Hash    string
+	Time    time.Time
+	Aliases []string
 }
 
 func (src *S3PackageSrc) UploadGoModule(ctx context.Context, version FullInfo, goModData []byte, zipFile io.ReadCloser) error {
@@ -305,8 +310,8 @@ func (src *S3PackageSrc) UploadGoModule(ctx context.Context, version FullInfo, g
 	}).Info("uploading go module")
 
 	metadata := map[string]string{
-		S3MetadataCommitTime: version.Time.Format(time.RFC3339),
-		S3MetadataCommitHash: version.OriginalCommitHash,
+		S3MetadataCommitTime: version.Commit.Time.Format(time.RFC3339),
+		S3MetadataCommitHash: version.Commit.Hash,
 	}
 
 	if err := src.put(ctx,
@@ -330,7 +335,7 @@ func (src *S3PackageSrc) UploadGoModule(ctx context.Context, version FullInfo, g
 		aliasMetadata[k] = v
 	}
 	aliasMetadata[S3MetadataAlias] = version.Version
-	for _, alias := range version.VersionAliases {
+	for _, alias := range version.Commit.Aliases {
 		if err := src.put(ctx,
 			path.Join(version.Package, fmt.Sprintf("%s.zip", alias)),
 			bytes.NewReader([]byte(version.Version)),

@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	git "github.com/go-git/go-git/v5"
 	"github.com/pentops/jsonapi/structure"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/registry/builder"
+	"github.com/pentops/registry/github"
 	"github.com/pentops/registry/gomodproxy"
 	"github.com/pentops/registry/japi"
 	"github.com/pentops/runner/commander"
@@ -80,8 +80,29 @@ func runProtoBuildRequest(ctx context.Context, cfg struct {
 
 }
 
+func readConfigFile(ctx context.Context, srcFile string, into interface{}) error {
+
+	generateBytes, err := os.ReadFile(srcFile)
+	if err != nil {
+		return err
+	}
+
+	if strings.HasSuffix(srcFile, ".json") {
+		if err := json.Unmarshal(generateBytes, into); err != nil {
+			return err
+		}
+	} else if strings.HasSuffix(srcFile, ".yaml") || strings.HasSuffix(srcFile, ".yml") {
+		if err := yaml.Unmarshal(generateBytes, into); err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("unknown generate file type")
+	}
+	return nil
+}
+
 func runProtoBuild(ctx context.Context, cfg struct {
-	Source        string `flag:"src" default:"." env:"PROTO_SOURCE" description:"Source directory containing jsonapi.yaml and buf.lock.yaml"`
+	Source        string `flag:"src" default:"." description:"Source directory containing jsonapi.yaml and buf.lock.yaml"`
 	PackagePrefix string `flag:"package-prefix" env:"PACKAGE_PREFIX" default:""`
 	GoModFile     string `flag:"gomod-file" env:"GOMOD_FILE" default:"go.mod"`
 
@@ -110,23 +131,11 @@ func runProtoBuild(ctx context.Context, cfg struct {
 	if !filepath.IsAbs(generateSource) {
 		generateSource = filepath.Join(cfg.Source, generateSource)
 	}
-	generateBytes, err := os.ReadFile(generateSource)
-	if err != nil {
-		return err
-	}
 
 	generateSpec := &builder.BufGenerateConfig{}
 
-	if strings.HasSuffix(generateSource, ".json") {
-		if err := json.Unmarshal(generateBytes, &generateSpec); err != nil {
-			return err
-		}
-	} else if strings.HasSuffix(generateSource, ".yaml") || strings.HasSuffix(generateSource, ".yml") {
-		if err := yaml.Unmarshal(generateBytes, &generateSpec); err != nil {
-			return err
-		}
-	} else {
-		return fmt.Errorf("unknown generate file type")
+	if err := readConfigFile(ctx, generateSource, generateSpec); err != nil {
+		return err
 	}
 
 	builders, err := builder.ConvertBufGenerateSpec(generateSpec)
@@ -134,68 +143,25 @@ func runProtoBuild(ctx context.Context, cfg struct {
 		return err
 	}
 
-	var commitTime time.Time
-	var commitHash string
-	var commitAliases []string
-
+	var commitInfo *gomodproxy.CommitInfo
 	if cfg.GitAuto {
-		repo, err := git.PlainOpen(cfg.Source)
+		commitInfo, err = builder.ExtractGitMetadata(ctx, cfg.Source)
 		if err != nil {
 			return err
 		}
 
-		head, err := repo.Head()
-		if err != nil {
-			return err
-		}
-
-		commit, err := repo.CommitObject(head.Hash())
-		if err != nil {
-			return err
-		}
-
-		commitTime = commit.Committer.When
-		commitHash = commit.Hash.String()
-
-		commitAliases = append(commitAliases, commitHash)
-
-		headName := head.Name()
-		if headName.IsBranch() {
-			commitAliases = append(commitAliases, headName.Short())
-			commitAliases = append(commitAliases, string(headName))
-
-			// TODO: Make this configurable
-			if headName == "refs/heads/main" {
-				commitAliases = append(commitAliases, "latest")
-			}
-		}
-
-		// TODO: Tags
-
-		log.WithFields(ctx, map[string]interface{}{
-			"commitHash":    commitHash,
-			"commitTime":    commitTime,
-			"commitAliases": commitAliases,
-		}).Info("Resolved Git Commit Info")
 	} else if cfg.CommitHash == "" || cfg.CommitTime == "" {
 		return fmt.Errorf("commit hash and time are required, or set --git-auto")
 	} else {
-		commitHash = cfg.CommitHash
-		commitTime, err = time.Parse(time.RFC3339, cfg.CommitTime)
+		commitInfo.Hash = cfg.CommitHash
+		commitInfo.Time, err = time.Parse(time.RFC3339, cfg.CommitTime)
 		if err != nil {
 			return fmt.Errorf("parsing commit time: %w", err)
 		}
-		commitAliases = cfg.CommitAliases
+		commitInfo.Aliases = cfg.CommitAliases
 	}
 
-	protoSource, err := structure.ReadFileDescriptorSet(ctx, cfg.Source)
-	if err != nil {
-		return err
-	}
-
-	input, err := structure.CodeGeneratorRequestFromDescriptors(structure.CodeGenOptions{
-		PackagePrefix: cfg.PackagePrefix,
-	}, protoSource)
+	input, err := builder.CodeGeneratorRequestFromSource(ctx, cfg.Source)
 	if err != nil {
 		return err
 	}
@@ -210,11 +176,9 @@ func runProtoBuild(ctx context.Context, cfg struct {
 	}
 
 	return builder.BuildImage(ctx, builder.BuildSpec{
-		GoModFile:     gomodData,
-		CommitTime:    commitTime,
-		CommitHash:    commitHash,
-		Builders:      builders,
-		CommitAliases: commitAliases,
+		GoModFile:  gomodData,
+		CommitInfo: commitInfo,
+		Builders:   builders,
 	}, input, remote)
 }
 
@@ -295,6 +259,75 @@ func pushS3(ctx context.Context, bb []byte, destinations ...string) error {
 	return nil
 }
 
+func TriggerHandler(githubClient *github.Client, uploader builder.Uploader) http.Handler {
+
+	fetchAndBuild := func(ctx context.Context, owner string, repo string, version string) error {
+
+		workDir, err := os.MkdirTemp("", "trigger")
+		if err != nil {
+			return err
+		}
+
+		defer os.RemoveAll(workDir)
+
+		commitInfo, err := githubClient.GetCommit(ctx, owner, repo, version)
+		if err != nil {
+			return err
+		}
+		if err := githubClient.GetContent(ctx, owner, repo, commitInfo.Hash, workDir); err != nil {
+			return err
+		}
+
+		input, err := builder.CodeGeneratorRequestFromSource(ctx, workDir)
+		if err != nil {
+			return err
+		}
+
+		gomodData, err := os.ReadFile(filepath.Join(workDir, "ext", "builder", "go-api", "go.mod"))
+		if err != nil {
+			return err
+		}
+
+		generateSpec := &builder.BufGenerateConfig{}
+		if err := readConfigFile(ctx, filepath.Join(workDir, "ext", "builder", "go-api", "buf.gen.yaml"), generateSpec); err != nil {
+			return err
+		}
+
+		fmt.Printf("generateSpec: %+v\n", generateSpec)
+
+		builders, err := builder.ConvertBufGenerateSpec(generateSpec)
+		if err != nil {
+			return err
+		}
+
+		return builder.BuildImage(ctx, builder.BuildSpec{
+			GoModFile:  gomodData,
+			CommitInfo: commitInfo,
+			Builders:   builders,
+		}, input, uploader)
+
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// /$owner/$repo/$version
+		parts := strings.Split(r.URL.Path, "/")
+		if len(parts) != 4 {
+			http.Error(w, "invalid path", http.StatusNotFound)
+			return
+		}
+
+		owner := parts[1]
+		repo := parts[2]
+		version := parts[3]
+
+		if err := fetchAndBuild(r.Context(), owner, repo, version); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+	})
+}
+
 func runCombinedServer(ctx context.Context, cfg struct {
 	Port        int    `env:"PORT" default:"8080"`
 	GomodRemote string `env:"GOMOD_REMOTE"`
@@ -318,9 +351,16 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		return err
 	}
 
+	githubClient, err := github.NewEnvClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	genericCORS := cors.Default()
 	mux := http.NewServeMux()
-	mux.Handle("/registry/v1/", http.StripPrefix("/registry/v1", japiHandler))
+	mux.Handle("/registry/v1/", genericCORS.Handler(http.StripPrefix("/registry/v1", japiHandler)))
 	mux.Handle("/gopkg/", http.StripPrefix("/gopkg", gomodproxy.Handler(gomodData)))
+	mux.Handle("/trigger/v1/", http.StripPrefix("/trigger/v1", TriggerHandler(githubClient, gomodData)))
 
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
