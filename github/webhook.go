@@ -92,6 +92,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 		"ext/j5/j5.yml",
 	})
 	if err != nil {
+		log.WithError(ctx, err).Error("Config Error")
 		_, err := ww.github.CreateCheckRun(ctx, ref, "j5-config", &CheckRunUpdate{
 			Status:     CheckRunStatusCompleted,
 			Conclusion: some(CheckRunConclusionFailure),
@@ -101,6 +102,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 			},
 		})
 		if err != nil {
+
 			return nil, err
 		}
 		return &emptypb.Empty{}, nil

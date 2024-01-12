@@ -126,8 +126,9 @@ func (cl Client) CreateCheckRun(ctx context.Context, ref RepoRef, name string, s
 		}
 	}
 	opts := github.CreateCheckRunOptions{
-		Name:   name,
-		Status: github.String(string(status.Status)),
+		Name:    name,
+		Status:  github.String(string(status.Status)),
+		HeadSHA: ref.Ref,
 	}
 	if status.Conclusion != nil {
 		opts.Conclusion = github.String(string(*status.Conclusion))
