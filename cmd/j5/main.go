@@ -18,6 +18,7 @@ import (
 	"github.com/pentops/o5-go/github/v1/github_pb"
 	"github.com/pentops/registry/anyfs"
 	"github.com/pentops/registry/builder"
+	"github.com/pentops/registry/docker"
 	"github.com/pentops/registry/github"
 	"github.com/pentops/registry/gomodproxy"
 	"github.com/pentops/registry/japi"
@@ -60,17 +61,40 @@ func main() {
 	cmdGroup.RunMain("registry", Version)
 }
 
+func loadConfig(src string) (*config_j5pb.Config, error) {
+	var configData []byte
+	var err error
+	for _, filename := range structure.ConfigPaths {
+		configData, err = os.ReadFile(filepath.Join(src, filename))
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return nil, err
+		}
+		break
+	}
+
+	if configData == nil {
+		return nil, fmt.Errorf("no config found")
+	}
+
+	config := &config_j5pb.Config{}
+	if err := protoyaml.Unmarshal(configData, config); err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
 func runTestBuild(ctx context.Context, cfg struct {
-	Source string `flag:"src" default:"." description:"Source directory containing jsonapi.yaml and buf.lock.yaml"`
+	Source   string   `flag:"src" default:"." description:"Source directory containing j5.yaml and buf.lock.yaml"`
+	Builders []string `flag:",remaining"`
 }) error {
 	remote := builder.NewNOPUploader()
 
-	japiConfigData, err := os.ReadFile(filepath.Join(cfg.Source, "jsonapi.yaml"))
+	japiConfig, err := loadConfig(cfg.Source)
 	if err != nil {
-		return err
-	}
-	japiConfig := &config_j5pb.Config{}
-	if err := protoyaml.Unmarshal(japiConfigData, japiConfig); err != nil {
 		return err
 	}
 
@@ -82,18 +106,18 @@ func runTestBuild(ctx context.Context, cfg struct {
 		Aliases: []string{},
 	}
 
-	dockerWrapper, err := builder.NewDockerWrapper(builder.DefaultRegistryAuths)
+	dockerWrapper, err := docker.NewDockerWrapper(docker.DefaultRegistryAuths)
 	if err != nil {
 		return err
 	}
 
 	bb := builder.NewBuilder(dockerWrapper, remote)
 
-	return bb.BuildAll(ctx, japiConfig, cfg.Source, commitInfo)
+	return bb.BuildAll(ctx, japiConfig, cfg.Source, commitInfo, cfg.Builders...)
 }
 
 func runProtoBuild(ctx context.Context, cfg struct {
-	Source        string `flag:"src" default:"." description:"Source directory containing jsonapi.yaml and buf.lock.yaml"`
+	Source        string `flag:"src" default:"." description:"Source directory containing j5.yaml and buf.lock.yaml"`
 	PackagePrefix string `flag:"package-prefix" env:"PACKAGE_PREFIX" default:""`
 	Storage       string `env:"REGISTRY_STORAGE"`
 
@@ -118,12 +142,8 @@ func runProtoBuild(ctx context.Context, cfg struct {
 
 	remote := builder.NewFSUploader(s3fs)
 
-	japiConfigData, err := os.ReadFile(filepath.Join(cfg.Source, "jsonapi.yaml"))
+	japiConfig, err := loadConfig(cfg.Source)
 	if err != nil {
-		return err
-	}
-	japiConfig := &config_j5pb.Config{}
-	if err := protoyaml.Unmarshal(japiConfigData, japiConfig); err != nil {
 		return err
 	}
 
@@ -145,7 +165,7 @@ func runProtoBuild(ctx context.Context, cfg struct {
 		commitInfo.Aliases = cfg.CommitAliases
 	}
 
-	dockerWrapper, err := builder.NewDockerWrapper(builder.DefaultRegistryAuths)
+	dockerWrapper, err := docker.NewDockerWrapper(docker.DefaultRegistryAuths)
 	if err != nil {
 		return err
 	}
@@ -156,7 +176,7 @@ func runProtoBuild(ctx context.Context, cfg struct {
 }
 
 func runPushAPI(ctx context.Context, cfg struct {
-	Source  string `flag:"src" default:"." description:"Source directory containing jsonapi.yaml and buf.lock.yaml"`
+	Source  string `flag:"src" default:"." description:"Source directory containing j5.yaml and buf.lock.yaml"`
 	Storage string `env:"REGISTRY_STORAGE"`
 
 	CommitHash    string   `flag:"commit-hash" env:"COMMIT_HASH" default:""`
@@ -257,7 +277,7 @@ func runCombinedServer(ctx context.Context, cfg struct {
 
 	remote := builder.NewFSUploader(s3fs)
 
-	dockerWrapper, err := builder.NewDockerWrapper(builder.DefaultRegistryAuths)
+	dockerWrapper, err := docker.NewDockerWrapper(docker.DefaultRegistryAuths)
 	if err != nil {
 		return err
 	}

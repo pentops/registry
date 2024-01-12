@@ -8,6 +8,7 @@ import (
 	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
 	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/log.go/log"
+	"github.com/pentops/registry/glob"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -22,7 +23,7 @@ func expandGitAliases(gitConfig *config_j5pb.GitConfig, commitInfo *builder_j5pb
 		} else {
 			aliases = append(aliases, alias)
 		}
-		if globMatch(gitConfig.Main, alias) {
+		if glob.GlobMatch(gitConfig.Main, alias) {
 			aliases = append(aliases, "latest")
 		}
 	}
@@ -57,7 +58,7 @@ func ExtractGitMetadata(ctx context.Context, gitConfig *config_j5pb.GitConfig, d
 		commitAliases = append(commitAliases, headName.Short())
 		commitAliases = append(commitAliases, string(headName))
 
-		if globMatch(gitConfig.Main, string(headName)) {
+		if glob.GlobMatch(gitConfig.Main, string(headName)) {
 			commitAliases = append(commitAliases, "latest")
 		}
 	}

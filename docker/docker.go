@@ -1,4 +1,4 @@
-package builder
+package docker
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -18,6 +17,7 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/log.go/log"
+	"github.com/pentops/registry/glob"
 )
 
 var DefaultRegistryAuths = []*config_j5pb.DockerRegistryAuth{{
@@ -82,8 +82,6 @@ func (dw *DockerWrapper) Run(ctx context.Context, spec *config_j5pb.DockerSpec, 
 		return err
 	}
 
-	log.Info(ctx, "creating container")
-
 	resp, err := dw.client.ContainerCreate(ctx, &container.Config{
 		AttachStdin:  true,
 		AttachStdout: true,
@@ -108,8 +106,6 @@ func (dw *DockerWrapper) Run(ctx context.Context, spec *config_j5pb.DockerSpec, 
 		}
 	}()
 
-	log.Info(ctx, "attaching to container")
-
 	hj, err := dw.client.ContainerAttach(ctx, resp.ID, types.ContainerAttachOptions{
 		Stdin:  true,
 		Stdout: true,
@@ -122,8 +118,6 @@ func (dw *DockerWrapper) Run(ctx context.Context, spec *config_j5pb.DockerSpec, 
 	}
 
 	defer hj.Close()
-
-	log.Info(ctx, "starting container")
 
 	if err := dw.client.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		return err
@@ -153,6 +147,7 @@ func (dw *DockerWrapper) Run(ctx context.Context, spec *config_j5pb.DockerSpec, 
 			return err
 		}
 	case st := <-statusCh:
+		log.WithField(ctx, "exitStatus", st).Info("container exited")
 		if st.StatusCode != 0 {
 			return fmt.Errorf("non-zero exit code: %d", st.StatusCode)
 		}
@@ -181,17 +176,6 @@ func mapEnvVars(spec []string) ([]string, error) {
 	return env, nil
 }
 
-func globMatch(pattern, s string) bool {
-	escaped := regexp.QuoteMeta(pattern)
-	// Replace escaped * with .* to make it a regexp pattern.
-	pattern = strings.ReplaceAll(escaped, "\\*", ".*")
-	matcher, err := regexp.Compile(pattern)
-	if err != nil {
-		return false
-	}
-	return matcher.MatchString(s)
-}
-
 func (dw *DockerWrapper) Pull(ctx context.Context, spec *config_j5pb.DockerSpec) error {
 
 	type basicAuth struct {
@@ -204,7 +188,7 @@ func (dw *DockerWrapper) Pull(ctx context.Context, spec *config_j5pb.DockerSpec)
 	var registryAuth *config_j5pb.DockerRegistryAuth
 	for _, auth := range dw.auth {
 		// If auth's registry pattern with * wildcards matches the spec's image, use it.
-		if globMatch(auth.Registry, spec.Image) {
+		if glob.GlobMatch(auth.Registry, spec.Image) {
 			registryAuth = auth
 			log.WithField(ctx, "registry", auth.Registry).Debug("using auth")
 			break
@@ -215,58 +199,95 @@ func (dw *DockerWrapper) Pull(ctx context.Context, spec *config_j5pb.DockerSpec)
 	}
 
 	if registryAuth != nil {
-		var authConfig *basicAuth
+		pullOptions.PrivilegeFunc = func() (string, error) {
+			var authConfig *basicAuth
 
-		switch authType := registryAuth.Auth.(type) {
-		case *config_j5pb.DockerRegistryAuth_Basic_:
-			authConfig = &basicAuth{
-				Username: authType.Basic.Username,
-				Password: os.Getenv(authType.Basic.PasswordEnvVar),
+			switch authType := registryAuth.Auth.(type) {
+			case *config_j5pb.DockerRegistryAuth_Basic_:
+				val := os.Getenv(authType.Basic.PasswordEnvVar)
+				if val == "" {
+					return "", fmt.Errorf("basic auth password (%s) not set", authType.Basic.PasswordEnvVar)
+				}
+
+				authConfig = &basicAuth{
+					Username: authType.Basic.Username,
+					Password: val,
+				}
+
+			case *config_j5pb.DockerRegistryAuth_Github_:
+				envVar := authType.Github.TokenEnvVar
+				if envVar == "" {
+					envVar = "GITHUB_TOKEN"
+				}
+				val := os.Getenv(envVar)
+				if val == "" {
+					return "", fmt.Errorf("github token (%s) not set", envVar)
+				}
+
+				authConfig = &basicAuth{
+					Username: "GITHUB",
+					Password: val,
+				}
+
+			case *config_j5pb.DockerRegistryAuth_AwsEcs:
+
+				// TODO: This is a little too magic.
+				awsConfig, err := config.LoadDefaultConfig(ctx)
+				if err != nil {
+					return "", fmt.Errorf("failed to load configuration: %w", err)
+				}
+
+				ecrClient := ecr.NewFromConfig(awsConfig)
+				resp, err := ecrClient.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{})
+				if err != nil {
+					return "", fmt.Errorf("failed to get authorization token: %w", err)
+				}
+
+				if len(resp.AuthorizationData) == 0 {
+					return "", fmt.Errorf("no authorization data returned")
+				}
+
+				authData, err := base64.StdEncoding.DecodeString(*resp.AuthorizationData[0].AuthorizationToken)
+				if err != nil {
+					return "", fmt.Errorf("failed to decode authorization token: %w", err)
+				}
+
+				parts := strings.SplitN(string(authData), ":", 2)
+				if len(parts) != 2 {
+					return "", fmt.Errorf("invalid authorization token")
+				}
+
+				authConfig = &basicAuth{
+					Username: parts[0],
+					Password: parts[1],
+				}
+
+			default:
+				return "", fmt.Errorf("unknown auth type: %T", authType)
 			}
-
-		case *config_j5pb.DockerRegistryAuth_AwsEcs:
-
-			// TODO: This is a little too magic.
-			awsConfig, err := config.LoadDefaultConfig(ctx)
-			if err != nil {
-				return fmt.Errorf("failed to load configuration: %w", err)
-			}
-
-			ecrClient := ecr.NewFromConfig(awsConfig)
-			resp, err := ecrClient.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{})
-			if err != nil {
-				return fmt.Errorf("failed to get authorization token: %w", err)
-			}
-
-			if len(resp.AuthorizationData) == 0 {
-				return fmt.Errorf("no authorization data returned")
-			}
-
-			authData, err := base64.StdEncoding.DecodeString(*resp.AuthorizationData[0].AuthorizationToken)
-			if err != nil {
-				return fmt.Errorf("failed to decode authorization token: %w", err)
-			}
-
-			parts := strings.SplitN(string(authData), ":", 2)
-			if len(parts) != 2 {
-				return fmt.Errorf("invalid authorization token")
-			}
-
-			authConfig = &basicAuth{
-				Username: parts[0],
-				Password: parts[1],
-			}
-
-		default:
-			return fmt.Errorf("unknown auth type: %T", authType)
+			cred, _ := json.Marshal(authConfig)
+			return base64.StdEncoding.EncodeToString(cred), nil
 		}
-		cred, _ := json.Marshal(authConfig)
-		pullOptions.RegistryAuth = base64.StdEncoding.EncodeToString(cred)
 	}
 
 	reader, err := dw.client.ImagePull(ctx, spec.Image, pullOptions)
 	if err != nil {
-		return fmt.Errorf("image pull: %w", err)
+		// The ECS registry seems to return the 'wrong' status code for PrivilegeFunc errors.
+		// This is a workaround.
+		if strings.Contains(err.Error(), "no basic auth credentials") {
+			token, err := pullOptions.PrivilegeFunc()
+			if err != nil {
+				return fmt.Errorf("image pull: %w", err)
+			}
+			pullOptions.PrivilegeFunc = nil
+			pullOptions.RegistryAuth = token
+			reader, err = dw.client.ImagePull(ctx, spec.Image, pullOptions)
+			if err != nil {
+				return fmt.Errorf("image pull: %w", err)
+			}
+		} else {
+			return fmt.Errorf("image pull: %w", err)
+		}
 	}
 
 	// cli.ImagePull is asynchronous.
