@@ -116,12 +116,32 @@ type RepoRef struct {
 	Ref   string
 }
 
-func (cl Client) CreateCheckRun(ctx context.Context, ref RepoRef, name string) (int64, error) {
-	run, _, err := cl.checks.CreateCheckRun(ctx, ref.Owner, ref.Repo, github.CreateCheckRunOptions{
+// CreateCheckRun creates a check run at Github for the given commit. If
+// CheckRunUpdate is nil, a check run with status "queued" is created, otherwise
+// details are copied as supplied.
+func (cl Client) CreateCheckRun(ctx context.Context, ref RepoRef, name string, status *CheckRunUpdate) (int64, error) {
+	if status == nil {
+		status = &CheckRunUpdate{
+			Status: CheckRunStatusQueued,
+		}
+	}
+	opts := github.CreateCheckRunOptions{
 		Name:    name,
+		Status:  github.String(string(status.Status)),
 		HeadSHA: ref.Ref,
-		Status:  github.String("queued"),
-	})
+	}
+	if status.Conclusion != nil {
+		opts.Conclusion = github.String(string(*status.Conclusion))
+	}
+
+	if status.Output != nil {
+		opts.Output = &github.CheckRunOutput{
+			Title:   status.Output.Title,
+			Summary: github.String(status.Output.Summary),
+			Text:    status.Output.Text,
+		}
+	}
+	run, _, err := cl.checks.CreateCheckRun(ctx, ref.Owner, ref.Repo, opts)
 	return run.GetID(), err
 }
 
