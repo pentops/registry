@@ -17,7 +17,7 @@ require (
 	github.com/google/go-github/v58 v58.0.0
 	github.com/google/uuid v1.4.0
 	github.com/jhump/protoreflect v1.15.3
-	github.com/pentops/jsonapi v0.0.0-20240111215604-a55d2fbfa6c4
+	github.com/pentops/jsonapi v0.0.0-20240112010716-42ccb3c5459e
 	github.com/pentops/log.go v0.0.0-20231218074934-67aedcab3fa4
 	github.com/pentops/o5-go v0.0.0-20240111055312-216db6a3b907
 	github.com/pentops/runner v0.0.0-20231219070819-c4878d5565d8
@@ -101,5 +101,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )
-
-replace github.com/pentops/jsonapi => /Users/daemonl/pentops/jsonapi
