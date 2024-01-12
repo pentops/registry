@@ -12,17 +12,21 @@ import (
 )
 
 func expandGitAliases(gitConfig *config_j5pb.GitConfig, commitInfo *builder_j5pb.CommitInfo) {
+	aliases := make([]string, 0, len(commitInfo.Aliases))
 	for _, alias := range commitInfo.Aliases {
 		if strings.HasPrefix(alias, "refs/tags/") {
-			commitInfo.Aliases = append(commitInfo.Aliases, strings.TrimPrefix(alias, "refs/tags/"))
+			aliases = append(aliases, strings.TrimPrefix(alias, "refs/tags/"))
 		} else if strings.HasPrefix(alias, "refs/heads/") {
 			branchName := strings.TrimPrefix(alias, "refs/heads/")
-			commitInfo.Aliases = append(commitInfo.Aliases, branchName)
+			aliases = append(aliases, branchName)
+		} else {
+			aliases = append(aliases, alias)
 		}
-		if globMatch(alias, commitInfo.Hash) {
-			commitInfo.Aliases = append(commitInfo.Aliases, alias)
+		if globMatch(gitConfig.Main, alias) {
+			aliases = append(aliases, "latest")
 		}
 	}
+	commitInfo.Aliases = aliases
 }
 
 func ExtractGitMetadata(ctx context.Context, gitConfig *config_j5pb.GitConfig, dir string) (*builder_j5pb.CommitInfo, error) {

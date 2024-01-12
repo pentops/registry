@@ -78,6 +78,8 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 		return nil, err
 	}
 
+	log.WithField(ctx, "commit", commitInfo).Debug("Got commit")
+
 	ref.Ref = commitInfo.Hash
 
 	cfg := &config_j5pb.Config{}

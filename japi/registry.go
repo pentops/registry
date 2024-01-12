@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"path"
 	"strings"
@@ -34,7 +35,7 @@ func NewRegistry(ctx context.Context, fs FS) (*Handler, error) {
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
 	if len(parts) != 5 {
-		http.NotFound(w, r)
+		http.Error(w, fmt.Sprintf("path had %d parts, expected 5", len(parts)), http.StatusNotFound)
 		return
 	}
 

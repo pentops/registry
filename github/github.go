@@ -27,7 +27,6 @@ import (
 
 type Client struct {
 	repositories RepositoriesService
-	git          GitService
 	checks       ChecksService
 }
 
@@ -37,10 +36,7 @@ type RepositoriesService interface {
 	GetContents(ctx context.Context, owner, repo, path string, opts *github.RepositoryContentGetOptions) (fileContent *github.RepositoryContent, directoryContent []*github.RepositoryContent, resp *github.Response, err error)
 	GetArchiveLink(ctx context.Context, owner string, repo string, archiveFormat github.ArchiveFormat, opts *github.RepositoryContentGetOptions, maxRedirects int) (*url.URL, *github.Response, error)
 	GetCommit(ctx context.Context, owner string, repo string, ref string, opts *github.ListOptions) (*github.RepositoryCommit, *github.Response, error)
-}
-
-type GitService interface {
-	ListMatchingRefs(ctx context.Context, owner, repo string, opts *github.ReferenceListOptions) ([]*github.Reference, *github.Response, error)
+	ListBranchesHeadCommit(ctx context.Context, owner string, repo string, sha string) ([]*github.BranchCommit, *github.Response, error)
 }
 
 type ChecksService interface {
@@ -109,7 +105,6 @@ func NewClient(tc *http.Client) (*Client, error) {
 	ghcl := github.NewClient(tc)
 	cl := &Client{
 		repositories: ghcl.Repositories,
-		git:          ghcl.Git,
 		checks:       ghcl.Checks,
 	}
 	return cl, nil
@@ -225,17 +220,14 @@ func (cl Client) GetCommit(ctx context.Context, ref RepoRef) (*builder_j5pb.Comm
 		Repo:  ref.Repo,
 	}
 
-	refs, _, err := cl.git.ListMatchingRefs(ctx, ref.Owner, ref.Repo, &github.ReferenceListOptions{
-		Ref: info.Hash,
-	})
+	heads, _, err := cl.repositories.ListBranchesHeadCommit(ctx, ref.Owner, ref.Repo, info.Hash)
 
 	if err != nil {
 		return nil, err
 	}
 
-	for _, ref := range refs {
-		refName := ref.GetRef()
-		info.Aliases = append(info.Aliases, refName)
+	for _, head := range heads {
+		info.Aliases = append(info.Aliases, fmt.Sprintf("refs/heads/%s", *head.Name))
 	}
 
 	return info, nil

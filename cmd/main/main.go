@@ -164,17 +164,6 @@ func runPushAPI(ctx context.Context, cfg struct {
 }
 
 func TriggerHandler(githubWorker github_pb.WebhookTopicServer) http.Handler {
-
-	fetchAndBuild := func(ctx context.Context, owner string, repo string, version string) error {
-		_, err := githubWorker.Push(ctx, &github_pb.PushMessage{
-			Owner: owner,
-			Repo:  repo,
-			Ref:   "ignored",
-			After: version,
-		})
-		return err
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// /$owner/$repo/$version
 		parts := strings.Split(r.URL.Path, "/")
@@ -187,11 +176,17 @@ func TriggerHandler(githubWorker github_pb.WebhookTopicServer) http.Handler {
 		repo := parts[2]
 		version := parts[3]
 
-		if err := fetchAndBuild(r.Context(), owner, repo, version); err != nil {
+		_, err := githubWorker.Push(r.Context(), &github_pb.PushMessage{
+			Owner: owner,
+			Repo:  repo,
+			Ref:   "ignored",
+			After: version,
+		})
+
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
 	})
 }
 
