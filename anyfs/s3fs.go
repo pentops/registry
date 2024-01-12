@@ -54,10 +54,11 @@ func NewS3FS(client S3API, location string) (*S3FS, error) {
 
 func (s3fs *S3FS) Put(ctx context.Context, subPath string, body io.Reader, metadata map[string]string) error {
 	key := path.Join(s3fs.prefix, subPath)
-	log.WithFields(ctx, map[string]interface{}{
+	ctx = log.WithFields(ctx, map[string]interface{}{
 		"s3Bucket": s3fs.bucket,
 		"s3Key":    key,
-	}).Info("uploading to s3")
+	})
+	log.Debug(ctx, "uploading to s3")
 
 	_, err := s3fs.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:   &s3fs.bucket,
@@ -66,8 +67,10 @@ func (s3fs *S3FS) Put(ctx context.Context, subPath string, body io.Reader, metad
 		Metadata: metadata,
 	})
 	if err != nil {
+		log.WithError(ctx, err).Error("failed to upload to s3")
 		return fmt.Errorf("failed to upload to s3: 's3://%s/%s' : %w", s3fs.bucket, key, err)
 	}
+	log.Info(ctx, "uploaded to s3")
 	return nil
 }
 
@@ -86,16 +89,24 @@ func (s3fs *S3FS) SubFS(subPath string) *S3FS {
 
 func (s3fs *S3FS) Head(ctx context.Context, subPath string) (*FileInfo, error) {
 	key := path.Join(s3fs.prefix, subPath)
+	ctx = log.WithFields(ctx, map[string]interface{}{
+		"s3Bucket": s3fs.bucket,
+		"s3Key":    key,
+	})
+	log.Debug(ctx, "s3 Head")
 	head, err := s3fs.client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: &s3fs.bucket,
 		Key:    &key,
 	})
 	if err != nil {
+		log.WithError(ctx, err).Error("s3 Head Error")
 		if strings.Contains(err.Error(), "NotFound") {
 			return nil, NotFoundError
 		}
 		return nil, err
 	}
+
+	log.Info(ctx, "s3 Head Success")
 
 	return &FileInfo{
 		Size:     *head.ContentLength,
@@ -106,17 +117,25 @@ func (s3fs *S3FS) Head(ctx context.Context, subPath string) (*FileInfo, error) {
 
 func (s3fs *S3FS) Get(ctx context.Context, subPath string) (io.ReadCloser, *FileInfo, error) {
 	key := path.Join(s3fs.prefix, subPath)
+	ctx = log.WithFields(ctx, map[string]interface{}{
+		"s3Bucket": s3fs.bucket,
+		"s3Key":    key,
+	})
+	log.Debug(ctx, "s3 Get")
 
 	obj, err := s3fs.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: &s3fs.bucket,
 		Key:    &key,
 	})
 	if err != nil {
+		log.WithError(ctx, err).Error("s3 Get Error")
 		if strings.Contains(err.Error(), "NoSuchKey") {
 			return nil, nil, NotFoundError
 		}
 		return nil, nil, err
 	}
+
+	log.Info(ctx, "s3 Get Success")
 
 	fileInfo := &FileInfo{
 		Size:     *obj.ContentLength,
@@ -148,6 +167,11 @@ type ListInfo struct {
 
 func (s3fs *S3FS) List(ctx context.Context, subPath string) ([]ListInfo, error) {
 	key := path.Join(s3fs.prefix, subPath)
+	ctx = log.WithFields(ctx, map[string]interface{}{
+		"s3Bucket": s3fs.bucket,
+		"s3Key":    key,
+	})
+	log.Debug(ctx, "s3 List")
 
 	var results []ListInfo
 
@@ -159,6 +183,7 @@ func (s3fs *S3FS) List(ctx context.Context, subPath string) ([]ListInfo, error) 
 			ContinuationToken: continuationToken,
 		})
 		if err != nil {
+			log.WithError(ctx, err).Error("s3 List Error")
 			return nil, fmt.Errorf("list s3://%s/%s: %w", s3fs.bucket, key, err)
 		}
 
@@ -173,6 +198,8 @@ func (s3fs *S3FS) List(ctx context.Context, subPath string) ([]ListInfo, error) 
 		}
 		continuationToken = page.NextContinuationToken
 	}
+
+	log.Info(ctx, "s3 List Success")
 
 	return results, nil
 }

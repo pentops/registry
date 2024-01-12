@@ -15,6 +15,7 @@ import (
 	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/jsonapi/gen/v1/jsonapi_pb"
 	"github.com/pentops/jsonapi/structure"
+	"github.com/pentops/jsonapi/swagger"
 	"github.com/pentops/log.go/log"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
@@ -25,7 +26,7 @@ import (
 
 type IUploader interface {
 	UploadGoModule(ctx context.Context, version FullInfo, goModData []byte, zipFile io.ReadCloser) error
-	UploadJsonAPI(ctx context.Context, version FullInfo, jsonapiData []byte) error
+	UploadJsonAPI(ctx context.Context, version FullInfo, jsonapiData J5Upload) error
 }
 
 type IDockerWrapper interface {
@@ -67,16 +68,27 @@ func (b *Builder) BuildAll(ctx context.Context, spec *config_j5pb.Config, srcDir
 	return nil
 }
 
+type J5Upload struct {
+	Image   *jsonapi_pb.Image
+	JDef    *structure.Built
+	Swagger *swagger.Document
+}
+
 func (b *Builder) BuildJsonAPI(ctx context.Context, srcDir string, registry *jsonapi_pb.RegistryConfig, commitInfo *builder_j5pb.CommitInfo) error {
 
 	log.Info(ctx, "build json API")
 
-	image, err := structure.ReadImageFromSourceDir(ctx, srcDir)
+	img, err := structure.ReadImageFromSourceDir(ctx, srcDir)
 	if err != nil {
 		return err
 	}
 
-	bb, err := proto.Marshal(image)
+	jdefDoc, err := structure.BuildFromImage(img)
+	if err != nil {
+		return err
+	}
+
+	swaggerDoc, err := swagger.BuildSwagger(jdefDoc)
 	if err != nil {
 		return err
 	}
@@ -84,7 +96,12 @@ func (b *Builder) BuildJsonAPI(ctx context.Context, srcDir string, registry *jso
 	if err := b.Uploader.UploadJsonAPI(ctx, FullInfo{
 		Package: path.Join(registry.Organization, registry.Name),
 		Commit:  commitInfo,
-	}, bb); err != nil {
+	},
+		J5Upload{
+			Image:   img,
+			JDef:    jdefDoc,
+			Swagger: swaggerDoc,
+		}); err != nil {
 		return err
 	}
 

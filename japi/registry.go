@@ -14,6 +14,7 @@ import (
 	"github.com/pentops/jsonapi/swagger"
 	"github.com/pentops/registry/anyfs"
 	"google.golang.org/protobuf/proto"
+	"gopkg.daemonl.com/log"
 )
 
 type FS interface {
@@ -47,10 +48,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	key := path.Join(orgName, imageName, version, "image.bin")
+	ctx = log.WithFields(ctx, map[string]interface{}{
+		"key": key,
+	})
+
 	bodyBytes, _, err := h.Source.GetBytes(ctx, key)
 	if err != nil {
 		if errors.Is(err, anyfs.NotFoundError) {
 			http.NotFound(w, r)
+			log.WithError(ctx, err).Error("not found")
+
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -100,7 +107,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(imgBytes) // nolint: errcheck
 
 	default:
-		http.NotFound(w, r)
+		http.Error(w, fmt.Sprintf("unknown API format %s", format), http.StatusNotFound)
 	}
 
 }
