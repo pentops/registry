@@ -7,6 +7,9 @@ blobstores:
 secrets:
   - name: github
 
+targets:
+  - name: "j5-builder-input"
+
 runtimes:
   - name: main
     routes:
@@ -26,6 +29,8 @@ runtimes:
     subscriptions:
       - name: "webhook-github"
         envName: "publicweb"
+        port: 8080
+      - name: "j5-builder-input"
         port: 8080
 
     containers:

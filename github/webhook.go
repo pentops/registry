@@ -14,8 +14,9 @@ import (
 )
 
 type IClient interface {
-	PullConfig(ctx context.Context, org string, repo string, commit string, into proto.Message, tryPaths []string) error
-	GetCommit(ctx context.Context, org string, repo string, commit string) (*builder_j5pb.CommitInfo, error)
+	PullConfig(ctx context.Context, ref RepoRef, into proto.Message, tryPaths []string) error
+	GetCommit(ctx context.Context, ref RepoRef) (*builder_j5pb.CommitInfo, error)
+	CreateCheckRun(ctx context.Context, ref RepoRef, name string) (int64, error)
 }
 
 type Publisher interface {
@@ -66,13 +67,21 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 	})
 	log.Debug(ctx, "Push")
 
-	commitInfo, err := ww.github.GetCommit(ctx, event.Owner, event.Repo, event.After)
+	ref := RepoRef{
+		Owner: event.Owner,
+		Repo:  event.Repo,
+		Ref:   event.After,
+	}
+
+	commitInfo, err := ww.github.GetCommit(ctx, ref)
 	if err != nil {
 		return nil, err
 	}
 
+	ref.Ref = commitInfo.Hash
+
 	cfg := &config_j5pb.Config{}
-	err = ww.github.PullConfig(ctx, event.Owner, event.Repo, event.After, cfg, []string{
+	err = ww.github.PullConfig(ctx, ref, cfg, []string{
 		"j5.yaml",
 		"jsonapi.yaml",
 		"j5.yml",
@@ -92,14 +101,26 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 			Git:      cfg.Git,
 		}
 
-		req := &builder_j5pb.BuildAPIMessage{
-			Commit: commitInfo,
-			Config: subConfig,
-		}
-		err := ww.publisher.Publish(ctx, req)
+		checkRunName := "j5-image"
+		checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName)
 		if err != nil {
 			return nil, err
 		}
+
+		req := &builder_j5pb.BuildAPIMessage{
+			Commit: commitInfo,
+			Config: subConfig,
+			CheckRun: &builder_j5pb.CheckRun{
+				Id:   checkRunID,
+				Name: checkRunName,
+			},
+		}
+
+		err = ww.publisher.Publish(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
 	}
 
 	for _, dockerBuild := range cfg.ProtoBuilds {
@@ -111,11 +132,21 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 			Registry:    cfg.Registry,
 			Git:         cfg.Git,
 		}
+
+		checkRunName := fmt.Sprintf("j5-proto-%s", dockerBuild.Label)
+		checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName)
+		if err != nil {
+			return nil, err
+		}
 		req := &builder_j5pb.BuildProtoMessage{
 			Commit: commitInfo,
 			Config: subConfig,
+			CheckRun: &builder_j5pb.CheckRun{
+				Id:   checkRunID,
+				Name: checkRunName,
+			},
 		}
-		err := ww.publisher.Publish(ctx, req)
+		err = ww.publisher.Publish(ctx, req)
 		if err != nil {
 			return nil, err
 		}

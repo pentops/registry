@@ -28,17 +28,24 @@ import (
 type Client struct {
 	repositories RepositoriesService
 	git          GitService
+	checks       ChecksService
 }
 
-type GitService interface {
-	ListMatchingRefs(ctx context.Context, owner, repo string, opts *github.ReferenceListOptions) ([]*github.Reference, *github.Response, error)
-}
 type RepositoriesService interface {
 	DownloadContents(ctx context.Context, owner, repo, filepath string, opts *github.RepositoryContentGetOptions) (io.ReadCloser, *github.Response, error)
 	ListByOrg(context.Context, string, *github.RepositoryListByOrgOptions) ([]*github.Repository, *github.Response, error)
 	GetContents(ctx context.Context, owner, repo, path string, opts *github.RepositoryContentGetOptions) (fileContent *github.RepositoryContent, directoryContent []*github.RepositoryContent, resp *github.Response, err error)
 	GetArchiveLink(ctx context.Context, owner string, repo string, archiveFormat github.ArchiveFormat, opts *github.RepositoryContentGetOptions, maxRedirects int) (*url.URL, *github.Response, error)
 	GetCommit(ctx context.Context, owner string, repo string, ref string, opts *github.ListOptions) (*github.RepositoryCommit, *github.Response, error)
+}
+
+type GitService interface {
+	ListMatchingRefs(ctx context.Context, owner, repo string, opts *github.ReferenceListOptions) ([]*github.Reference, *github.Response, error)
+}
+
+type ChecksService interface {
+	CreateCheckRun(ctx context.Context, owner string, repo string, req github.CreateCheckRunOptions) (*github.CheckRun, *github.Response, error)
+	UpdateCheckRun(ctx context.Context, owner string, repo string, checkRunID int64, req github.UpdateCheckRunOptions) (*github.CheckRun, *github.Response, error)
 }
 
 func NewEnvClient(ctx context.Context) (*Client, error) {
@@ -103,18 +110,82 @@ func NewClient(tc *http.Client) (*Client, error) {
 	cl := &Client{
 		repositories: ghcl.Repositories,
 		git:          ghcl.Git,
+		checks:       ghcl.Checks,
 	}
 	return cl, nil
 }
 
-func (cl Client) PullConfig(ctx context.Context, org, repo, ref string, into proto.Message, tryPaths []string) error {
+type RepoRef struct {
+	Owner string
+	Repo  string
+	Ref   string
+}
+
+func (cl Client) CreateCheckRun(ctx context.Context, ref RepoRef, name string) (int64, error) {
+	run, _, err := cl.checks.CreateCheckRun(ctx, ref.Owner, ref.Repo, github.CreateCheckRunOptions{
+		Name:    name,
+		HeadSHA: ref.Ref,
+		Status:  github.String("queued"),
+	})
+	return run.GetID(), err
+}
+
+type CheckRunStatus string
+
+const (
+	CheckRunStatusQueued     = CheckRunStatus("queued")
+	CheckRunStatusInProgress = CheckRunStatus("in_progress")
+	CheckRunStatusCompleted  = CheckRunStatus("completed")
+)
+
+type CheckRunConclusion string
+
+const (
+	CheckRunConclusionSuccess = CheckRunConclusion("success")
+	CheckRunConclusionFailure = CheckRunConclusion("failure")
+)
+
+type CheckRunUpdate struct {
+	Status     CheckRunStatus
+	Conclusion *CheckRunConclusion
+	Output     *CheckRunOutput
+}
+
+type CheckRunOutput struct {
+	Title   *string
+	Summary string
+	Text    *string
+}
+
+func (cl Client) UpdateCheckRun(ctx context.Context, ref RepoRef, checkRun *builder_j5pb.CheckRun, status CheckRunUpdate) error {
+	opts := github.UpdateCheckRunOptions{
+		Name:   checkRun.Name,
+		Status: github.String(string(status.Status)),
+	}
+	if status.Conclusion != nil {
+		opts.Conclusion = github.String(string(*status.Conclusion))
+	}
+
+	if status.Output != nil {
+		opts.Output = &github.CheckRunOutput{
+			Title:   status.Output.Title,
+			Summary: github.String(status.Output.Summary),
+			Text:    status.Output.Text,
+		}
+	}
+
+	_, _, err := cl.checks.UpdateCheckRun(ctx, ref.Owner, ref.Repo, checkRun.Id, opts)
+	return err
+}
+
+func (cl Client) PullConfig(ctx context.Context, ref RepoRef, into proto.Message, tryPaths []string) error {
 
 	opts := &github.RepositoryContentGetOptions{
-		Ref: ref,
+		Ref: ref.Ref,
 	}
 	for _, path := range tryPaths {
 
-		file, _, err := cl.repositories.DownloadContents(ctx, org, repo, path, opts)
+		file, _, err := cl.repositories.DownloadContents(ctx, ref.Owner, ref.Repo, path, opts)
 		if err != nil {
 			errStr := err.Error()
 			if strings.HasPrefix(errStr, "no file named") {
@@ -139,9 +210,9 @@ func (cl Client) PullConfig(ctx context.Context, org, repo, ref string, into pro
 	return fmt.Errorf("no config found")
 }
 
-func (cl Client) GetCommit(ctx context.Context, org string, repo string, ref string) (*builder_j5pb.CommitInfo, error) {
+func (cl Client) GetCommit(ctx context.Context, ref RepoRef) (*builder_j5pb.CommitInfo, error) {
 
-	commit, _, err := cl.repositories.GetCommit(ctx, org, repo, ref, &github.ListOptions{})
+	commit, _, err := cl.repositories.GetCommit(ctx, ref.Owner, ref.Repo, ref.Ref, &github.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -150,12 +221,12 @@ func (cl Client) GetCommit(ctx context.Context, org string, repo string, ref str
 	info := &builder_j5pb.CommitInfo{
 		Hash:  commit.GetSHA(),
 		Time:  timestamppb.New(ts.Time),
-		Owner: org,
-		Repo:  repo,
+		Owner: ref.Owner,
+		Repo:  ref.Repo,
 	}
 
-	refs, _, err := cl.git.ListMatchingRefs(ctx, org, repo, &github.ReferenceListOptions{
-		Ref: ref,
+	refs, _, err := cl.git.ListMatchingRefs(ctx, ref.Owner, ref.Repo, &github.ReferenceListOptions{
+		Ref: info.Hash,
 	})
 
 	if err != nil {
@@ -170,12 +241,12 @@ func (cl Client) GetCommit(ctx context.Context, org string, repo string, ref str
 	return info, nil
 }
 
-func (cl Client) GetContent(ctx context.Context, org string, repo string, ref string, destDir string) error {
+func (cl Client) GetContent(ctx context.Context, ref RepoRef, destDir string) error {
 	opts := &github.RepositoryContentGetOptions{
-		Ref: ref,
+		Ref: ref.Ref,
 	}
 
-	linkURL, _, err := cl.repositories.GetArchiveLink(ctx, org, repo, github.Zipball, opts, 5)
+	linkURL, _, err := cl.repositories.GetArchiveLink(ctx, ref.Owner, ref.Repo, github.Zipball, opts, 5)
 	if err != nil {
 		return err
 	}
