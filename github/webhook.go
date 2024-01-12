@@ -6,6 +6,7 @@ import (
 
 	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
 	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
+	"github.com/pentops/jsonapi/structure"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-go/github/v1/github_pb"
 	"github.com/pentops/registry/messaging"
@@ -83,14 +84,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 	ref.Ref = commitInfo.Hash
 
 	cfg := &config_j5pb.Config{}
-	err = ww.github.PullConfig(ctx, ref, cfg, []string{
-		"j5.yaml",
-		"jsonapi.yaml",
-		"j5.yml",
-		"jsonapi.yml",
-		"ext/j5/j5.yaml",
-		"ext/j5/j5.yml",
-	})
+	err = ww.github.PullConfig(ctx, ref, cfg, structure.ConfigPaths)
 	if err != nil {
 		log.WithError(ctx, err).Error("Config Error")
 		_, err := ww.github.CreateCheckRun(ctx, ref, "j5-config", &CheckRunUpdate{
@@ -102,7 +96,6 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 			},
 		})
 		if err != nil {
-
 			return nil, err
 		}
 		return &emptypb.Empty{}, nil
