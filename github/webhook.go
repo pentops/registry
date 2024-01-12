@@ -16,7 +16,7 @@ import (
 type IClient interface {
 	PullConfig(ctx context.Context, ref RepoRef, into proto.Message, tryPaths []string) error
 	GetCommit(ctx context.Context, ref RepoRef) (*builder_j5pb.CommitInfo, error)
-	CreateCheckRun(ctx context.Context, ref RepoRef, name string) (int64, error)
+	CreateCheckRun(ctx context.Context, ref RepoRef, name string, status *CheckRunUpdate) (int64, error)
 }
 
 type Publisher interface {
@@ -92,7 +92,18 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 		"ext/j5/j5.yml",
 	})
 	if err != nil {
-		return nil, err
+		_, err := ww.github.CreateCheckRun(ctx, ref, "j5-config", &CheckRunUpdate{
+			Status:     CheckRunStatusCompleted,
+			Conclusion: some(CheckRunConclusionFailure),
+			Output: &CheckRunOutput{
+				Title:   some("j5 config error"),
+				Summary: err.Error(),
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		return &emptypb.Empty{}, nil
 	}
 
 	{
@@ -104,7 +115,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 		}
 
 		checkRunName := "j5-image"
-		checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName)
+		checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -136,7 +147,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 		}
 
 		checkRunName := fmt.Sprintf("j5-proto-%s", dockerBuild.Label)
-		checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName)
+		checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -155,4 +166,8 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 	}
 
 	return &emptypb.Empty{}, nil
+}
+
+func some[T any](s T) *T {
+	return &s
 }
