@@ -1,4 +1,4 @@
-package builder
+package glob
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ func TestWildcardMatcher(t *testing.T) {
 	} {
 		t.Run(fmt.Sprintf("%s-%s", spec.input, spec.pattern), func(t *testing.T) {
 
-			gotMatch := globMatch(spec.pattern, spec.input)
+			gotMatch := GlobMatch(spec.pattern, spec.input)
 			if spec.expected && !gotMatch {
 				t.Errorf("expected %s to match %s", spec.input, spec.pattern)
 			} else if !spec.expected && gotMatch {

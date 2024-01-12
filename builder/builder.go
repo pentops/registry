@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
@@ -45,7 +46,7 @@ func NewBuilder(docker IDockerWrapper, uploader IUploader) *Builder {
 	}
 }
 
-func (b *Builder) BuildAll(ctx context.Context, spec *config_j5pb.Config, srcDir string, commitInfo *builder_j5pb.CommitInfo) error {
+func (b *Builder) BuildAll(ctx context.Context, spec *config_j5pb.Config, srcDir string, commitInfo *builder_j5pb.CommitInfo, onlyMatching ...string) error {
 	protoBuildRequest, err := CodeGeneratorRequestFromSource(ctx, srcDir)
 	if err != nil {
 		return err
@@ -55,14 +56,89 @@ func (b *Builder) BuildAll(ctx context.Context, spec *config_j5pb.Config, srcDir
 		expandGitAliases(spec.Git, commitInfo)
 	}
 
-	for _, dockerBuild := range spec.ProtoBuilds {
-		if err := b.BuildProto(ctx, srcDir, dockerBuild, protoBuildRequest, commitInfo); err != nil {
+	if len(onlyMatching) == 0 {
+		if err := b.BuildJsonAPI(ctx, srcDir, spec.Registry, commitInfo); err != nil {
 			return err
+		}
+
+		for _, dockerBuild := range spec.ProtoBuilds {
+			if err := b.BuildProto(ctx, srcDir, dockerBuild, protoBuildRequest, commitInfo); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	didAny := false
+
+	for _, builderName := range onlyMatching {
+
+		if builderName == "j5" {
+			if err := b.BuildJsonAPI(ctx, srcDir, spec.Registry, commitInfo); err != nil {
+				return err
+			}
+			didAny = true
+			continue
+		}
+
+		subConfig := &config_j5pb.Config{
+			Packages: spec.Packages,
+			Options:  spec.Options,
+			Registry: spec.Registry,
+			Git:      spec.Git,
+		}
+		// format is proto/name, proto/name/plugin, j5
+		if strings.HasPrefix(builderName, "proto/") {
+			builderName = strings.TrimPrefix(builderName, "proto/")
+			pluginName := ""
+			if strings.Contains(builderName, "/") {
+				parts := strings.SplitN(builderName, "/", 2)
+				builderName = parts[0]
+				pluginName = parts[1]
+			}
+
+			fmt.Printf("builderName: %s, pluginName: %s\n", builderName, pluginName)
+
+			var foundProtoBuild *config_j5pb.ProtoBuildConfig
+			for _, protoBuild := range spec.ProtoBuilds {
+				if protoBuild.Label == builderName {
+					foundProtoBuild = protoBuild
+					break
+				}
+			}
+
+			if foundProtoBuild == nil {
+				return fmt.Errorf("proto build not found: %s", builderName)
+			}
+
+			if pluginName != "" {
+				found := false
+				for _, plugin := range foundProtoBuild.Plugins {
+					if plugin.Label == pluginName {
+						found = true
+						foundProtoBuild.Plugins = []*config_j5pb.ProtoBuildPlugin{plugin}
+						break
+					}
+				}
+
+				if !found {
+					return fmt.Errorf("plugin %s not found in proto builder %s", pluginName, builderName)
+				}
+			}
+
+			subConfig.ProtoBuilds = []*config_j5pb.ProtoBuildConfig{foundProtoBuild}
+
+			didAny = true
+			if err := b.BuildProto(ctx, srcDir, foundProtoBuild, protoBuildRequest, commitInfo); err != nil {
+				return err
+			}
+
 		}
 	}
 
-	if err := b.BuildJsonAPI(ctx, srcDir, spec.Registry, commitInfo); err != nil {
-		return err
+	if !didAny {
+		return fmt.Errorf("no builders matched")
 	}
 
 	return nil
@@ -167,6 +243,7 @@ func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *co
 
 func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *config_j5pb.ProtoBuildPlugin, sourceProto *pluginpb.CodeGeneratorRequest) error {
 
+	start := time.Now()
 	if plugin.Label == "" {
 		// This is a pretty poor way to label it, prefer spetting label
 		// explicitly in config.
@@ -176,7 +253,7 @@ func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *conf
 	}
 
 	ctx = log.WithField(ctx, "builder", plugin.Label)
-	log.Info(ctx, "running build plugin")
+	log.Debug(ctx, "Running Protoc Plugin")
 
 	parameter := strings.Join(plugin.Parameters, ",")
 	sourceProto.Parameter = &parameter
@@ -199,6 +276,10 @@ func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *conf
 		return err
 	}
 
+	if resp.Error != nil {
+		return fmt.Errorf("plugin error: %s", *resp.Error)
+	}
+
 	for _, f := range resp.File {
 		name := f.GetName()
 		fullPath := filepath.Join(dest, name)
@@ -210,7 +291,10 @@ func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *conf
 		}
 	}
 
-	log.Info(ctx, "build complete")
+	log.WithFields(ctx, map[string]interface{}{
+		"files":           len(resp.File),
+		"durationSeconds": time.Since(start).Seconds(),
+	}).Info("Protoc Plugin Complete")
 
 	return nil
 }
