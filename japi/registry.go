@@ -5,58 +5,38 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
-	"net/url"
 	"path"
 	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/pentops/jsonapi/gen/v1/jsonapi_pb"
 	"github.com/pentops/jsonapi/structure"
 	"github.com/pentops/jsonapi/swagger"
-	"github.com/pentops/log.go/log"
+	"github.com/pentops/registry/anyfs"
 	"google.golang.org/protobuf/proto"
+	"gopkg.daemonl.com/log"
 )
 
-func NewRegistry(ctx context.Context, s3Client S3API, bucket string) (*Handler, error) {
-
-	bucketURL, err := url.Parse(bucket)
-	if err != nil {
-		return nil, err
-	}
-
-	if bucketURL.Scheme != "s3" {
-		return nil, fmt.Errorf("bucket must be an s3:// url")
-	}
-
-	bucketName := bucketURL.Host
-	if bucketName == "" {
-		return nil, fmt.Errorf("bucket must be an s3:// url")
-	}
-
-	prefix := bucketURL.Path
-
-	source := &S3Source{
-		Bucket: bucketName,
-		Prefix: prefix,
-		Client: s3Client,
-	}
-
-	return &Handler{
-		Source: source,
-	}, nil
-
+type FS interface {
+	GetBytes(ctx context.Context, path string) ([]byte, *anyfs.FileInfo, error)
 }
 
 type Handler struct {
-	Source Source
+	Source FS
+}
+
+func NewRegistry(ctx context.Context, fs FS) (*Handler, error) {
+
+	return &Handler{
+		Source: fs,
+	}, nil
+
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
 	if len(parts) != 5 {
-		http.NotFound(w, r)
+		http.Error(w, fmt.Sprintf("path had %d parts, expected 5", len(parts)), http.StatusNotFound)
 		return
 	}
 
@@ -67,16 +47,29 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	img, err := h.Source.GetImage(ctx, orgName, imageName, version)
+	key := path.Join(orgName, imageName, version, "image.bin")
+	ctx = log.WithFields(ctx, map[string]interface{}{
+		"key": key,
+	})
+
+	bodyBytes, _, err := h.Source.GetBytes(ctx, key)
 	if err != nil {
-		if errors.Is(err, ImageNotFoundError) {
+		if errors.Is(err, anyfs.NotFoundError) {
 			http.NotFound(w, r)
+			log.WithError(ctx, err).Error("not found")
+
 			return
 		}
-
-		log.WithError(ctx, err).Error("Failed to get image")
-		http.Error(w, "Internal", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	img := &jsonapi_pb.Image{}
+	if err := proto.Unmarshal(bodyBytes, img); err != nil {
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	switch format {
@@ -114,7 +107,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(imgBytes) // nolint: errcheck
 
 	default:
-		http.NotFound(w, r)
+		http.Error(w, fmt.Sprintf("unknown API format %s", format), http.StatusNotFound)
 	}
 
 }
@@ -150,50 +143,4 @@ func buildJDef(ctx context.Context, img *jsonapi_pb.Image) ([]byte, error) {
 	}
 
 	return asJson, nil
-}
-
-var ImageNotFoundError = fmt.Errorf("image not found")
-
-type Source interface {
-	GetImage(ctx context.Context, orgName, imageName string, version string) (*jsonapi_pb.Image, error)
-}
-
-type S3Source struct {
-	Bucket string
-	Prefix string
-	Client S3API
-}
-
-type S3API interface {
-	//PutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.Options)) (*s3.PutObjectOutput, error)
-	GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
-}
-
-func (s *S3Source) GetImage(ctx context.Context, orgName, imageName string, version string) (*jsonapi_pb.Image, error) {
-	key := path.Join(s.Prefix, orgName, imageName, version, "image.bin")
-	input := &s3.GetObjectInput{
-		Bucket: &s.Bucket,
-		Key:    &key,
-	}
-
-	output, err := s.Client.GetObject(ctx, input)
-	if err != nil {
-		if strings.Contains(err.Error(), "NoSuchKey") {
-			return nil, ImageNotFoundError
-		}
-
-		return nil, err
-	}
-	defer output.Body.Close()
-	bodyBytes, err := io.ReadAll(output.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	img := &jsonapi_pb.Image{}
-	if err := proto.Unmarshal(bodyBytes, img); err != nil {
-		return nil, err
-	}
-
-	return img, nil
 }
