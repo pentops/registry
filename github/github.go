@@ -14,9 +14,12 @@ import (
 	"strings"
 
 	"github.com/bradleyfalzon/ghinstallation"
+	"github.com/bufbuild/protoyaml-go"
+	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/registry/builder"
 	"golang.org/x/oauth2"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.daemonl.com/envconf"
 
 	"github.com/google/go-github/v58/github"
@@ -104,7 +107,39 @@ func NewClient(tc *http.Client) (*Client, error) {
 	return cl, nil
 }
 
-func (cl Client) GetCommit(ctx context.Context, org string, repo string, ref string) (*builder.CommitInfo, error) {
+func (cl Client) PullConfig(ctx context.Context, org, repo, ref string, into proto.Message, tryPaths []string) error {
+
+	opts := &github.RepositoryContentGetOptions{
+		Ref: ref,
+	}
+	for _, path := range tryPaths {
+
+		file, _, err := cl.repositories.DownloadContents(ctx, org, repo, path, opts)
+		if err != nil {
+			errStr := err.Error()
+			if strings.HasPrefix(errStr, "no file named") {
+				continue
+			}
+
+			return err
+		}
+		data, err := io.ReadAll(file)
+		file.Close()
+		if err != nil {
+			return fmt.Errorf("reading bytes: %s", err)
+		}
+
+		if err := protoyaml.Unmarshal(data, into); err != nil {
+			return fmt.Errorf("unmarshaling yaml: %s", err)
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("no config found")
+}
+
+func (cl Client) GetCommit(ctx context.Context, org string, repo string, ref string) (*builder_j5pb.CommitInfo, error) {
 
 	commit, _, err := cl.repositories.GetCommit(ctx, org, repo, ref, &github.ListOptions{})
 	if err != nil {
@@ -112,9 +147,11 @@ func (cl Client) GetCommit(ctx context.Context, org string, repo string, ref str
 	}
 
 	ts := commit.GetCommit().GetCommitter().GetDate()
-	info := &builder.CommitInfo{
-		Hash: commit.GetSHA(),
-		Time: ts.Time,
+	info := &builder_j5pb.CommitInfo{
+		Hash:  commit.GetSHA(),
+		Time:  timestamppb.New(ts.Time),
+		Owner: org,
+		Repo:  repo,
 	}
 
 	refs, _, err := cl.git.ListMatchingRefs(ctx, org, repo, &github.ReferenceListOptions{

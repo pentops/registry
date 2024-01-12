@@ -16,21 +16,33 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/pentops/jsonapi/gen/v1/jsonapi_pb"
+	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/log.go/log"
 )
+
+var DefaultRegistryAuths = []*config_j5pb.DockerRegistryAuth{{
+	Registry: "ghcr.io/*",
+	Auth: &config_j5pb.DockerRegistryAuth_Github_{
+		Github: &config_j5pb.DockerRegistryAuth_Github{},
+	},
+}, {
+	Registry: "*.dkr.ecr.*.amazonaws.com/*",
+	Auth: &config_j5pb.DockerRegistryAuth_AwsEcs{
+		AwsEcs: &config_j5pb.DockerRegistryAuth_AWSECS{},
+	},
+}}
 
 type DockerWrapper struct {
 	pulledImages map[string]bool
 	client       *client.Client
-	auth         []*jsonapi_pb.DockerRegistryAuth
+	auth         []*config_j5pb.DockerRegistryAuth
 }
 
 type ECRAPI interface {
 	GetAuthorizationToken(ctx context.Context, params *ecr.GetAuthorizationTokenInput, optFns ...func(*ecr.Options)) (*ecr.GetAuthorizationTokenOutput, error)
 }
 
-func NewDockerWrapper(registryAuth []*jsonapi_pb.DockerRegistryAuth) (*DockerWrapper, error) {
+func NewDockerWrapper(registryAuth []*config_j5pb.DockerRegistryAuth) (*DockerWrapper, error) {
 
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -48,7 +60,7 @@ func (dw *DockerWrapper) Close() error {
 	return dw.client.Close()
 }
 
-func (dw *DockerWrapper) Run(ctx context.Context, spec *jsonapi_pb.DockerSpec, input io.Reader, output io.Writer) error {
+func (dw *DockerWrapper) Run(ctx context.Context, spec *config_j5pb.DockerSpec, input io.Reader, output io.Writer) error {
 
 	if spec.Pull {
 		// skip if pulled...
@@ -180,7 +192,7 @@ func globMatch(pattern, s string) bool {
 	return matcher.MatchString(s)
 }
 
-func (dw *DockerWrapper) Pull(ctx context.Context, spec *jsonapi_pb.DockerSpec) error {
+func (dw *DockerWrapper) Pull(ctx context.Context, spec *config_j5pb.DockerSpec) error {
 
 	type basicAuth struct {
 		Username string `json:"username"`
@@ -189,7 +201,7 @@ func (dw *DockerWrapper) Pull(ctx context.Context, spec *jsonapi_pb.DockerSpec) 
 
 	pullOptions := types.ImagePullOptions{}
 
-	var registryAuth *jsonapi_pb.DockerRegistryAuth
+	var registryAuth *config_j5pb.DockerRegistryAuth
 	for _, auth := range dw.auth {
 		// If auth's registry pattern with * wildcards matches the spec's image, use it.
 		if globMatch(auth.Registry, spec.Image) {
@@ -206,13 +218,13 @@ func (dw *DockerWrapper) Pull(ctx context.Context, spec *jsonapi_pb.DockerSpec) 
 		var authConfig *basicAuth
 
 		switch authType := registryAuth.Auth.(type) {
-		case *jsonapi_pb.DockerRegistryAuth_Basic_:
+		case *config_j5pb.DockerRegistryAuth_Basic_:
 			authConfig = &basicAuth{
 				Username: authType.Basic.Username,
 				Password: os.Getenv(authType.Basic.PasswordEnvVar),
 			}
 
-		case *jsonapi_pb.DockerRegistryAuth_AwsEcs:
+		case *config_j5pb.DockerRegistryAuth_AwsEcs:
 
 			// TODO: This is a little too magic.
 			awsConfig, err := config.LoadDefaultConfig(ctx)

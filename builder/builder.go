@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
+	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/jsonapi/gen/v1/jsonapi_pb"
 	"github.com/pentops/jsonapi/structure"
 	"github.com/pentops/log.go/log"
@@ -27,7 +29,7 @@ type IUploader interface {
 }
 
 type IDockerWrapper interface {
-	Run(ctx context.Context, spec *jsonapi_pb.DockerSpec, input io.Reader, output io.Writer) error
+	Run(ctx context.Context, spec *config_j5pb.DockerSpec, input io.Reader, output io.Writer) error
 }
 
 type Builder struct {
@@ -42,7 +44,7 @@ func NewBuilder(docker IDockerWrapper, uploader IUploader) *Builder {
 	}
 }
 
-func (b *Builder) BuildAll(ctx context.Context, spec *jsonapi_pb.Config, srcDir string, commitInfo *CommitInfo) error {
+func (b *Builder) BuildAll(ctx context.Context, spec *config_j5pb.Config, srcDir string, commitInfo *builder_j5pb.CommitInfo) error {
 	protoBuildRequest, err := CodeGeneratorRequestFromSource(ctx, srcDir)
 	if err != nil {
 		return err
@@ -58,6 +60,15 @@ func (b *Builder) BuildAll(ctx context.Context, spec *jsonapi_pb.Config, srcDir 
 		}
 	}
 
+	if err := b.BuildJsonAPI(ctx, srcDir, spec.Registry, commitInfo); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *Builder) BuildJsonAPI(ctx context.Context, srcDir string, registry *jsonapi_pb.RegistryConfig, commitInfo *builder_j5pb.CommitInfo) error {
+
 	log.Info(ctx, "build json API")
 
 	image, err := structure.ReadImageFromSourceDir(ctx, srcDir)
@@ -71,7 +82,7 @@ func (b *Builder) BuildAll(ctx context.Context, spec *jsonapi_pb.Config, srcDir 
 	}
 
 	if err := b.Uploader.UploadJsonAPI(ctx, FullInfo{
-		Package: path.Join(spec.Registry.Organization, spec.Registry.Name),
+		Package: path.Join(registry.Organization, registry.Name),
 		Commit:  commitInfo,
 	}, bb); err != nil {
 		return err
@@ -105,7 +116,7 @@ func copyFile(src, dst string) error {
 	return err
 }
 
-func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *jsonapi_pb.ProtoBuildConfig, protoBuildRequest *pluginpb.CodeGeneratorRequest, commitInfo *CommitInfo) error {
+func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *config_j5pb.ProtoBuildConfig, protoBuildRequest *pluginpb.CodeGeneratorRequest, commitInfo *builder_j5pb.CommitInfo) error {
 
 	dest, err := os.MkdirTemp("", uuid.NewString())
 	if err != nil {
@@ -122,7 +133,7 @@ func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *js
 	}
 
 	switch pkg := dockerBuild.PackageType.(type) {
-	case *jsonapi_pb.ProtoBuildConfig_GoProxy_:
+	case *config_j5pb.ProtoBuildConfig_GoProxy_:
 		if err := copyFile(filepath.Join(srcDir, pkg.GoProxy.GoModFile), filepath.Join(packageRoot, "go.mod")); err != nil {
 			return err
 		}
@@ -137,7 +148,7 @@ func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *js
 
 }
 
-func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *jsonapi_pb.ProtoBuildPlugin, sourceProto *pluginpb.CodeGeneratorRequest) error {
+func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *config_j5pb.ProtoBuildPlugin, sourceProto *pluginpb.CodeGeneratorRequest) error {
 
 	if plugin.Label == "" {
 		// This is a pretty poor way to label it, prefer spetting label
@@ -187,7 +198,7 @@ func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *json
 	return nil
 }
 
-func (b *Builder) PushGoPackage(ctx context.Context, root string, commitInfo *CommitInfo) error {
+func (b *Builder) PushGoPackage(ctx context.Context, root string, commitInfo *builder_j5pb.CommitInfo) error {
 	packageRoot := filepath.Join(root, "package")
 
 	gomodBytes, err := os.ReadFile(filepath.Join(packageRoot, "go.mod"))
@@ -211,7 +222,7 @@ func (b *Builder) PushGoPackage(ctx context.Context, root string, commitInfo *Co
 		commitHashPrefix = commitHashPrefix[:12]
 	}
 
-	canonicalVersion := module.PseudoVersion("", "", commitInfo.Time, commitHashPrefix)
+	canonicalVersion := module.PseudoVersion("", "", commitInfo.Time.AsTime(), commitHashPrefix)
 
 	zipFilePath := filepath.Join(root, canonicalVersion+".zip")
 

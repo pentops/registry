@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,20 +11,29 @@ import (
 	"time"
 
 	"github.com/bufbuild/protoyaml-go"
-	"github.com/pentops/jsonapi/gen/v1/jsonapi_pb"
+	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
+	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/jsonapi/structure"
 	"github.com/pentops/log.go/log"
+	"github.com/pentops/o5-go/github/v1/github_pb"
 	"github.com/pentops/registry/anyfs"
 	"github.com/pentops/registry/builder"
 	"github.com/pentops/registry/github"
 	"github.com/pentops/registry/gomodproxy"
 	"github.com/pentops/registry/japi"
+	"github.com/pentops/registry/messaging"
+	"github.com/pentops/runner"
 	"github.com/pentops/runner/commander"
 	"github.com/rs/cors"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"gopkg.daemonl.com/log/grpc_log"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
 )
 
 var Version = "0.0.0"
@@ -78,12 +88,12 @@ func runProtoBuild(ctx context.Context, cfg struct {
 	if err != nil {
 		return err
 	}
-	japiConfig := &jsonapi_pb.Config{}
+	japiConfig := &config_j5pb.Config{}
 	if err := protoyaml.Unmarshal(japiConfigData, japiConfig); err != nil {
 		return err
 	}
 
-	var commitInfo *builder.CommitInfo
+	var commitInfo *builder_j5pb.CommitInfo
 	if cfg.GitAuto {
 		commitInfo, err = builder.ExtractGitMetadata(ctx, japiConfig.Git, cfg.Source)
 		if err != nil {
@@ -93,14 +103,15 @@ func runProtoBuild(ctx context.Context, cfg struct {
 		return fmt.Errorf("commit hash and time are required, or set --git-auto")
 	} else {
 		commitInfo.Hash = cfg.CommitHash
-		commitInfo.Time, err = time.Parse(time.RFC3339, cfg.CommitTime)
+		commitTime, err := time.Parse(time.RFC3339, cfg.CommitTime)
 		if err != nil {
 			return fmt.Errorf("parsing commit time: %w", err)
 		}
+		commitInfo.Time = timestamppb.New(commitTime)
 		commitInfo.Aliases = cfg.CommitAliases
 	}
 
-	dockerWrapper, err := builder.NewDockerWrapper(japiConfig.DockerRegistryAuths)
+	dockerWrapper, err := builder.NewDockerWrapper(builder.DefaultRegistryAuths)
 	if err != nil {
 		return err
 	}
@@ -152,42 +163,16 @@ func runPushAPI(ctx context.Context, cfg struct {
 
 }
 
-func TriggerHandler(githubClient *github.Client, uploader builder.IUploader) http.Handler {
+func TriggerHandler(githubWorker github_pb.WebhookTopicServer) http.Handler {
 
 	fetchAndBuild := func(ctx context.Context, owner string, repo string, version string) error {
-
-		workDir, err := os.MkdirTemp("", "trigger")
-		if err != nil {
-			return err
-		}
-
-		defer os.RemoveAll(workDir)
-
-		commitInfo, err := githubClient.GetCommit(ctx, owner, repo, version)
-		if err != nil {
-			return err
-		}
-		if err := githubClient.GetContent(ctx, owner, repo, commitInfo.Hash, workDir); err != nil {
-			return err
-		}
-
-		japiConfigData, err := os.ReadFile(filepath.Join(workDir, "jsonapi.yaml"))
-		if err != nil {
-			return err
-		}
-		japiConfig := &jsonapi_pb.Config{}
-		if err := protoyaml.Unmarshal(japiConfigData, japiConfig); err != nil {
-			return err
-		}
-
-		dockerWrapper, err := builder.NewDockerWrapper(japiConfig.DockerRegistryAuths)
-		if err != nil {
-			return err
-		}
-
-		bb := builder.NewBuilder(dockerWrapper, uploader)
-
-		return bb.BuildAll(ctx, japiConfig, workDir, commitInfo)
+		_, err := githubWorker.Push(ctx, &github_pb.PushMessage{
+			Owner: owner,
+			Repo:  repo,
+			Ref:   "ignored",
+			After: version,
+		})
+		return err
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -211,8 +196,11 @@ func TriggerHandler(githubClient *github.Client, uploader builder.IUploader) htt
 }
 
 func runCombinedServer(ctx context.Context, cfg struct {
-	Port    int    `env:"PORT" default:"8080"`
-	Storage string `env:"REGISTRY_STORAGE"`
+	HTTPPort    int      `env:"HTTP_PORT" default:"8081"`
+	GRPCPort    int      `env:"GRPC_PORT" default:"8080"`
+	Storage     string   `env:"REGISTRY_STORAGE"`
+	SourceRepos []string `env:"SOURCE_REPOS"`
+	SNSPrefix   string   `env:"SNS_PREFIX"`
 }) error {
 
 	awsConfig, err := config.LoadDefaultConfig(ctx)
@@ -221,6 +209,7 @@ func runCombinedServer(ctx context.Context, cfg struct {
 	}
 
 	s3Client := s3.NewFromConfig(awsConfig)
+	snsClient := sns.NewFromConfig(awsConfig)
 
 	s3fs, err := anyfs.NewS3FS(s3Client, cfg.Storage)
 	if err != nil {
@@ -235,32 +224,99 @@ func runCombinedServer(ctx context.Context, cfg struct {
 	gomodData, err := gomodproxy.NewS3PackageSrc(ctx, s3fs.SubFS("gomod"))
 	if err != nil {
 		return err
-
 	}
 
 	remote := builder.NewFSUploader(s3fs)
+
+	dockerWrapper, err := builder.NewDockerWrapper(builder.DefaultRegistryAuths)
+	if err != nil {
+		return err
+	}
 
 	githubClient, err := github.NewEnvClient(ctx)
 	if err != nil {
 		return err
 	}
 
-	genericCORS := cors.Default()
-	mux := http.NewServeMux()
-	mux.Handle("/registry/v1/", genericCORS.Handler(http.StripPrefix("/registry/v1", japiHandler)))
-	mux.Handle("/gopkg/", http.StripPrefix("/gopkg", gomodproxy.Handler(gomodData)))
-	mux.Handle("/trigger/v1/", http.StripPrefix("/trigger/v1", TriggerHandler(githubClient, remote)))
+	builderHandler := builder.NewBuildWorker(builder.NewBuilder(dockerWrapper, remote), githubClient)
 
-	httpServer := &http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.Port),
-		Handler: mux,
+	var publisher github.Publisher
+	if strings.ToLower(cfg.SNSPrefix) == "local" {
+		publisher = localPublisher{
+			handler: builderHandler,
+		}
+	} else {
+		publisher = messaging.NewSNSPublisher(snsClient, cfg.SNSPrefix)
 	}
-	log.WithField(ctx, "port", cfg.Port).Info("Begin Registry Server")
 
-	go func() {
-		<-ctx.Done()
-		httpServer.Shutdown(ctx) // nolint:errcheck
-	}()
+	githubWorker, err := github.NewWebhookWorker(githubClient, publisher, cfg.SourceRepos)
+	if err != nil {
+		return err
+	}
 
-	return httpServer.ListenAndServe()
+	runGroup := runner.NewGroup(runner.WithName("main"), runner.WithCancelOnSignals())
+
+	runGroup.Add("httpServer", func(ctx context.Context) error {
+
+		genericCORS := cors.Default()
+		mux := http.NewServeMux()
+		mux.Handle("/registry/v1/", genericCORS.Handler(http.StripPrefix("/registry/v1", japiHandler)))
+		mux.Handle("/gopkg/", http.StripPrefix("/gopkg", gomodproxy.Handler(gomodData)))
+		mux.Handle("/trigger/v1/", http.StripPrefix("/trigger/v1", TriggerHandler(githubWorker)))
+
+		httpServer := &http.Server{
+			Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
+			Handler: mux,
+		}
+		log.WithField(ctx, "port", cfg.HTTPPort).Info("Begin Registry Server")
+
+		go func() {
+			<-ctx.Done()
+			httpServer.Shutdown(ctx) // nolint:errcheck
+		}()
+
+		return httpServer.ListenAndServe()
+	})
+
+	runGroup.Add("grpcServer", func(ctx context.Context) error {
+		grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
+			grpc_log.UnaryServerInterceptor(log.DefaultContext, log.DefaultTrace, log.DefaultLogger),
+		))
+		github_pb.RegisterWebhookTopicServer(grpcServer, githubWorker)
+		builder_j5pb.RegisterBuilderTopicServer(grpcServer, builderHandler)
+		reflection.Register(grpcServer)
+
+		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
+		if err != nil {
+			return err
+		}
+		log.WithField(ctx, "port", cfg.GRPCPort).Info("Begin Worker Server")
+		go func() {
+			<-ctx.Done()
+			grpcServer.GracefulStop() // nolint:errcheck
+		}()
+
+		return grpcServer.Serve(lis)
+	})
+
+	return runGroup.Run(ctx)
+}
+
+type localPublisher struct {
+	handler builder_j5pb.BuilderTopicServer
+}
+
+func (l localPublisher) Publish(ctx context.Context, msg messaging.Message) error {
+
+	switch msg := msg.(type) {
+	case *builder_j5pb.BuildProtoMessage:
+		_, err := l.handler.BuildProto(ctx, msg)
+		return err
+	case *builder_j5pb.BuildAPIMessage:
+		_, err := l.handler.BuildAPI(ctx, msg)
+		return err
+	default:
+		return fmt.Errorf("unknown local publisher message: %T", msg)
+	}
+
 }

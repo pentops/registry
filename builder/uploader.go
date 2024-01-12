@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/registry/gomodproxy"
 )
@@ -34,13 +35,7 @@ func NewFSUploader(fs FS) *FSUploader {
 type FullInfo struct {
 	Version string
 	Package string
-	Commit  *CommitInfo
-}
-
-type CommitInfo struct {
-	Hash    string
-	Time    time.Time
-	Aliases []string
+	Commit  *builder_j5pb.CommitInfo
 }
 
 func (uu *FSUploader) UploadGoModule(ctx context.Context, version FullInfo, goModData []byte, zipFile io.ReadCloser) error {
@@ -52,7 +47,7 @@ func (uu *FSUploader) UploadGoModule(ctx context.Context, version FullInfo, goMo
 	}).Info("uploading go module")
 
 	metadata := map[string]string{
-		gomodproxy.S3MetadataCommitTime: version.Commit.Time.Format(time.RFC3339),
+		gomodproxy.S3MetadataCommitTime: version.Commit.Time.AsTime().Format(time.RFC3339),
 		gomodproxy.S3MetadataCommitHash: version.Commit.Hash,
 	}
 
