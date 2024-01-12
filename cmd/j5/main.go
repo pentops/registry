@@ -55,7 +55,41 @@ func main() {
 
 	cmdGroup.Add("serve", commander.NewCommand(runCombinedServer))
 
+	cmdGroup.Add("test", commander.NewCommand(runTestBuild))
+
 	cmdGroup.RunMain("registry", Version)
+}
+
+func runTestBuild(ctx context.Context, cfg struct {
+	Source string `flag:"src" default:"." description:"Source directory containing jsonapi.yaml and buf.lock.yaml"`
+}) error {
+	remote := builder.NewNOPUploader()
+
+	japiConfigData, err := os.ReadFile(filepath.Join(cfg.Source, "jsonapi.yaml"))
+	if err != nil {
+		return err
+	}
+	japiConfig := &config_j5pb.Config{}
+	if err := protoyaml.Unmarshal(japiConfigData, japiConfig); err != nil {
+		return err
+	}
+
+	commitInfo := &builder_j5pb.CommitInfo{
+		Hash:    "test",
+		Owner:   "test",
+		Repo:    "test",
+		Time:    timestamppb.New(time.Now()),
+		Aliases: []string{},
+	}
+
+	dockerWrapper, err := builder.NewDockerWrapper(builder.DefaultRegistryAuths)
+	if err != nil {
+		return err
+	}
+
+	bb := builder.NewBuilder(dockerWrapper, remote)
+
+	return bb.BuildAll(ctx, japiConfig, cfg.Source, commitInfo)
 }
 
 func runProtoBuild(ctx context.Context, cfg struct {

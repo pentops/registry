@@ -20,6 +20,21 @@ type FS interface {
 	Put(ctx context.Context, path string, body io.Reader, metadata map[string]string) error
 }
 
+type NOPUploader struct {
+}
+
+func NewNOPUploader() *NOPUploader {
+	return &NOPUploader{}
+}
+
+func (uu *NOPUploader) UploadGoModule(ctx context.Context, version FullInfo, goModData []byte, zipFile io.ReadCloser) error {
+	return nil
+}
+
+func (uu *NOPUploader) UploadJsonAPI(ctx context.Context, info FullInfo, data J5Upload) error {
+	return nil
+}
+
 type FSUploader struct {
 	fs          FS
 	GomodPrefix string
