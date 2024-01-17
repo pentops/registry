@@ -17,9 +17,9 @@ require (
 	github.com/google/go-github/v58 v58.0.0
 	github.com/google/uuid v1.4.0
 	github.com/jhump/protoreflect v1.15.3
-	github.com/pentops/jsonapi v0.0.0-20240116022521-f2565e9666a2
+	github.com/pentops/jsonapi v0.0.0-20240117062246-0135c430593a
 	github.com/pentops/log.go v0.0.0-20231218074934-67aedcab3fa4
-	github.com/pentops/o5-go v0.0.0-20240111055312-216db6a3b907
+	github.com/pentops/o5-go v0.0.0-20240116023954-fa173a9df789
 	github.com/pentops/runner v0.0.0-20231219070819-c4878d5565d8
 	github.com/rs/cors v1.10.1
 	golang.org/x/mod v0.14.0
@@ -79,7 +79,6 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
-	github.com/pentops/sugar-go v0.0.0-20231029194349-ec12ec0132c5 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
