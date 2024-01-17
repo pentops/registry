@@ -9,7 +9,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/pentops/jsonapi/gen/v1/jsonapi_pb"
+	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/jsonapi/structure"
 	"github.com/pentops/jsonapi/swagger"
 	"github.com/pentops/registry/anyfs"
@@ -64,7 +64,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	img := &jsonapi_pb.Image{}
+	img := &source_j5pb.SourceImage{}
 	if err := proto.Unmarshal(bodyBytes, img); err != nil {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -112,7 +112,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func buildSwagger(ctx context.Context, img *jsonapi_pb.Image) ([]byte, error) {
+func buildSwagger(ctx context.Context, img *source_j5pb.SourceImage) ([]byte, error) {
 	jdefDoc, err := structure.BuildFromImage(img)
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func buildSwagger(ctx context.Context, img *jsonapi_pb.Image) ([]byte, error) {
 	return asJson, nil
 }
 
-func buildJDef(ctx context.Context, img *jsonapi_pb.Image) ([]byte, error) {
+func buildJDef(ctx context.Context, img *source_j5pb.SourceImage) ([]byte, error) {
 	jdefDoc, err := structure.BuildFromImage(img)
 	if err != nil {
 		return nil, err

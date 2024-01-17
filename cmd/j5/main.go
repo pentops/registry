@@ -12,8 +12,8 @@ import (
 
 	"github.com/bufbuild/protoyaml-go"
 	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
-	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
-	"github.com/pentops/jsonapi/structure"
+	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
+	"github.com/pentops/jsonapi/source"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-go/github/v1/github_pb"
 	"github.com/pentops/registry/anyfs"
@@ -61,10 +61,10 @@ func main() {
 	cmdGroup.RunMain("registry", Version)
 }
 
-func loadConfig(src string) (*config_j5pb.Config, error) {
+func loadConfig(src string) (*source_j5pb.Config, error) {
 	var configData []byte
 	var err error
-	for _, filename := range structure.ConfigPaths {
+	for _, filename := range source.ConfigPaths {
 		configData, err = os.ReadFile(filepath.Join(src, filename))
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -79,7 +79,7 @@ func loadConfig(src string) (*config_j5pb.Config, error) {
 		return nil, fmt.Errorf("no config found")
 	}
 
-	config := &config_j5pb.Config{}
+	config := &source_j5pb.Config{}
 	if err := protoyaml.Unmarshal(configData, config); err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func runPushAPI(ctx context.Context, cfg struct {
 	GitAuto bool `flag:"git-auto" env:"COMMIT_INFO_GIT_AUTO" default:"false" description:"Automatically pull commit info from git"`
 }) error {
 
-	image, err := structure.ReadImageFromSourceDir(ctx, cfg.Source)
+	image, err := source.ReadImageFromSourceDir(ctx, cfg.Source)
 	if err != nil {
 		return err
 	}

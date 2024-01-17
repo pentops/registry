@@ -4,12 +4,12 @@ import (
 	"testing"
 
 	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
-	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
+	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
 )
 
 func TestExpandGitAliases(t *testing.T) {
 
-	cfg := &config_j5pb.GitConfig{
+	cfg := &source_j5pb.GitConfig{
 		Main: "refs/heads/main",
 	}
 
