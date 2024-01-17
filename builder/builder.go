@@ -13,8 +13,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
-	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
-	"github.com/pentops/jsonapi/gen/v1/jsonapi_pb"
+	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
+	"github.com/pentops/jsonapi/gen/j5/v1/schema_j5pb"
+	"github.com/pentops/jsonapi/source"
 	"github.com/pentops/jsonapi/structure"
 	"github.com/pentops/jsonapi/swagger"
 	"github.com/pentops/log.go/log"
@@ -31,7 +32,7 @@ type IUploader interface {
 }
 
 type IDockerWrapper interface {
-	Run(ctx context.Context, spec *config_j5pb.DockerSpec, input io.Reader, output io.Writer) error
+	Run(ctx context.Context, spec *source_j5pb.DockerSpec, input io.Reader, output io.Writer) error
 }
 
 type Builder struct {
@@ -46,7 +47,7 @@ func NewBuilder(docker IDockerWrapper, uploader IUploader) *Builder {
 	}
 }
 
-func (b *Builder) BuildAll(ctx context.Context, spec *config_j5pb.Config, srcDir string, commitInfo *builder_j5pb.CommitInfo, onlyMatching ...string) error {
+func (b *Builder) BuildAll(ctx context.Context, spec *source_j5pb.Config, srcDir string, commitInfo *builder_j5pb.CommitInfo, onlyMatching ...string) error {
 	protoBuildRequest, err := CodeGeneratorRequestFromSource(ctx, srcDir)
 	if err != nil {
 		return err
@@ -82,7 +83,7 @@ func (b *Builder) BuildAll(ctx context.Context, spec *config_j5pb.Config, srcDir
 			continue
 		}
 
-		subConfig := &config_j5pb.Config{
+		subConfig := &source_j5pb.Config{
 			Packages: spec.Packages,
 			Options:  spec.Options,
 			Registry: spec.Registry,
@@ -100,7 +101,7 @@ func (b *Builder) BuildAll(ctx context.Context, spec *config_j5pb.Config, srcDir
 
 			fmt.Printf("builderName: %s, pluginName: %s\n", builderName, pluginName)
 
-			var foundProtoBuild *config_j5pb.ProtoBuildConfig
+			var foundProtoBuild *source_j5pb.ProtoBuildConfig
 			for _, protoBuild := range spec.ProtoBuilds {
 				if protoBuild.Label == builderName {
 					foundProtoBuild = protoBuild
@@ -117,7 +118,7 @@ func (b *Builder) BuildAll(ctx context.Context, spec *config_j5pb.Config, srcDir
 				for _, plugin := range foundProtoBuild.Plugins {
 					if plugin.Label == pluginName {
 						found = true
-						foundProtoBuild.Plugins = []*config_j5pb.ProtoBuildPlugin{plugin}
+						foundProtoBuild.Plugins = []*source_j5pb.ProtoBuildPlugin{plugin}
 						break
 					}
 				}
@@ -127,7 +128,7 @@ func (b *Builder) BuildAll(ctx context.Context, spec *config_j5pb.Config, srcDir
 				}
 			}
 
-			subConfig.ProtoBuilds = []*config_j5pb.ProtoBuildConfig{foundProtoBuild}
+			subConfig.ProtoBuilds = []*source_j5pb.ProtoBuildConfig{foundProtoBuild}
 
 			didAny = true
 			if err := b.BuildProto(ctx, srcDir, foundProtoBuild, protoBuildRequest, commitInfo); err != nil {
@@ -145,16 +146,16 @@ func (b *Builder) BuildAll(ctx context.Context, spec *config_j5pb.Config, srcDir
 }
 
 type J5Upload struct {
-	Image   *jsonapi_pb.Image
-	JDef    *structure.Built
+	Image   *source_j5pb.SourceImage
+	JDef    *schema_j5pb.API
 	Swagger *swagger.Document
 }
 
-func (b *Builder) BuildJsonAPI(ctx context.Context, srcDir string, registry *jsonapi_pb.RegistryConfig, commitInfo *builder_j5pb.CommitInfo) error {
+func (b *Builder) BuildJsonAPI(ctx context.Context, srcDir string, registry *source_j5pb.RegistryConfig, commitInfo *builder_j5pb.CommitInfo) error {
 
 	log.Info(ctx, "build json API")
 
-	img, err := structure.ReadImageFromSourceDir(ctx, srcDir)
+	img, err := source.ReadImageFromSourceDir(ctx, srcDir)
 	if err != nil {
 		return err
 	}
@@ -173,6 +174,7 @@ func (b *Builder) BuildJsonAPI(ctx context.Context, srcDir string, registry *jso
 		Package: path.Join(registry.Organization, registry.Name),
 		Commit:  commitInfo,
 	},
+
 		J5Upload{
 			Image:   img,
 			JDef:    jdefDoc,
@@ -209,7 +211,7 @@ func copyFile(src, dst string) error {
 	return err
 }
 
-func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *config_j5pb.ProtoBuildConfig, protoBuildRequest *pluginpb.CodeGeneratorRequest, commitInfo *builder_j5pb.CommitInfo) error {
+func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *source_j5pb.ProtoBuildConfig, protoBuildRequest *pluginpb.CodeGeneratorRequest, commitInfo *builder_j5pb.CommitInfo) error {
 
 	dest, err := os.MkdirTemp("", uuid.NewString())
 	if err != nil {
@@ -226,7 +228,7 @@ func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *co
 	}
 
 	switch pkg := dockerBuild.PackageType.(type) {
-	case *config_j5pb.ProtoBuildConfig_GoProxy_:
+	case *source_j5pb.ProtoBuildConfig_GoProxy_:
 		if err := copyFile(filepath.Join(srcDir, pkg.GoProxy.GoModFile), filepath.Join(packageRoot, "go.mod")); err != nil {
 			return err
 		}
@@ -241,7 +243,7 @@ func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *co
 
 }
 
-func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *config_j5pb.ProtoBuildPlugin, sourceProto *pluginpb.CodeGeneratorRequest) error {
+func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *source_j5pb.ProtoBuildPlugin, sourceProto *pluginpb.CodeGeneratorRequest) error {
 
 	start := time.Now()
 	if plugin.Label == "" {

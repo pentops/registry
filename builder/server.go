@@ -6,8 +6,7 @@ import (
 	"os"
 
 	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
-	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
-	"github.com/pentops/jsonapi/gen/v1/jsonapi_pb"
+	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/registry/github"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -31,7 +30,7 @@ type IBuilder interface {
 	BuildProto(
 		ctx context.Context,
 		srcDir string,
-		spec *config_j5pb.ProtoBuildConfig,
+		spec *source_j5pb.ProtoBuildConfig,
 		generateRequest *pluginpb.CodeGeneratorRequest,
 		commitInfo *builder_j5pb.CommitInfo,
 	) error
@@ -39,7 +38,7 @@ type IBuilder interface {
 	BuildJsonAPI(
 		ctx context.Context,
 		srcDir string,
-		registry *jsonapi_pb.RegistryConfig,
+		registry *source_j5pb.RegistryConfig,
 		commitInfo *builder_j5pb.CommitInfo,
 	) error
 }

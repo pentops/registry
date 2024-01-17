@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
-	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
-	"github.com/pentops/jsonapi/structure"
+	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
+	"github.com/pentops/jsonapi/source"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-go/github/v1/github_pb"
 	"github.com/pentops/registry/messaging"
@@ -83,8 +83,8 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 
 	ref.Ref = commitInfo.Hash
 
-	cfg := &config_j5pb.Config{}
-	err = ww.github.PullConfig(ctx, ref, cfg, structure.ConfigPaths)
+	cfg := &source_j5pb.Config{}
+	err = ww.github.PullConfig(ctx, ref, cfg, source.ConfigPaths)
 	if err != nil {
 		log.WithError(ctx, err).Error("Config Error")
 		_, err := ww.github.CreateCheckRun(ctx, ref, "j5-config", &CheckRunUpdate{
@@ -102,7 +102,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 	}
 
 	{
-		subConfig := &config_j5pb.Config{
+		subConfig := &source_j5pb.Config{
 			Packages: cfg.Packages,
 			Options:  cfg.Options,
 			Registry: cfg.Registry,
@@ -133,8 +133,8 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 
 	for _, dockerBuild := range cfg.ProtoBuilds {
 		log.Debug(ctx, "Publishing docker build")
-		subConfig := &config_j5pb.Config{
-			ProtoBuilds: []*config_j5pb.ProtoBuildConfig{dockerBuild},
+		subConfig := &source_j5pb.Config{
+			ProtoBuilds: []*source_j5pb.ProtoBuildConfig{dockerBuild},
 			Packages:    cfg.Packages,
 			Options:     cfg.Options,
 			Registry:    cfg.Registry,
