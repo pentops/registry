@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -30,6 +33,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/pluginpb"
 	"gopkg.daemonl.com/log/grpc_log"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -52,6 +56,7 @@ func main() {
 
 	protoGroup := commander.NewCommandSet()
 	protoGroup.Add("build", commander.NewCommand(runProtoBuild))
+	protoGroup.Add("request", commander.NewCommand(runProtoRequest))
 	cmdGroup.Add("proto", protoGroup)
 
 	cmdGroup.Add("serve", commander.NewCommand(runCombinedServer))
@@ -89,13 +94,41 @@ func loadConfig(src string) (*source_j5pb.Config, error) {
 
 func runTestBuild(ctx context.Context, cfg struct {
 	Source   string   `flag:"src" default:"." description:"Source directory containing j5.yaml and buf.lock.yaml"`
-	Builders []string `flag:",remaining"`
+	NoPull   bool     `flag:"no-pull" default:"false" description:"Don't pull images from registry"`
+	Output   []string `flag:"output" default:"" description:"Not a dry run - actually output the built files (e.g. for go mod replace). "`
+	Builders []string `flag:",remaining" description:"Builders to run - 'j5', 'proto/$label' 'proto/$label/$plugin'"`
 }) error {
-	remote := builder.NewNOPUploader()
+
+	remote := builder.NewRawUploader()
+	if len(cfg.Output) > 0 {
+		for _, output := range cfg.Output {
+			parts := strings.SplitN(output, "=", 2)
+			if len(parts) != 2 {
+				if len(cfg.Output) != 1 {
+					return fmt.Errorf("invalid output: %s, specify either a single dir, or key=val pairs", output)
+				}
+				remote.J5Output = output
+			}
+			if strings.HasPrefix(parts[0], "j5") {
+				remote.J5Output = parts[1]
+			} else if strings.HasPrefix(parts[0], "proto/") {
+				key := strings.TrimPrefix(parts[0], "proto/")
+				remote.ProtoGenOutputs[key] = parts[1]
+			}
+		}
+	}
 
 	japiConfig, err := loadConfig(cfg.Source)
 	if err != nil {
 		return err
+	}
+
+	if cfg.NoPull {
+		for _, builder := range japiConfig.ProtoBuilds {
+			for _, plugin := range builder.Plugins {
+				plugin.Docker.Pull = false
+			}
+		}
 	}
 
 	commitInfo := &builder_j5pb.CommitInfo{
@@ -114,6 +147,79 @@ func runTestBuild(ctx context.Context, cfg struct {
 	bb := builder.NewBuilder(dockerWrapper, remote)
 
 	return bb.BuildAll(ctx, japiConfig, cfg.Source, commitInfo, cfg.Builders...)
+}
+
+func runProtoRequest(ctx context.Context, cfg struct {
+	Source        string `flag:"src" default:"." description:"Source directory containing j5.yaml and buf.lock.yaml"`
+	PackagePrefix string `flag:"package-prefix" env:"PACKAGE_PREFIX" default:""`
+	Command       string `flag:"command" default:"" description:"Pipe the output to a builder command and print files"`
+}) error {
+	protoBuildRequest, err := builder.CodeGeneratorRequestFromSource(ctx, cfg.Source)
+	if err != nil {
+		return err
+	}
+
+	protoBuildRequestBytes, err := proto.Marshal(protoBuildRequest)
+	if err != nil {
+		return err
+	}
+
+	if cfg.Command == "" {
+		_, err = os.Stdout.Write(protoBuildRequestBytes)
+		return err
+	}
+
+	cmd := exec.CommandContext(ctx, cfg.Command)
+
+	inPipe, err := cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
+	defer inPipe.Close()
+
+	outPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	defer outPipe.Close()
+
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	outErr := make(chan error)
+	outBuf := &bytes.Buffer{}
+	go func() {
+		_, err := io.Copy(outBuf, outPipe)
+		outErr <- err
+	}()
+
+	if _, err := inPipe.Write(protoBuildRequestBytes); err != nil {
+		return err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return err
+	}
+
+	outPipe.Close()
+
+	if err := <-outErr; err != nil {
+		return err
+	}
+
+	res := pluginpb.CodeGeneratorResponse{}
+	if err := proto.Unmarshal(outBuf.Bytes(), &res); err != nil {
+		return err
+	}
+
+	for _, file := range res.File {
+		fmt.Println(file.GetName())
+	}
+
+	return nil
 }
 
 func runProtoBuild(ctx context.Context, cfg struct {

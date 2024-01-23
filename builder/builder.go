@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
 	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/jsonapi/gen/j5/v1/schema_j5pb"
@@ -19,15 +18,12 @@ import (
 	"github.com/pentops/jsonapi/structure"
 	"github.com/pentops/jsonapi/swagger"
 	"github.com/pentops/log.go/log"
-	"golang.org/x/mod/modfile"
-	"golang.org/x/mod/module"
-	"golang.org/x/mod/zip"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type IUploader interface {
-	UploadGoModule(ctx context.Context, version FullInfo, goModData []byte, zipFile io.ReadCloser) error
+	BuildGoModule(ctx context.Context, commitInfo *builder_j5pb.CommitInfo, label string, callback BuilderCallback) error
 	UploadJsonAPI(ctx context.Context, version FullInfo, jsonapiData J5Upload) error
 }
 
@@ -213,33 +209,24 @@ func copyFile(src, dst string) error {
 
 func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *source_j5pb.ProtoBuildConfig, protoBuildRequest *pluginpb.CodeGeneratorRequest, commitInfo *builder_j5pb.CommitInfo) error {
 
-	dest, err := os.MkdirTemp("", uuid.NewString())
-	if err != nil {
-		return err
-	}
-	packageRoot := filepath.Join(dest, "package")
-
-	defer os.RemoveAll(dest)
-
-	for _, plugin := range dockerBuild.Plugins {
-		if err := b.RunProtocPlugin(ctx, packageRoot, plugin, protoBuildRequest); err != nil {
-			return err
-		}
-	}
-
 	switch pkg := dockerBuild.PackageType.(type) {
 	case *source_j5pb.ProtoBuildConfig_GoProxy_:
-		if err := copyFile(filepath.Join(srcDir, pkg.GoProxy.GoModFile), filepath.Join(packageRoot, "go.mod")); err != nil {
-			return err
-		}
-		if err := b.PushGoPackage(ctx, dest, commitInfo); err != nil {
-			return err
-		}
+		return b.Uploader.BuildGoModule(ctx, commitInfo, dockerBuild.Label, func(ctx context.Context, packageRoot string) error {
+			for _, plugin := range dockerBuild.Plugins {
+				if err := b.RunProtocPlugin(ctx, packageRoot, plugin, protoBuildRequest); err != nil {
+					return err
+				}
+			}
+
+			if err := copyFile(filepath.Join(srcDir, pkg.GoProxy.GoModFile), filepath.Join(packageRoot, "go.mod")); err != nil {
+				return err
+			}
+
+			return nil
+		})
 	default:
 		return fmt.Errorf("unsupported package type: %T", pkg)
 	}
-
-	return nil
 
 }
 
@@ -299,68 +286,4 @@ func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *sour
 	}).Info("Protoc Plugin Complete")
 
 	return nil
-}
-
-func (b *Builder) PushGoPackage(ctx context.Context, root string, commitInfo *builder_j5pb.CommitInfo) error {
-	packageRoot := filepath.Join(root, "package")
-
-	gomodBytes, err := os.ReadFile(filepath.Join(packageRoot, "go.mod"))
-	if err != nil {
-		return err
-	}
-
-	parsedGoMod, err := modfile.Parse("go.mod", gomodBytes, nil)
-	if err != nil {
-		return err
-	}
-
-	if parsedGoMod.Module == nil {
-		return fmt.Errorf("no module found in go.mod")
-	}
-
-	packageName := parsedGoMod.Module.Mod.Path
-
-	commitHashPrefix := commitInfo.Hash
-	if len(commitHashPrefix) > 12 {
-		commitHashPrefix = commitHashPrefix[:12]
-	}
-
-	canonicalVersion := module.PseudoVersion("", "", commitInfo.Time.AsTime(), commitHashPrefix)
-
-	zipFilePath := filepath.Join(root, canonicalVersion+".zip")
-
-	if err := func() error {
-		outWriter, err := os.Create(zipFilePath)
-		if err != nil {
-			return err
-		}
-
-		defer outWriter.Close()
-
-		err = zip.CreateFromDir(outWriter, module.Version{
-			Path:    packageName,
-			Version: canonicalVersion,
-		}, packageRoot)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}(); err != nil {
-		return fmt.Errorf("creating zip file: %w", err)
-	}
-
-	info := FullInfo{
-		Version: canonicalVersion,
-		Package: packageName,
-		Commit:  commitInfo,
-	}
-
-	zipReader, err := os.Open(zipFilePath)
-	if err != nil {
-		return err
-	}
-
-	return b.Uploader.UploadGoModule(ctx, info, gomodBytes, zipReader)
-
 }
