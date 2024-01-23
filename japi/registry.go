@@ -11,6 +11,7 @@ import (
 
 	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/jsonapi/structure"
+	"github.com/pentops/jsonapi/structure/jdef"
 	"github.com/pentops/jsonapi/swagger"
 	"github.com/pentops/registry/anyfs"
 	"google.golang.org/protobuf/proto"
@@ -132,15 +133,20 @@ func buildSwagger(ctx context.Context, img *source_j5pb.SourceImage) ([]byte, er
 }
 
 func buildJDef(ctx context.Context, img *source_j5pb.SourceImage) ([]byte, error) {
-	jdefDoc, err := structure.BuildFromImage(img)
+	image, err := structure.BuildFromImage(img)
 	if err != nil {
 		return nil, err
 	}
 
-	asJson, err := json.Marshal(jdefDoc)
+	jDefJSON, err := jdef.FromProto(image)
 	if err != nil {
 		return nil, err
 	}
 
-	return asJson, nil
+	jDefJSONBytes, err := json.Marshal(jDefJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	return jDefJSONBytes, nil
 }
