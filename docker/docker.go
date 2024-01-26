@@ -60,7 +60,7 @@ func (dw *DockerWrapper) Close() error {
 	return dw.client.Close()
 }
 
-func (dw *DockerWrapper) Run(ctx context.Context, spec *source_j5pb.DockerSpec, input io.Reader, output io.Writer) error {
+func (dw *DockerWrapper) Run(ctx context.Context, spec *source_j5pb.DockerSpec, input io.Reader, output io.Writer, errOutput io.Writer) error {
 
 	if spec.Pull {
 		// skip if pulled...
@@ -127,7 +127,7 @@ func (dw *DockerWrapper) Run(ctx context.Context, spec *source_j5pb.DockerSpec, 
 
 	chOut := make(chan error)
 	go func() {
-		_, err = stdcopy.StdCopy(output, os.Stderr, hj.Reader)
+		_, err = stdcopy.StdCopy(output, errOutput, hj.Reader)
 		chOut <- err
 	}()
 

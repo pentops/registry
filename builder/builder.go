@@ -28,7 +28,7 @@ type IUploader interface {
 }
 
 type IDockerWrapper interface {
-	Run(ctx context.Context, spec *source_j5pb.DockerSpec, input io.Reader, output io.Writer) error
+	Run(ctx context.Context, spec *source_j5pb.DockerSpec, input io.Reader, output, errOutput io.Writer) error
 }
 
 type Builder struct {
@@ -59,7 +59,7 @@ func (b *Builder) BuildAll(ctx context.Context, spec *source_j5pb.Config, srcDir
 		}
 
 		for _, dockerBuild := range spec.ProtoBuilds {
-			if err := b.BuildProto(ctx, srcDir, dockerBuild, protoBuildRequest, commitInfo); err != nil {
+			if err := b.BuildProto(ctx, srcDir, dockerBuild, protoBuildRequest, commitInfo, os.Stderr); err != nil {
 				return err
 			}
 		}
@@ -127,7 +127,7 @@ func (b *Builder) BuildAll(ctx context.Context, spec *source_j5pb.Config, srcDir
 			subConfig.ProtoBuilds = []*source_j5pb.ProtoBuildConfig{foundProtoBuild}
 
 			didAny = true
-			if err := b.BuildProto(ctx, srcDir, foundProtoBuild, protoBuildRequest, commitInfo); err != nil {
+			if err := b.BuildProto(ctx, srcDir, foundProtoBuild, protoBuildRequest, commitInfo, os.Stderr); err != nil {
 				return err
 			}
 
@@ -207,13 +207,13 @@ func copyFile(src, dst string) error {
 	return err
 }
 
-func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *source_j5pb.ProtoBuildConfig, protoBuildRequest *pluginpb.CodeGeneratorRequest, commitInfo *builder_j5pb.CommitInfo) error {
+func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *source_j5pb.ProtoBuildConfig, protoBuildRequest *pluginpb.CodeGeneratorRequest, commitInfo *builder_j5pb.CommitInfo, logWriter io.Writer) error {
 
 	switch pkg := dockerBuild.PackageType.(type) {
 	case *source_j5pb.ProtoBuildConfig_GoProxy_:
 		return b.Uploader.BuildGoModule(ctx, commitInfo, dockerBuild.Label, func(ctx context.Context, packageRoot string) error {
 			for _, plugin := range dockerBuild.Plugins {
-				if err := b.RunProtocPlugin(ctx, packageRoot, plugin, protoBuildRequest); err != nil {
+				if err := b.RunProtocPlugin(ctx, packageRoot, plugin, protoBuildRequest, logWriter); err != nil {
 					return err
 				}
 			}
@@ -230,7 +230,7 @@ func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *so
 
 }
 
-func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *source_j5pb.ProtoBuildPlugin, sourceProto *pluginpb.CodeGeneratorRequest) error {
+func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *source_j5pb.ProtoBuildPlugin, sourceProto *pluginpb.CodeGeneratorRequest, errOut io.Writer) error {
 
 	start := time.Now()
 	if plugin.Label == "" {
@@ -256,7 +256,7 @@ func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *sour
 
 	outBuffer := &bytes.Buffer{}
 	inBuffer := bytes.NewReader(reqBytes)
-	err = b.Docker.Run(ctx, plugin.Docker, inBuffer, outBuffer)
+	err = b.Docker.Run(ctx, plugin.Docker, inBuffer, outBuffer, errOut)
 	if err != nil {
 		return fmt.Errorf("running docker %s: %w", plugin.Label, err)
 	}
