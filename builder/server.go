@@ -1,8 +1,10 @@
 package builder
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
@@ -33,6 +35,7 @@ type IBuilder interface {
 		spec *source_j5pb.ProtoBuildConfig,
 		generateRequest *pluginpb.CodeGeneratorRequest,
 		commitInfo *builder_j5pb.CommitInfo,
+		stderr io.Writer,
 	) error
 
 	BuildJsonAPI(
@@ -107,6 +110,7 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_j5pb.BuildPr
 		if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
 			Status:     github.CheckRunStatusCompleted,
 			Conclusion: some(github.CheckRunConclusionFailure),
+
 			Output: &github.CheckRunOutput{
 				Title:   some("proto request error"),
 				Summary: errorMessage,
@@ -119,19 +123,21 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_j5pb.BuildPr
 	}
 
 	// Build
-	if err := bw.builder.BuildProto(ctx, workDir, buildSpec, protoBuildRequest, req.Commit); err != nil {
+	errBuffer := &bytes.Buffer{}
+	if err := bw.builder.BuildProto(ctx, workDir, buildSpec, protoBuildRequest, req.Commit, io.MultiWriter(os.Stderr, errBuffer)); err != nil {
 		if req.CheckRun == nil {
 			return nil, err
 		}
 
 		errorMessage := err.Error()
+		fullText := fmt.Sprintf("%s\n\n```%s```", errorMessage, errBuffer.String())
 		if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
 			Status:     github.CheckRunStatusCompleted,
 			Conclusion: some(github.CheckRunConclusionFailure),
 			Output: &github.CheckRunOutput{
 				Title:   some("proto build error"),
 				Summary: errorMessage,
-				Text:    some(errorMessage),
+				Text:    some(fullText),
 			},
 		}); err != nil {
 			return nil, err
@@ -142,6 +148,11 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_j5pb.BuildPr
 	if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
 		Status:     github.CheckRunStatusCompleted,
 		Conclusion: some(github.CheckRunConclusionSuccess),
+		Output: &github.CheckRunOutput{
+			Title:   some("proto build success"),
+			Summary: "proto build success",
+			Text:    some(errBuffer.String()),
+		},
 	}); err != nil {
 		return nil, err
 	}
