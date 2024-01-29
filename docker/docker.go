@@ -15,6 +15,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
 	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/registry/glob"
@@ -60,8 +61,7 @@ func (dw *DockerWrapper) Close() error {
 	return dw.client.Close()
 }
 
-func (dw *DockerWrapper) Run(ctx context.Context, spec *source_j5pb.DockerSpec, input io.Reader, output io.Writer, errOutput io.Writer) error {
-
+func (dw *DockerWrapper) Run(ctx context.Context, spec *source_j5pb.DockerSpec, input io.Reader, output io.Writer, errOutput io.Writer, commitInfo *builder_j5pb.CommitInfo) error {
 	if spec.Pull {
 		// skip if pulled...
 		if !dw.pulledImages[spec.Image] {
@@ -77,7 +77,7 @@ func (dw *DockerWrapper) Run(ctx context.Context, spec *source_j5pb.DockerSpec, 
 		}
 	}
 
-	env, err := mapEnvVars(spec.Env)
+	env, err := mapEnvVars(spec.Env, commitInfo)
 	if err != nil {
 		return err
 	}
@@ -164,10 +164,14 @@ func (dw *DockerWrapper) Run(ctx context.Context, spec *source_j5pb.DockerSpec, 
 	return nil
 }
 
-func mapEnvVars(spec []string) ([]string, error) {
+func mapEnvVars(spec []string, commitInfo *builder_j5pb.CommitInfo) ([]string, error) {
 	env := make([]string, len(spec))
 	for idx, src := range spec {
-		parts := strings.SplitN(src, "=", 1)
+		if strings.Contains(src, "PROTOC_GEN_GO_MESSAGING_EXTRA_HEADERS") && strings.Contains(src, "$GIT_HASH") {
+			env[idx] = fmt.Sprintf("PROTOC_GEN_GO_MESSAGING_EXTRA_HEADERS=api-version:%v", commitInfo.Hash)
+			continue
+		}
+		parts := strings.Split(src, "=")
 		if len(parts) == 1 {
 			env[idx] = fmt.Sprintf("%s=%s", src, os.Getenv(src))
 			continue
@@ -176,6 +180,7 @@ func mapEnvVars(spec []string) ([]string, error) {
 			return nil, fmt.Errorf("invalid env var: %s", src)
 		}
 		val := os.ExpandEnv(src)
+
 		env[idx] = fmt.Sprintf("%s=%s", parts[0], val)
 	}
 	return env, nil
