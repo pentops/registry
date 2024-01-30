@@ -28,7 +28,7 @@ type IUploader interface {
 }
 
 type IDockerWrapper interface {
-	Run(ctx context.Context, spec *source_j5pb.DockerSpec, input io.Reader, output, errOutput io.Writer) error
+	Run(ctx context.Context, spec *source_j5pb.DockerSpec, input io.Reader, output, errOutput io.Writer, commitInfo *builder_j5pb.CommitInfo) error
 }
 
 type Builder struct {
@@ -211,9 +211,9 @@ func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *so
 
 	switch pkg := dockerBuild.PackageType.(type) {
 	case *source_j5pb.ProtoBuildConfig_GoProxy_:
-		return b.Uploader.BuildGoModule(ctx, commitInfo, dockerBuild.Label, func(ctx context.Context, packageRoot string) error {
+		return b.Uploader.BuildGoModule(ctx, commitInfo, dockerBuild.Label, func(ctx context.Context, packageRoot string, commitInfo *builder_j5pb.CommitInfo) error {
 			for _, plugin := range dockerBuild.Plugins {
-				if err := b.RunProtocPlugin(ctx, packageRoot, plugin, protoBuildRequest, logWriter); err != nil {
+				if err := b.RunProtocPlugin(ctx, packageRoot, plugin, protoBuildRequest, logWriter, commitInfo); err != nil {
 					return err
 				}
 			}
@@ -230,7 +230,7 @@ func (b *Builder) BuildProto(ctx context.Context, srcDir string, dockerBuild *so
 
 }
 
-func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *source_j5pb.ProtoBuildPlugin, sourceProto *pluginpb.CodeGeneratorRequest, errOut io.Writer) error {
+func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *source_j5pb.ProtoBuildPlugin, sourceProto *pluginpb.CodeGeneratorRequest, errOut io.Writer, commitInfo *builder_j5pb.CommitInfo) error {
 
 	start := time.Now()
 	if plugin.Label == "" {
@@ -256,7 +256,8 @@ func (b *Builder) RunProtocPlugin(ctx context.Context, dest string, plugin *sour
 
 	outBuffer := &bytes.Buffer{}
 	inBuffer := bytes.NewReader(reqBytes)
-	err = b.Docker.Run(ctx, plugin.Docker, inBuffer, outBuffer, errOut)
+
+	err = b.Docker.Run(ctx, plugin.Docker, inBuffer, outBuffer, errOut, commitInfo)
 	if err != nil {
 		return fmt.Errorf("running docker %s: %w", plugin.Label, err)
 	}

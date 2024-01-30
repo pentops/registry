@@ -48,7 +48,7 @@ func (uu *RawUploader) BuildGoModule(ctx context.Context, commitInfo *builder_j5
 		output = tmpDir
 	}
 
-	return callback(ctx, output)
+	return callback(ctx, output, commitInfo)
 }
 
 func (uu *RawUploader) UploadJsonAPI(ctx context.Context, info FullInfo, data J5Upload) error {
@@ -111,7 +111,7 @@ type FullInfo struct {
 	Commit  *builder_j5pb.CommitInfo
 }
 
-type BuilderCallback func(ctx context.Context, workingDir string) error
+type BuilderCallback func(ctx context.Context, workingDir string, commitInfo *builder_j5pb.CommitInfo) error
 
 func (uu *FSUploader) BuildGoModule(ctx context.Context, commitInfo *builder_j5pb.CommitInfo, label string, callback BuilderCallback) error {
 
@@ -123,7 +123,7 @@ func (uu *FSUploader) BuildGoModule(ctx context.Context, commitInfo *builder_j5p
 
 	defer os.RemoveAll(dest)
 
-	if err := callback(ctx, packageRoot); err != nil {
+	if err := callback(ctx, packageRoot, commitInfo); err != nil {
 		return err
 	}
 
