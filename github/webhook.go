@@ -76,7 +76,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 
 	commitInfo, err := ww.github.GetCommit(ctx, ref)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get commit: %w", err)
 	}
 
 	log.WithField(ctx, "commit", commitInfo).Debug("Got commit")
@@ -96,7 +96,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 			},
 		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("j5 config check run: %w", err)
 		}
 		return &emptypb.Empty{}, nil
 	}
@@ -112,7 +112,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 		checkRunName := "j5-image"
 		checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("j5 image check run: %w", err)
 		}
 
 		req := &builder_j5pb.BuildAPIMessage{
@@ -126,7 +126,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 
 		err = ww.publisher.Publish(ctx, req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("publish: j5 image: %w", err)
 		}
 
 	}
@@ -144,7 +144,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 		checkRunName := fmt.Sprintf("j5-proto-%s", dockerBuild.Label)
 		checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("j5 proto check run: %w", err)
 		}
 		req := &builder_j5pb.BuildProtoMessage{
 			Commit: commitInfo,
@@ -156,7 +156,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 		}
 		err = ww.publisher.Publish(ctx, req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("publish: j5 proto: %w", err)
 		}
 	}
 
