@@ -148,22 +148,21 @@ type J5Upload struct {
 }
 
 func (b *Builder) BuildJsonAPI(ctx context.Context, srcDir string, registry *source_j5pb.RegistryConfig, commitInfo *builder_j5pb.CommitInfo) error {
-
 	log.Info(ctx, "build json API")
 
 	img, err := source.ReadImageFromSourceDir(ctx, srcDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("read image: %w", err)
 	}
 
 	jdefDoc, err := structure.BuildFromImage(img)
 	if err != nil {
-		return err
+		return fmt.Errorf("build from image: %w", err)
 	}
 
 	swaggerDoc, err := swagger.BuildSwagger(jdefDoc)
 	if err != nil {
-		return err
+		return fmt.Errorf("build swagger: %w", err)
 	}
 
 	if err := b.Uploader.UploadJsonAPI(ctx, FullInfo{
@@ -176,7 +175,7 @@ func (b *Builder) BuildJsonAPI(ctx context.Context, srcDir string, registry *sou
 			JDef:    jdefDoc,
 			Swagger: swaggerDoc,
 		}); err != nil {
-		return err
+		return fmt.Errorf("upload json api: %w", err)
 	}
 
 	return nil
