@@ -35,7 +35,6 @@ type Message interface {
 }
 
 func (p *SNSPublisher) Publish(ctx context.Context, msg Message) error {
-
 	protoBody, err := proto.Marshal(msg)
 	if err != nil {
 		return err
