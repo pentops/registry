@@ -351,11 +351,12 @@ func TriggerHandler(githubWorker github_pb.WebhookTopicServer) http.Handler {
 }
 
 func runCombinedServer(ctx context.Context, cfg struct {
-	HTTPPort    int      `env:"HTTP_PORT" default:"8081"`
-	GRPCPort    int      `env:"GRPC_PORT" default:"8080"`
-	Storage     string   `env:"REGISTRY_STORAGE"`
-	SourceRepos []string `env:"SOURCE_REPOS"`
-	SNSPrefix   string   `env:"SNS_PREFIX"`
+	HTTPPort         int      `env:"HTTP_PORT" default:"8081"`
+	GRPCPort         int      `env:"GRPC_PORT" default:"8080"`
+	Storage          string   `env:"REGISTRY_STORAGE"`
+	SourceRepos      []string `env:"SOURCE_REPOS"`
+	SourceCheckRepos []string `env:"SOURCE_CHECK_REPOS"`
+	SNSPrefix        string   `env:"SNS_PREFIX"`
 }) error {
 
 	awsConfig, err := config.LoadDefaultConfig(ctx)
@@ -404,7 +405,7 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		publisher = messaging.NewSNSPublisher(snsClient, cfg.SNSPrefix)
 	}
 
-	githubWorker, err := github.NewWebhookWorker(githubClient, publisher, cfg.SourceRepos)
+	githubWorker, err := github.NewWebhookWorker(githubClient, publisher, cfg.SourceRepos, cfg.SourceCheckRepos)
 	if err != nil {
 		return err
 	}

@@ -48,6 +48,9 @@ runtimes:
           - name: SOURCE_REPOS
             fromEnv:
               name: j5-repos
+          - name: SOURCE_CHECK_REPOS
+            fromEnv:
+              name: j5-check-repos
 
           - name: GRPC_PORT
             value: "8080"

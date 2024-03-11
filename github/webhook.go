@@ -29,32 +29,44 @@ type RefMatcher interface {
 }
 
 type WebhookWorker struct {
-	github    IClient
-	publisher Publisher
-	repos     []string
+	github     IClient
+	publisher  Publisher
+	repos      []string
+	checkRepos []string
 
 	github_pb.UnimplementedWebhookTopicServer
 }
 
-func NewWebhookWorker(githubClient IClient, publisher Publisher, repos []string) (*WebhookWorker, error) {
+func NewWebhookWorker(githubClient IClient, publisher Publisher, repos []string, checkRepos []string) (*WebhookWorker, error) {
 	return &WebhookWorker{
-		github:    githubClient,
-		repos:     repos,
-		publisher: publisher,
+		github:     githubClient,
+		repos:      repos,
+		publisher:  publisher,
+		checkRepos: checkRepos,
 	}, nil
 }
 
 func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage) (*emptypb.Empty, error) {
-
 	repo := fmt.Sprintf("%s/%s", event.Owner, event.Repo)
 
 	matches := false
+	skipChecks := true
+
 	for _, r := range ww.repos {
 		if r == repo {
 			matches = true
 			break
 		}
 	}
+
+	for _, r := range ww.checkRepos {
+		if r == repo {
+			matches = true
+			skipChecks = false
+			break
+		}
+	}
+
 	if !matches {
 		log.Info(ctx, "Repo not configured, nothing to do")
 		return &emptypb.Empty{}, nil
@@ -109,26 +121,28 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 			Git:      cfg.Git,
 		}
 
-		checkRunName := "j5-image"
-		checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
-		if err != nil {
-			return nil, fmt.Errorf("j5 image check run: %w", err)
-		}
-
 		req := &builder_j5pb.BuildAPIMessage{
 			Commit: commitInfo,
 			Config: subConfig,
-			CheckRun: &builder_j5pb.CheckRun{
+		}
+
+		if !skipChecks {
+			checkRunName := "j5-image"
+			checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
+			if err != nil {
+				return nil, fmt.Errorf("j5 image check run: %w", err)
+			}
+
+			req.CheckRun = &builder_j5pb.CheckRun{
 				Id:   checkRunID,
 				Name: checkRunName,
-			},
+			}
 		}
 
 		err = ww.publisher.Publish(ctx, req)
 		if err != nil {
 			return nil, fmt.Errorf("publish: j5 image: %w", err)
 		}
-
 	}
 
 	for _, dockerBuild := range cfg.ProtoBuilds {
@@ -141,19 +155,24 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 			Git:         cfg.Git,
 		}
 
-		checkRunName := fmt.Sprintf("j5-proto-%s", dockerBuild.Label)
-		checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
-		if err != nil {
-			return nil, fmt.Errorf("j5 proto check run: %w", err)
-		}
 		req := &builder_j5pb.BuildProtoMessage{
 			Commit: commitInfo,
 			Config: subConfig,
-			CheckRun: &builder_j5pb.CheckRun{
+		}
+
+		if !skipChecks {
+			checkRunName := fmt.Sprintf("j5-proto-%s", dockerBuild.Label)
+			checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
+			if err != nil {
+				return nil, fmt.Errorf("j5 proto check run: %w", err)
+			}
+
+			req.CheckRun = &builder_j5pb.CheckRun{
 				Id:   checkRunID,
 				Name: checkRunName,
-			},
+			}
 		}
+
 		err = ww.publisher.Publish(ctx, req)
 		if err != nil {
 			return nil, fmt.Errorf("publish: j5 proto: %w", err)
