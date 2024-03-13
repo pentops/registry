@@ -19,7 +19,7 @@ require (
 	github.com/jhump/protoreflect v1.15.5
 	github.com/pentops/jsonapi v0.0.0-20240311200923-9c52d92fb211
 	github.com/pentops/log.go v0.0.0-20231218074934-67aedcab3fa4
-	github.com/pentops/o5-go v0.0.0-20240116023954-fa173a9df789
+	github.com/pentops/o5-go v0.0.0-20240311180821-02aff9314f4c
 	github.com/pentops/runner v0.0.0-20231219070819-c4878d5565d8
 	github.com/rs/cors v1.10.1
 	golang.org/x/mod v0.14.0
