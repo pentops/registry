@@ -148,15 +148,21 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_j5pb.BuildPr
 		return &emptypb.Empty{}, nil
 	}
 
+	errStr := errBuffer.String()
+	if len(errStr) >= 65535 {
+		trunc := "... (truncated see logs for full error)"
+		errStr = errStr[:65535-len(trunc)] + trunc
+	}
 	if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
 		Status:     github.CheckRunStatusCompleted,
 		Conclusion: some(github.CheckRunConclusionSuccess),
 		Output: &github.CheckRunOutput{
 			Title:   some("proto build success"),
 			Summary: "proto build success",
-			Text:    some(errBuffer.String()),
+			Text:    some(errStr),
 		},
 	}); err != nil {
+		log.Error(ctx, errBuffer.String())
 		return nil, fmt.Errorf("update checkrun: completed: %w", err)
 	}
 
