@@ -70,11 +70,10 @@ func (bw *BuildWorker) updateCheckRun(ctx context.Context, commit *builder_j5pb.
 }
 
 func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_j5pb.BuildProtoMessage) (*emptypb.Empty, error) {
-
 	if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
 		Status: github.CheckRunStatusInProgress,
 	}); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("check run: in progress: %w", err)
 	}
 
 	if req.Config.Git != nil {
@@ -83,7 +82,7 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_j5pb.BuildPr
 
 	workDir, err := os.MkdirTemp("", "src")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("make workdir: %w", err)
 	}
 
 	defer os.RemoveAll(workDir)
@@ -91,7 +90,7 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_j5pb.BuildPr
 	// Clone
 	err = bw.clone(ctx, req.Commit, workDir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("clone: %w", err)
 	}
 
 	if len(req.Config.ProtoBuilds) != 1 {
@@ -103,10 +102,11 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_j5pb.BuildPr
 	protoBuildRequest, err := CodeGeneratorRequestFromSource(ctx, workDir)
 	if err != nil {
 		if req.CheckRun == nil {
-			return nil, err
+			return nil, fmt.Errorf("build request: %w", err)
 		}
 
 		errorMessage := err.Error()
+
 		if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
 			Status:     github.CheckRunStatusCompleted,
 			Conclusion: some(github.CheckRunConclusionFailure),
@@ -117,8 +117,10 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_j5pb.BuildPr
 				Text:    some(errorMessage),
 			},
 		}); err != nil {
-			return nil, err
+			log.Error(ctx, errorMessage)
+			return nil, fmt.Errorf("build request: update checkrun: failure: %w", err)
 		}
+
 		return &emptypb.Empty{}, nil
 	}
 
@@ -126,7 +128,7 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_j5pb.BuildPr
 	errBuffer := &bytes.Buffer{}
 	if err := bw.builder.BuildProto(ctx, workDir, buildSpec, protoBuildRequest, req.Commit, io.MultiWriter(os.Stderr, errBuffer)); err != nil {
 		if req.CheckRun == nil {
-			return nil, err
+			return nil, fmt.Errorf("build: %w", err)
 		}
 
 		errorMessage := err.Error()
@@ -140,7 +142,8 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_j5pb.BuildPr
 				Text:    some(fullText),
 			},
 		}); err != nil {
-			return nil, err
+			log.Error(ctx, errorMessage)
+			return nil, fmt.Errorf("build: update checkrun: failure: %w", err)
 		}
 		return &emptypb.Empty{}, nil
 	}
@@ -154,7 +157,7 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_j5pb.BuildPr
 			Text:    some(errBuffer.String()),
 		},
 	}); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("update checkrun: completed: %w", err)
 	}
 
 	return &emptypb.Empty{}, nil
