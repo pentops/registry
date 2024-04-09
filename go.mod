@@ -17,9 +17,9 @@ require (
 	github.com/google/go-github/v58 v58.0.0
 	github.com/google/uuid v1.4.0
 	github.com/jhump/protoreflect v1.15.5
-	github.com/pentops/jsonapi v0.0.0-20240311200923-9c52d92fb211
+	github.com/pentops/jsonapi v0.0.0-20240409180110-344be49fb0b7
 	github.com/pentops/log.go v0.0.0-20231218074934-67aedcab3fa4
-	github.com/pentops/o5-go v0.0.0-20240311180821-02aff9314f4c
+	github.com/pentops/o5-go v0.0.0-20240408212856-11470fd1dbd0
 	github.com/pentops/runner v0.0.0-20231219070819-c4878d5565d8
 	github.com/rs/cors v1.10.1
 	golang.org/x/mod v0.14.0
