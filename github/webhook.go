@@ -8,7 +8,7 @@ import (
 	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/jsonapi/source"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/o5-go/github/v1/github_pb"
+	"github.com/pentops/o5-deploy-aws/gen/o5/github/v1/github_pb"
 	"github.com/pentops/registry/messaging"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
