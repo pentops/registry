@@ -19,7 +19,7 @@ require (
 	github.com/jhump/protoreflect v1.15.5
 	github.com/pentops/jsonapi v0.0.0-20240507235404-82342e0c081e
 	github.com/pentops/log.go v0.0.0-20231218074934-67aedcab3fa4
-	github.com/pentops/o5-deploy-aws v0.0.0-20240507232448-ac86b64f4e7f
+	github.com/pentops/o5-go v0.0.0-20240508001320-1edbdabffef5
 	github.com/pentops/runner v0.0.0-20240423175422-9ce56dcd8e33
 	github.com/rs/cors v1.10.1
 	golang.org/x/mod v0.17.0
@@ -79,12 +79,13 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
-	github.com/pentops/o5-go v0.0.0-20240508001320-1edbdabffef5 // indirect
+	github.com/pentops/protostate v0.0.0-20240507224927-061bebbb51da // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/skeema/knownhosts v1.2.1 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/exp v0.0.0-20240409090435-93d18d7e34b8 // indirect
