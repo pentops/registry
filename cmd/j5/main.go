@@ -262,14 +262,16 @@ func runProtoBuild(ctx context.Context, cfg struct {
 	} else if cfg.CommitHash == "" || cfg.CommitTime == "" {
 		return fmt.Errorf("commit hash and time are required, or set --git-auto")
 	} else {
-		commitInfo = &builder_j5pb.CommitInfo{}
-		commitInfo.Hash = cfg.CommitHash
 		commitTime, err := time.Parse(time.RFC3339, cfg.CommitTime)
 		if err != nil {
 			return fmt.Errorf("parsing commit time: %w", err)
 		}
-		commitInfo.Time = timestamppb.New(commitTime)
-		commitInfo.Aliases = cfg.CommitAliases
+
+		commitInfo = &builder_j5pb.CommitInfo{
+			Hash:    cfg.CommitHash,
+			Time:    timestamppb.New(commitTime),
+			Aliases: cfg.CommitAliases,
+		}
 	}
 
 	dockerWrapper, err := docker.NewDockerWrapper(docker.DefaultRegistryAuths)
