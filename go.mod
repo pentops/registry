@@ -12,7 +12,7 @@ require (
 	github.com/bufbuild/protoyaml-go v0.1.9
 	github.com/google/go-github/v58 v58.0.0
 	github.com/google/uuid v1.6.0
-	github.com/pentops/jsonapi v0.0.0-20240526154609-711edd4f8e6e
+	github.com/pentops/jsonapi v0.0.0-20240601013239-fb79b612e28e
 	github.com/pentops/log.go v0.0.0-20240523172444-85c9292a83db
 	github.com/pentops/o5-go v0.0.0-20240528195917-c3143ac171a2
 	github.com/pentops/runner v0.0.0-20240525192419-d655233635e9
@@ -109,5 +109,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/pentops/jsonapi => /Users/daemonl/pentops/jsonapi

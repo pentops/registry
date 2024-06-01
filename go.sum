@@ -1538,6 +1538,8 @@ github.com/opencontainers/image-spec v1.1.0/go.mod h1:W4s4sFTMaBeK1BQLXbG4AdM2sz
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/pentops/flowtest v0.0.0-20240525161451-19748de5798c h1:XJ1gQK653XP+VxEhDcrcFitGzlPzOhdSRr+qoAFojSE=
 github.com/pentops/flowtest v0.0.0-20240525161451-19748de5798c/go.mod h1:6Pf0nvVOm8SX9Lw0Su1k7IlC+1OMXDUztRj82+f+GjU=
+github.com/pentops/jsonapi v0.0.0-20240601013239-fb79b612e28e h1:9JpUEGPwUpTbRECqRx2w+FO6zWhjiFBnU/nrMYfUJ64=
+github.com/pentops/jsonapi v0.0.0-20240601013239-fb79b612e28e/go.mod h1:LnBOwoaBuIa4lFlp9dRwIBoFG5AmmPUyp60IGygyTDw=
 github.com/pentops/log.go v0.0.0-20240523172444-85c9292a83db h1:+d9Omr3fQ/A7f318vAReTDjPfH4t9XbcnCF8w6TD3Hs=
 github.com/pentops/log.go v0.0.0-20240523172444-85c9292a83db/go.mod h1:UXhrs+VZ6cWZ7b/v8AtuvBZc5nwS5WFHP94JoFrZQA8=
 github.com/pentops/o5-go v0.0.0-20240528195917-c3143ac171a2 h1:CX2HkNsawDlSyXB91lNDx17L84GcStoyGi592vV7Cwc=
