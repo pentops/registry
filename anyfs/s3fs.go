@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/pentops/log.go/log"
 )
@@ -27,8 +28,18 @@ type S3FS struct {
 	client S3API
 }
 
-func NewS3FS(client S3API, location string) (*S3FS, error) {
+func NewS3EnvFS(ctx context.Context, location string) (*S3FS, error) {
+	awsConfig, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
 
+	s3Client := s3.NewFromConfig(awsConfig)
+
+	return NewS3FS(s3Client, location)
+}
+
+func NewS3FS(client S3API, location string) (*S3FS, error) {
 	bucketURL, err := url.Parse(location)
 	if err != nil {
 		return nil, err
@@ -74,12 +85,7 @@ func (s3fs *S3FS) Put(ctx context.Context, subPath string, body io.Reader, metad
 	return nil
 }
 
-type FileInfo struct {
-	Metadata map[string]string
-	Size     int64
-}
-
-func (s3fs *S3FS) SubFS(subPath string) *S3FS {
+func (s3fs *S3FS) SubFS(subPath string) FS {
 	return &S3FS{
 		bucket: s3fs.bucket,
 		prefix: path.Join(s3fs.prefix, subPath),

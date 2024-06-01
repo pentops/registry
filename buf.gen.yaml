@@ -1,0 +1,13 @@
+version: v1
+plugins:
+  - plugin: buf.build/protocolbuffers/go:v1.31.0
+    out: .
+    opt: paths=import,module=github.com/pentops/registry
+
+  - name: go-messaging # github.com/pentops/protoc-gen-go-messaging
+    out: .
+    opt: paths=import,module=github.com/pentops/registry
+
+  - name: go-grpc # 'Official' version
+    out: .
+    opt: paths=import,module=github.com/pentops/registry

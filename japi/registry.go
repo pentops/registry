@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
-	"github.com/pentops/jsonapi/structure"
-	"github.com/pentops/jsonapi/structure/jdef"
-	"github.com/pentops/jsonapi/swagger"
+	"github.com/pentops/jsonapi/schema/jdef"
+	"github.com/pentops/jsonapi/schema/structure"
+	"github.com/pentops/jsonapi/schema/swagger"
 	"github.com/pentops/registry/anyfs"
 	"google.golang.org/protobuf/proto"
 	"gopkg.daemonl.com/log"

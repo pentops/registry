@@ -15,8 +15,9 @@ import (
 
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/bufbuild/protoyaml-go"
-	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
+	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
+	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
 	"golang.org/x/oauth2"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -172,7 +173,7 @@ type CheckRunOutput struct {
 	Text    *string
 }
 
-func (cl Client) UpdateCheckRun(ctx context.Context, ref RepoRef, checkRun *builder_j5pb.CheckRun, status CheckRunUpdate) error {
+func (cl Client) UpdateCheckRun(ctx context.Context, ref RepoRef, checkRun *builder_tpb.CheckRun, status CheckRunUpdate) error {
 	opts := github.UpdateCheckRunOptions{
 		Name:   checkRun.Name,
 		Status: github.String(string(status.Status)),
@@ -225,7 +226,7 @@ func (cl Client) PullConfig(ctx context.Context, ref RepoRef, into proto.Message
 	return fmt.Errorf("no config found")
 }
 
-func (cl Client) GetCommit(ctx context.Context, ref RepoRef) (*builder_j5pb.CommitInfo, error) {
+func (cl Client) GetCommit(ctx context.Context, ref RepoRef) (*source_j5pb.CommitInfo, error) {
 
 	commit, _, err := cl.repositories.GetCommit(ctx, ref.Owner, ref.Repo, ref.Ref, &github.ListOptions{})
 	if err != nil {
@@ -233,7 +234,7 @@ func (cl Client) GetCommit(ctx context.Context, ref RepoRef) (*builder_j5pb.Comm
 	}
 
 	ts := commit.GetCommit().GetCommitter().GetDate()
-	info := &builder_j5pb.CommitInfo{
+	info := &source_j5pb.CommitInfo{
 		Hash:  commit.GetSHA(),
 		Time:  timestamppb.New(ts.Time),
 		Owner: ref.Owner,
