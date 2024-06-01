@@ -2,8 +2,30 @@
 
 package github_pb
 
+import (
+	messaging_pb "github.com/pentops/o5-go/messaging/v1/messaging_pb"
+	proto "google.golang.org/protobuf/proto"
+)
+
 // Service: WebhookTopic
 // Method: Push
+
+func (msg *PushMessage) O5Message() (*messaging_pb.Message, error) {
+	body, err := proto.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	return &messaging_pb.Message{
+		DestinationTopic: "github-webhook",
+		GrpcService:      "o5.registry.github.v1.WebhookTopic",
+		GrpcMethod:       "Push",
+		Body: &messaging_pb.Any{
+			TypeUrl: "type.googleapis.com/o5.registry.github.v1.PushMessage",
+			Value:   body,
+		},
+		Headers: map[string]string{},
+	}, nil
+}
 
 func (msg *PushMessage) MessagingTopic() string {
 	return "github-webhook"
@@ -12,7 +34,6 @@ func (msg *PushMessage) MessagingHeaders() map[string]string {
 	headers := map[string]string{
 		"grpc-service": "/o5.registry.github.v1.WebhookTopic/Push",
 		"grpc-message": "o5.registry.github.v1.PushMessage",
-		"api-version":  "d3da92b150f015554fc7ab24687173140b196813",
 	}
 	return headers
 }

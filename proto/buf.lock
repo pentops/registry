@@ -13,6 +13,11 @@ deps:
     digest: shake256:de26a277fc28b8b411ecf58729d78d32fcf15090ffd998a4469225b17889bfb51442eaab04bb7a8d88d203ecdf0a9febd4ffd52c18ed1c2229160c7bd353ca95
   - remote: buf.build
     owner: pentops
+    repository: j5
+    commit: 14f7c48937bf40438bdb52b60a0eb99e
+    digest: shake256:9ce0c019a3c5b8ecf992747c2f0a4e8ce0e9e637372618e283b891fc674d14d1fa8c044bc62a155a55234a38923eb4fe5c69232a136fcbc013d5f4c493bdb6b5
+  - remote: buf.build
+    owner: pentops
     repository: listify
     commit: f8340e85a19c464ca909db89a45b9b57
     digest: shake256:fe3921bb77acb2e244d32a3f3c4c423ab02f92cacf9b914edce78aecd89d52446adb9e1d62bd4a80d49bbfe517a8b6f0382aaa15ede9dd7f55329a45fd16a187

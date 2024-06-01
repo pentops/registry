@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pentops/jsonapi/gen/j5/builder/v1/builder_j5pb"
+	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
-	"github.com/pentops/jsonapi/source"
+	"github.com/pentops/jsonapi/schema/source"
 	"github.com/pentops/log.go/log"
+	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/messaging"
 	"google.golang.org/protobuf/proto"
@@ -16,7 +17,7 @@ import (
 
 type IClient interface {
 	PullConfig(ctx context.Context, ref RepoRef, into proto.Message, tryPaths []string) error
-	GetCommit(ctx context.Context, ref RepoRef) (*builder_j5pb.CommitInfo, error)
+	GetCommit(ctx context.Context, ref RepoRef) (*source_j5pb.CommitInfo, error)
 	CreateCheckRun(ctx context.Context, ref RepoRef, name string, status *CheckRunUpdate) (int64, error)
 }
 
@@ -95,7 +96,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 
 	ref.Ref = commitInfo.Hash
 
-	cfg := &source_j5pb.Config{}
+	cfg := &config_j5pb.Config{}
 	err = ww.github.PullConfig(ctx, ref, cfg, source.ConfigPaths)
 	if err != nil {
 		log.WithError(ctx, err).Error("Config Error")
@@ -114,14 +115,14 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 	}
 
 	{
-		subConfig := &source_j5pb.Config{
+		subConfig := &config_j5pb.Config{
 			Packages: cfg.Packages,
 			Options:  cfg.Options,
 			Registry: cfg.Registry,
 			Git:      cfg.Git,
 		}
 
-		req := &builder_j5pb.BuildAPIMessage{
+		req := &builder_tpb.BuildAPIMessage{
 			Commit: commitInfo,
 			Config: subConfig,
 		}
@@ -133,7 +134,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 				return nil, fmt.Errorf("j5 image check run: %w", err)
 			}
 
-			req.CheckRun = &builder_j5pb.CheckRun{
+			req.CheckRun = &builder_tpb.CheckRun{
 				Id:   checkRunID,
 				Name: checkRunName,
 			}
@@ -147,27 +148,27 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 
 	for _, dockerBuild := range cfg.ProtoBuilds {
 		log.Debug(ctx, "Publishing docker build")
-		subConfig := &source_j5pb.Config{
-			ProtoBuilds: []*source_j5pb.ProtoBuildConfig{dockerBuild},
+		subConfig := &config_j5pb.Config{
+			ProtoBuilds: []*config_j5pb.ProtoBuildConfig{dockerBuild},
 			Packages:    cfg.Packages,
 			Options:     cfg.Options,
 			Registry:    cfg.Registry,
 			Git:         cfg.Git,
 		}
 
-		req := &builder_j5pb.BuildProtoMessage{
+		req := &builder_tpb.BuildProtoMessage{
 			Commit: commitInfo,
 			Config: subConfig,
 		}
 
 		if !skipChecks {
-			checkRunName := fmt.Sprintf("j5-proto-%s", dockerBuild.Label)
+			checkRunName := fmt.Sprintf("j5-proto-%s", dockerBuild.Name)
 			checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
 			if err != nil {
 				return nil, fmt.Errorf("j5 proto check run: %w", err)
 			}
 
-			req.CheckRun = &builder_j5pb.CheckRun{
+			req.CheckRun = &builder_tpb.CheckRun{
 				Id:   checkRunID,
 				Name: checkRunName,
 			}

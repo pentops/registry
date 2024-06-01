@@ -16,20 +16,11 @@ import (
 	"github.com/pentops/registry/anyfs"
 )
 
-type FS interface {
-	Put(ctx context.Context, path string, body io.Reader, metadata map[string]string) error
-	Get(ctx context.Context, path string) (io.ReadCloser, *anyfs.FileInfo, error)
-	GetBytes(ctx context.Context, path string) ([]byte, *anyfs.FileInfo, error)
-	Head(ctx context.Context, path string) (*anyfs.FileInfo, error)
-	List(ctx context.Context, path string) ([]anyfs.ListInfo, error)
-}
-
 type S3PackageSrc struct {
-	fs FS
+	fs anyfs.FS
 }
 
-func NewS3PackageSrc(ctx context.Context, fs FS) (*S3PackageSrc, error) {
-
+func NewS3PackageSrc(ctx context.Context, fs anyfs.FS) (*S3PackageSrc, error) {
 	return &S3PackageSrc{
 		fs: fs,
 	}, nil
