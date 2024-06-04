@@ -10,13 +10,14 @@ import (
 // Service: BuilderTopic
 // Method: BuildProto
 
-func (msg *BuildProtoMessage) O5Message() (*messaging_pb.Message, error) {
+func (msg *BuildProtoMessage) O5Message(id string) (*messaging_pb.Message, error) {
 	body, err := proto.Marshal(msg)
 	if err != nil {
 		return nil, err
 	}
 	return &messaging_pb.Message{
 		DestinationTopic: "j5-builder-input",
+		MessageId:        id,
 		GrpcService:      "o5.registry.builder.v1.BuilderTopic",
 		GrpcMethod:       "BuildProto",
 		Body: &messaging_pb.Any{
@@ -40,13 +41,14 @@ func (msg *BuildProtoMessage) MessagingHeaders() map[string]string {
 
 // Method: BuildAPI
 
-func (msg *BuildAPIMessage) O5Message() (*messaging_pb.Message, error) {
+func (msg *BuildAPIMessage) O5Message(id string) (*messaging_pb.Message, error) {
 	body, err := proto.Marshal(msg)
 	if err != nil {
 		return nil, err
 	}
 	return &messaging_pb.Message{
 		DestinationTopic: "j5-builder-input",
+		MessageId:        id,
 		GrpcService:      "o5.registry.builder.v1.BuilderTopic",
 		GrpcMethod:       "BuildAPI",
 		Body: &messaging_pb.Any{
