@@ -4,14 +4,14 @@ package github_pb
 
 import (
 	messaging_pb "github.com/pentops/o5-go/messaging/v1/messaging_pb"
-	proto "google.golang.org/protobuf/proto"
+	protojson "google.golang.org/protobuf/encoding/protojson"
 )
 
 // Service: WebhookTopic
 // Method: Push
 
 func (msg *PushMessage) O5Message(id string) (*messaging_pb.Message, error) {
-	body, err := proto.Marshal(msg)
+	body, err := protojson.Marshal(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -21,8 +21,9 @@ func (msg *PushMessage) O5Message(id string) (*messaging_pb.Message, error) {
 		GrpcService:      "o5.registry.github.v1.WebhookTopic",
 		GrpcMethod:       "Push",
 		Body: &messaging_pb.Any{
-			TypeUrl: "type.googleapis.com/o5.registry.github.v1.PushMessage",
-			Value:   body,
+			TypeUrl:  "type.googleapis.com/o5.registry.github.v1.PushMessage",
+			Value:    body,
+			Encoding: messaging_pb.WireEncoding_WIRE_ENCODING_PROTOJSON,
 		},
 		Headers: map[string]string{},
 	}, nil
