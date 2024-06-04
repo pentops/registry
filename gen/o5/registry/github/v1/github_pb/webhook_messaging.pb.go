@@ -10,13 +10,14 @@ import (
 // Service: WebhookTopic
 // Method: Push
 
-func (msg *PushMessage) O5Message() (*messaging_pb.Message, error) {
+func (msg *PushMessage) O5Message(id string) (*messaging_pb.Message, error) {
 	body, err := proto.Marshal(msg)
 	if err != nil {
 		return nil, err
 	}
 	return &messaging_pb.Message{
 		DestinationTopic: "github-webhook",
+		MessageId:        id,
 		GrpcService:      "o5.registry.github.v1.WebhookTopic",
 		GrpcMethod:       "Push",
 		Body: &messaging_pb.Any{
