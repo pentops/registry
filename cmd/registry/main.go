@@ -71,7 +71,7 @@ func TriggerHandler(githubWorker github_pb.WebhookTopicServer) http.Handler {
 
 func runMigrate(ctx context.Context, cfg struct {
 	MigrationsDir string `env:"MIGRATIONS_DIR" default:"./ext/db"`
-	*service.DBConfig
+	service.DBConfig
 }) error {
 
 	db, err := cfg.OpenDatabase(ctx)
