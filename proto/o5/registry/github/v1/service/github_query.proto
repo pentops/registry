@@ -15,7 +15,7 @@ service RepoQueryService {
   option (psm.state.v1.state_query).name = "repo";
 
   rpc GetRepo(GetRepoRequest) returns (GetRepoResponse) {
-    option (google.api.http) = {get: "/registry/github/v1/q/repo/{owner}/{name"};
+    option (google.api.http) = {get: "/registry/github/v1/q/repo/{owner}/{name}"};
     option (psm.state.v1.state_query_method).get = true;
   }
 
