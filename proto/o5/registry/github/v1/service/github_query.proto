@@ -11,7 +11,7 @@ import "psm/state/v1/annotations.proto";
 
 option go_package = "github.com/pentops/registry/gen/o5/registry/github/v1/github_spb";
 
-service RepoQueryService {
+service GithubQueryService {
   option (psm.state.v1.state_query).name = "repo";
 
   rpc GetRepo(GetRepoRequest) returns (GetRepoResponse) {

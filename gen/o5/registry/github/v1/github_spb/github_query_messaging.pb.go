@@ -2,7 +2,7 @@
 
 package github_spb
 
-// Service: RepoQueryService
+// Service: GithubQueryService
 // Method: GetRepo
 
 // Method: ListRepos

@@ -18,158 +18,158 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// RepoQueryServiceClient is the client API for RepoQueryService service.
+// GithubQueryServiceClient is the client API for GithubQueryService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RepoQueryServiceClient interface {
+type GithubQueryServiceClient interface {
 	GetRepo(ctx context.Context, in *GetRepoRequest, opts ...grpc.CallOption) (*GetRepoResponse, error)
 	ListRepos(ctx context.Context, in *ListReposRequest, opts ...grpc.CallOption) (*ListReposResponse, error)
 	ListRepoEvents(ctx context.Context, in *ListRepoEventsRequest, opts ...grpc.CallOption) (*ListRepoEventsResponse, error)
 }
 
-type repoQueryServiceClient struct {
+type githubQueryServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewRepoQueryServiceClient(cc grpc.ClientConnInterface) RepoQueryServiceClient {
-	return &repoQueryServiceClient{cc}
+func NewGithubQueryServiceClient(cc grpc.ClientConnInterface) GithubQueryServiceClient {
+	return &githubQueryServiceClient{cc}
 }
 
-func (c *repoQueryServiceClient) GetRepo(ctx context.Context, in *GetRepoRequest, opts ...grpc.CallOption) (*GetRepoResponse, error) {
+func (c *githubQueryServiceClient) GetRepo(ctx context.Context, in *GetRepoRequest, opts ...grpc.CallOption) (*GetRepoResponse, error) {
 	out := new(GetRepoResponse)
-	err := c.cc.Invoke(ctx, "/o5.registry.github.v1.service.RepoQueryService/GetRepo", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/o5.registry.github.v1.service.GithubQueryService/GetRepo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *repoQueryServiceClient) ListRepos(ctx context.Context, in *ListReposRequest, opts ...grpc.CallOption) (*ListReposResponse, error) {
+func (c *githubQueryServiceClient) ListRepos(ctx context.Context, in *ListReposRequest, opts ...grpc.CallOption) (*ListReposResponse, error) {
 	out := new(ListReposResponse)
-	err := c.cc.Invoke(ctx, "/o5.registry.github.v1.service.RepoQueryService/ListRepos", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/o5.registry.github.v1.service.GithubQueryService/ListRepos", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *repoQueryServiceClient) ListRepoEvents(ctx context.Context, in *ListRepoEventsRequest, opts ...grpc.CallOption) (*ListRepoEventsResponse, error) {
+func (c *githubQueryServiceClient) ListRepoEvents(ctx context.Context, in *ListRepoEventsRequest, opts ...grpc.CallOption) (*ListRepoEventsResponse, error) {
 	out := new(ListRepoEventsResponse)
-	err := c.cc.Invoke(ctx, "/o5.registry.github.v1.service.RepoQueryService/ListRepoEvents", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/o5.registry.github.v1.service.GithubQueryService/ListRepoEvents", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// RepoQueryServiceServer is the server API for RepoQueryService service.
-// All implementations must embed UnimplementedRepoQueryServiceServer
+// GithubQueryServiceServer is the server API for GithubQueryService service.
+// All implementations must embed UnimplementedGithubQueryServiceServer
 // for forward compatibility
-type RepoQueryServiceServer interface {
+type GithubQueryServiceServer interface {
 	GetRepo(context.Context, *GetRepoRequest) (*GetRepoResponse, error)
 	ListRepos(context.Context, *ListReposRequest) (*ListReposResponse, error)
 	ListRepoEvents(context.Context, *ListRepoEventsRequest) (*ListRepoEventsResponse, error)
-	mustEmbedUnimplementedRepoQueryServiceServer()
+	mustEmbedUnimplementedGithubQueryServiceServer()
 }
 
-// UnimplementedRepoQueryServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedRepoQueryServiceServer struct {
+// UnimplementedGithubQueryServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedGithubQueryServiceServer struct {
 }
 
-func (UnimplementedRepoQueryServiceServer) GetRepo(context.Context, *GetRepoRequest) (*GetRepoResponse, error) {
+func (UnimplementedGithubQueryServiceServer) GetRepo(context.Context, *GetRepoRequest) (*GetRepoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRepo not implemented")
 }
-func (UnimplementedRepoQueryServiceServer) ListRepos(context.Context, *ListReposRequest) (*ListReposResponse, error) {
+func (UnimplementedGithubQueryServiceServer) ListRepos(context.Context, *ListReposRequest) (*ListReposResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRepos not implemented")
 }
-func (UnimplementedRepoQueryServiceServer) ListRepoEvents(context.Context, *ListRepoEventsRequest) (*ListRepoEventsResponse, error) {
+func (UnimplementedGithubQueryServiceServer) ListRepoEvents(context.Context, *ListRepoEventsRequest) (*ListRepoEventsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRepoEvents not implemented")
 }
-func (UnimplementedRepoQueryServiceServer) mustEmbedUnimplementedRepoQueryServiceServer() {}
+func (UnimplementedGithubQueryServiceServer) mustEmbedUnimplementedGithubQueryServiceServer() {}
 
-// UnsafeRepoQueryServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RepoQueryServiceServer will
+// UnsafeGithubQueryServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to GithubQueryServiceServer will
 // result in compilation errors.
-type UnsafeRepoQueryServiceServer interface {
-	mustEmbedUnimplementedRepoQueryServiceServer()
+type UnsafeGithubQueryServiceServer interface {
+	mustEmbedUnimplementedGithubQueryServiceServer()
 }
 
-func RegisterRepoQueryServiceServer(s grpc.ServiceRegistrar, srv RepoQueryServiceServer) {
-	s.RegisterService(&RepoQueryService_ServiceDesc, srv)
+func RegisterGithubQueryServiceServer(s grpc.ServiceRegistrar, srv GithubQueryServiceServer) {
+	s.RegisterService(&GithubQueryService_ServiceDesc, srv)
 }
 
-func _RepoQueryService_GetRepo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GithubQueryService_GetRepo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRepoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RepoQueryServiceServer).GetRepo(ctx, in)
+		return srv.(GithubQueryServiceServer).GetRepo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/o5.registry.github.v1.service.RepoQueryService/GetRepo",
+		FullMethod: "/o5.registry.github.v1.service.GithubQueryService/GetRepo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepoQueryServiceServer).GetRepo(ctx, req.(*GetRepoRequest))
+		return srv.(GithubQueryServiceServer).GetRepo(ctx, req.(*GetRepoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RepoQueryService_ListRepos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GithubQueryService_ListRepos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListReposRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RepoQueryServiceServer).ListRepos(ctx, in)
+		return srv.(GithubQueryServiceServer).ListRepos(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/o5.registry.github.v1.service.RepoQueryService/ListRepos",
+		FullMethod: "/o5.registry.github.v1.service.GithubQueryService/ListRepos",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepoQueryServiceServer).ListRepos(ctx, req.(*ListReposRequest))
+		return srv.(GithubQueryServiceServer).ListRepos(ctx, req.(*ListReposRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RepoQueryService_ListRepoEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GithubQueryService_ListRepoEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRepoEventsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RepoQueryServiceServer).ListRepoEvents(ctx, in)
+		return srv.(GithubQueryServiceServer).ListRepoEvents(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/o5.registry.github.v1.service.RepoQueryService/ListRepoEvents",
+		FullMethod: "/o5.registry.github.v1.service.GithubQueryService/ListRepoEvents",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepoQueryServiceServer).ListRepoEvents(ctx, req.(*ListRepoEventsRequest))
+		return srv.(GithubQueryServiceServer).ListRepoEvents(ctx, req.(*ListRepoEventsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// RepoQueryService_ServiceDesc is the grpc.ServiceDesc for RepoQueryService service.
+// GithubQueryService_ServiceDesc is the grpc.ServiceDesc for GithubQueryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var RepoQueryService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "o5.registry.github.v1.service.RepoQueryService",
-	HandlerType: (*RepoQueryServiceServer)(nil),
+var GithubQueryService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "o5.registry.github.v1.service.GithubQueryService",
+	HandlerType: (*GithubQueryServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetRepo",
-			Handler:    _RepoQueryService_GetRepo_Handler,
+			Handler:    _GithubQueryService_GetRepo_Handler,
 		},
 		{
 			MethodName: "ListRepos",
-			Handler:    _RepoQueryService_ListRepos_Handler,
+			Handler:    _GithubQueryService_ListRepos_Handler,
 		},
 		{
 			MethodName: "ListRepoEvents",
-			Handler:    _RepoQueryService_ListRepoEvents_Handler,
+			Handler:    _GithubQueryService_ListRepoEvents_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

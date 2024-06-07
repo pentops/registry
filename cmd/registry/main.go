@@ -14,11 +14,13 @@ import (
 	"github.com/pentops/registry/buildwrap"
 	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_pb"
+	"github.com/pentops/registry/gen/o5/registry/github/v1/github_spb"
 	"github.com/pentops/registry/github"
 	"github.com/pentops/registry/gomodproxy"
 	"github.com/pentops/registry/japi"
 	"github.com/pentops/registry/packagestore"
 	"github.com/pentops/registry/service"
+	"github.com/pentops/registry/state"
 	"github.com/pentops/runner"
 	"github.com/pentops/runner/commander"
 	"github.com/pressly/goose"
@@ -139,6 +141,21 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		return err
 	}
 
+	stateMachines, err := state.NewStateMachines()
+	if err != nil {
+		return err
+	}
+
+	githubCommand, err := service.NewGithubCommandService(db, stateMachines)
+	if err != nil {
+		return err
+	}
+
+	githubQuery, err := service.NewGithubQueryService(db, stateMachines)
+	if err != nil {
+		return err
+	}
+
 	runGroup := runner.NewGroup(runner.WithName("main"), runner.WithCancelOnSignals())
 
 	runGroup.Add("httpServer", func(ctx context.Context) error {
@@ -169,6 +186,8 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		))
 		github_pb.RegisterWebhookTopicServer(grpcServer, githubWorker)
 		builder_tpb.RegisterBuilderTopicServer(grpcServer, buildWorker)
+		github_spb.RegisterGithubCommandServiceServer(grpcServer, githubCommand)
+		github_spb.RegisterGithubQueryServiceServer(grpcServer, githubQuery)
 		reflection.Register(grpcServer)
 
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
