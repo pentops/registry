@@ -124,7 +124,7 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_tpb.BuildPro
 		logStr = logStr[:65535-len(trunc)] + trunc
 	}
 
-	if req.CheckRun == nil {
+	if req.CheckRun != nil {
 		if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
 			Status:     github.CheckRunStatusCompleted,
 			Conclusion: some(github.CheckRunConclusionSuccess),
