@@ -15,13 +15,13 @@ import (
 
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/bufbuild/protoyaml-go"
-	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
+	"github.com/pentops/envconf.go/envconf"
+	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
 	"golang.org/x/oauth2"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"gopkg.daemonl.com/envconf"
 
 	"github.com/google/go-github/v58/github"
 )

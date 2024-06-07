@@ -9,9 +9,27 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/pentops/log.go/log"
 )
+
+type Info struct {
+	Version string
+	Time    time.Time
+}
+
+type VersionNotFoundError string
+
+var NotImplementedError = fmt.Errorf("not implemented")
+
+func (vnfe VersionNotFoundError) Error() string {
+	return fmt.Sprintf("version not found: %s", string(vnfe))
+}
+
+func (vnfe VersionNotFoundError) HTTPError(r *http.Request, w http.ResponseWriter) {
+	http.Error(w, vnfe.Error(), http.StatusNotFound)
+}
 
 type httpError interface {
 	HTTPError(r *http.Request, w http.ResponseWriter)
@@ -53,12 +71,12 @@ func (rr RawResponse) HTTPResponse(r *http.Request, w http.ResponseWriter) {
 }
 
 type ModProvider interface {
-	Latest(ctx context.Context, packageName string) (*Info, error)
-	List(ctx context.Context, packageName string) ([]string, error)
+	GoModLatest(ctx context.Context, packageName string) (*Info, error)
+	GoModList(ctx context.Context, packageName string) ([]string, error)
 
-	Info(ctx context.Context, packageName, version string) (*Info, error)
-	Mod(ctx context.Context, packageName, version string) ([]byte, error)
-	Zip(ctx context.Context, packageName, version string) (io.ReadCloser, error)
+	GoModInfo(ctx context.Context, packageName, version string) (*Info, error)
+	GoModMod(ctx context.Context, packageName, version string) ([]byte, error)
+	GoModZip(ctx context.Context, packageName, version string) (io.ReadCloser, error)
 }
 
 type Command int
@@ -185,7 +203,7 @@ func Handler(mods ModProvider) http.Handler {
 
 		switch parsed.Command {
 		case LatestCommand:
-			info, err := mods.Latest(ctx, parsed.PackageName)
+			info, err := mods.GoModLatest(ctx, parsed.PackageName)
 			if err != nil {
 				if errors.Is(err, NotImplementedError) {
 					http.Error(w, err.Error(), http.StatusNotFound)
@@ -200,7 +218,7 @@ func Handler(mods ModProvider) http.Handler {
 			return
 
 		case ListCommand:
-			versions, err := mods.List(ctx, parsed.PackageName)
+			versions, err := mods.GoModList(ctx, parsed.PackageName)
 			if err != nil {
 				log.WithError(ctx, err).Error("http error")
 				sendError(w, r, err)
@@ -212,7 +230,7 @@ func Handler(mods ModProvider) http.Handler {
 			return
 
 		case InfoCommand:
-			info, err := mods.Info(ctx, parsed.PackageName, parsed.Version)
+			info, err := mods.GoModInfo(ctx, parsed.PackageName, parsed.Version)
 			if err != nil {
 				log.WithError(ctx, err).Error("http error")
 				sendError(w, r, err)
@@ -223,7 +241,7 @@ func Handler(mods ModProvider) http.Handler {
 			return
 
 		case ModCommand:
-			mod, err := mods.Mod(ctx, parsed.PackageName, parsed.Version)
+			mod, err := mods.GoModMod(ctx, parsed.PackageName, parsed.Version)
 			if err != nil {
 				log.WithError(ctx, err).Error("http error")
 				sendError(w, r, err)
@@ -236,7 +254,7 @@ func Handler(mods ModProvider) http.Handler {
 			return
 
 		case ZipCommand:
-			zip, err := mods.Zip(ctx, parsed.PackageName, parsed.Version)
+			zip, err := mods.GoModZip(ctx, parsed.PackageName, parsed.Version)
 			if err != nil {
 				log.WithError(ctx, err).Error("http error")
 				sendError(w, r, err)

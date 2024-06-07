@@ -3,117 +3,91 @@ package japi
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
-	"path"
 	"strings"
 
-	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
-	"github.com/pentops/jsonapi/schema/jdef"
-	"github.com/pentops/jsonapi/schema/structure"
-	"github.com/pentops/jsonapi/schema/swagger"
-	"github.com/pentops/registry/anyfs"
+	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
+	"github.com/pentops/j5/schema/jdef"
+	"github.com/pentops/j5/schema/structure"
+	"github.com/pentops/j5/schema/swagger"
+	"github.com/pentops/log.go/log"
 	"google.golang.org/protobuf/proto"
-	"gopkg.daemonl.com/log"
 )
 
-type FS interface {
-	GetBytes(ctx context.Context, path string) ([]byte, *anyfs.FileInfo, error)
+type ImageProvider interface {
+	GetJ5Image(ctx context.Context, orgName, imageName, version string) (*source_j5pb.SourceImage, error)
 }
 
-type Handler struct {
-	Source FS
-}
+func Handler(store ImageProvider) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-func NewRegistry(ctx context.Context, fs FS) (*Handler, error) {
+		parts := strings.Split(r.URL.Path, "/")
+		if len(parts) != 5 {
+			http.Error(w, fmt.Sprintf("path had %d parts, expected 5", len(parts)), http.StatusNotFound)
+			return
+		}
 
-	return &Handler{
-		Source: fs,
-	}, nil
+		orgName := parts[1]
+		imageName := parts[2]
+		version := parts[3]
+		format := parts[4]
 
-}
+		ctx := r.Context()
 
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) != 5 {
-		http.Error(w, fmt.Sprintf("path had %d parts, expected 5", len(parts)), http.StatusNotFound)
-		return
-	}
+		img, err := store.GetJ5Image(ctx, orgName, imageName, version)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if img == nil {
+			http.Error(w, "Image not found", http.StatusNotFound)
+			log.Error(ctx, "No Image")
+			return
+		}
 
-	orgName := parts[1]
-	imageName := parts[2]
-	version := parts[3]
-	format := parts[4]
+		switch format {
+		case "swagger.json":
+			swaggerContent, err := buildSwagger(img)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 
-	ctx := r.Context()
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write(swaggerContent) // nolint: errcheck
 
-	key := path.Join(orgName, imageName, version, "image.bin")
-	ctx = log.WithFields(ctx, map[string]interface{}{
-		"key": key,
+		case "jdef.json":
+			jdefContent, err := buildJDef(img)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write(jdefContent) // nolint: errcheck
+
+		case "image.bin":
+			w.Header().Set("Content-Type", "application/octet-stream")
+			w.WriteHeader(http.StatusOK)
+			imgBytes, err := proto.Marshal(img)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			w.Write(imgBytes) // nolint: errcheck
+
+		default:
+			http.Error(w, fmt.Sprintf("unknown API format %s", format), http.StatusNotFound)
+		}
 	})
 
-	bodyBytes, _, err := h.Source.GetBytes(ctx, key)
-	if err != nil {
-		if errors.Is(err, anyfs.NotFoundError) {
-			http.NotFound(w, r)
-			log.WithError(ctx, err).Error("not found")
-
-			return
-		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	img := &source_j5pb.SourceImage{}
-	if err := proto.Unmarshal(bodyBytes, img); err != nil {
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	switch format {
-	case "swagger.json":
-		swaggerContent, err := buildSwagger(ctx, img)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(swaggerContent) // nolint: errcheck
-
-	case "jdef.json":
-		jdefContent, err := buildJDef(ctx, img)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(jdefContent) // nolint: errcheck
-
-	case "image.bin":
-		w.Header().Set("Content-Type", "application/octet-stream")
-		w.WriteHeader(http.StatusOK)
-		imgBytes, err := proto.Marshal(img)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Write(imgBytes) // nolint: errcheck
-
-	default:
-		http.Error(w, fmt.Sprintf("unknown API format %s", format), http.StatusNotFound)
-	}
-
 }
 
-func buildSwagger(ctx context.Context, img *source_j5pb.SourceImage) ([]byte, error) {
+func buildSwagger(img *source_j5pb.SourceImage) ([]byte, error) {
 	jdefDoc, err := structure.BuildFromImage(img)
 	if err != nil {
 		return nil, err
@@ -132,7 +106,7 @@ func buildSwagger(ctx context.Context, img *source_j5pb.SourceImage) ([]byte, er
 	return asJson, nil
 }
 
-func buildJDef(ctx context.Context, img *source_j5pb.SourceImage) ([]byte, error) {
+func buildJDef(img *source_j5pb.SourceImage) ([]byte, error) {
 	image, err := structure.BuildFromImage(img)
 	if err != nil {
 		return nil, err

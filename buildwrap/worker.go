@@ -3,31 +3,25 @@ package buildwrap
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
-	"path"
-	"path/filepath"
-	"strings"
-	"time"
 
-	"github.com/pentops/jsonapi/builder/builder"
-	"github.com/pentops/jsonapi/builder/git"
-	"github.com/pentops/jsonapi/gen/j5/config/v1/config_j5pb"
-	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
-	"github.com/pentops/jsonapi/schema/structure"
-	"github.com/pentops/jsonapi/schema/swagger"
+	"github.com/pentops/j5/builder/builder"
+	"github.com/pentops/j5/builder/git"
+	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
+	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/github"
-	"github.com/pentops/registry/gomodproxy"
-	"golang.org/x/mod/modfile"
-	"golang.org/x/mod/module"
-	"golang.org/x/mod/zip"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
+
+type Storage interface {
+	UploadGoModule(ctx context.Context, commitInfo *source_j5pb.CommitInfo, fs fs.FS) error
+	UploadJ5Image(ctx context.Context, commitInfo *source_j5pb.CommitInfo, img *source_j5pb.SourceImage) error
+}
 
 type BuildWorker struct {
 	builder_tpb.UnimplementedBuilderTopicServer
@@ -35,8 +29,7 @@ type BuildWorker struct {
 	builder J5Builder
 	github  IGithub
 
-	goModUploader RemoteWithMetadata
-	j5Uploader    RemoteWithMetadata
+	store Storage
 }
 
 type J5Builder interface {
@@ -49,16 +42,12 @@ type IGithub interface {
 	UpdateCheckRun(ctx context.Context, ref github.RepoRef, checkRun *builder_tpb.CheckRun, status github.CheckRunUpdate) error
 }
 
-func NewBuildWorker(builder J5Builder, github IGithub, rootUploader RemoteWithMetadata) *BuildWorker {
-
-	goModUploader := SubRemote(rootUploader, "gomod")
-	j5Uploader := SubRemote(rootUploader, "japi")
+func NewBuildWorker(builder J5Builder, github IGithub, store Storage) *BuildWorker {
 
 	return &BuildWorker{
-		builder:       builder,
-		github:        github,
-		goModUploader: goModUploader,
-		j5Uploader:    j5Uploader,
+		builder: builder,
+		github:  github,
+		store:   store,
 	}
 }
 
@@ -80,10 +69,12 @@ func (bw *BuildWorker) updateCheckRun(ctx context.Context, commit *source_j5pb.C
 
 func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_tpb.BuildProtoMessage) (*emptypb.Empty, error) {
 
-	if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
-		Status: github.CheckRunStatusInProgress,
-	}); err != nil {
-		return nil, fmt.Errorf("check run: in progress: %w", err)
+	if req.CheckRun != nil {
+		if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
+			Status: github.CheckRunStatusInProgress,
+		}); err != nil {
+			return nil, fmt.Errorf("check run: in progress: %w", err)
+		}
 	}
 
 	if req.Config.Git != nil {
@@ -132,17 +123,20 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_tpb.BuildPro
 		trunc := "... (truncated see logs for full error)"
 		logStr = logStr[:65535-len(trunc)] + trunc
 	}
-	if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
-		Status:     github.CheckRunStatusCompleted,
-		Conclusion: some(github.CheckRunConclusionSuccess),
-		Output: &github.CheckRunOutput{
-			Title:   some("proto build success"),
-			Summary: "proto build success",
-			Text:    some(logStr),
-		},
-	}); err != nil {
-		log.Error(ctx, logStr)
-		return nil, fmt.Errorf("update checkrun: completed: %w", err)
+
+	if req.CheckRun == nil {
+		if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
+			Status:     github.CheckRunStatusCompleted,
+			Conclusion: some(github.CheckRunConclusionSuccess),
+			Output: &github.CheckRunOutput{
+				Title:   some("proto build success"),
+				Summary: "proto build success",
+				Text:    some(logStr),
+			},
+		}); err != nil {
+			log.Error(ctx, logStr)
+			return nil, fmt.Errorf("update checkrun: completed: %w", err)
+		}
 	}
 
 	return &emptypb.Empty{}, nil
@@ -153,6 +147,7 @@ func (bw *BuildWorker) buildProto(ctx context.Context, source builder.Source, bu
 	if err != nil {
 		return fmt.Errorf("make tmp dest: %w", err)
 	}
+	defer dest.Close()
 
 	buildSpec, err := source.PackageBuildConfig(builderName)
 	if err != nil {
@@ -172,101 +167,12 @@ func (bw *BuildWorker) buildProto(ctx context.Context, source builder.Source, bu
 	// Package And Upload
 	switch buildSpec.PackageType.(type) {
 	case *config_j5pb.ProtoBuildConfig_GoProxy_:
-		err := bw.uploadGoModule(ctx, commitInfo, dest.root)
+		err := bw.store.UploadGoModule(ctx, commitInfo, dest)
 		if err != nil {
 			return fmt.Errorf("upload go module: %w", err)
 		}
 	default:
 		return fmt.Errorf("unsupported package type")
-	}
-
-	return nil
-}
-
-func (bw *BuildWorker) uploadGoModule(ctx context.Context, commitInfo *source_j5pb.CommitInfo, packageRoot string) error {
-
-	gomodBytes, err := os.ReadFile(filepath.Join(packageRoot, "go.mod"))
-	if err != nil {
-		return err
-	}
-
-	parsedGoMod, err := modfile.Parse("go.mod", gomodBytes, nil)
-	if err != nil {
-		return err
-	}
-
-	if parsedGoMod.Module == nil {
-		return fmt.Errorf("no module found in go.mod")
-	}
-
-	packageName := parsedGoMod.Module.Mod.Path
-
-	commitHashPrefix := commitInfo.Hash
-	if len(commitHashPrefix) > 12 {
-		commitHashPrefix = commitHashPrefix[:12]
-	}
-
-	canonicalVersion := module.PseudoVersion("", "", commitInfo.Time.AsTime(), commitHashPrefix)
-
-	log.WithFields(ctx, map[string]interface{}{
-		"package": packageName,
-		"version": canonicalVersion,
-	}).Info("uploading go module")
-
-	zipBuf := &bytes.Buffer{}
-
-	err = zip.CreateFromDir(zipBuf, module.Version{
-		Path:    packageName,
-		Version: canonicalVersion,
-	}, packageRoot)
-	if err != nil {
-		return err
-	}
-
-	metadata := map[string]string{
-		gomodproxy.S3MetadataCommitTime: commitInfo.Time.AsTime().Format(time.RFC3339),
-		gomodproxy.S3MetadataCommitHash: commitInfo.Hash,
-	}
-
-	dest := bw.goModUploader
-	if err := dest.Put(ctx,
-		path.Join(packageName, fmt.Sprintf("%s.mod", canonicalVersion)),
-		strings.NewReader(string(gomodBytes)),
-		metadata,
-	); err != nil {
-		return err
-	}
-
-	if err := dest.Put(ctx,
-		path.Join(packageName, fmt.Sprintf("%s.zip", canonicalVersion)),
-		zipBuf,
-		metadata,
-	); err != nil {
-		return err
-	}
-
-	aliasMetadata := map[string]string{}
-	for k, v := range metadata {
-		aliasMetadata[k] = v
-	}
-	aliasMetadata[gomodproxy.S3MetadataAlias] = canonicalVersion
-
-	for _, alias := range commitInfo.Aliases {
-		if err := dest.Put(ctx,
-			path.Join(packageName, fmt.Sprintf("%s.zip", alias)),
-			bytes.NewReader([]byte(canonicalVersion)),
-			aliasMetadata,
-		); err != nil {
-			return err
-		}
-	}
-
-	if err := dest.Put(ctx,
-		path.Join(packageName, fmt.Sprintf("%s.zip", commitInfo.Hash)),
-		bytes.NewReader([]byte(canonicalVersion)),
-		aliasMetadata,
-	); err != nil {
-		return err
 	}
 
 	return nil
@@ -331,76 +237,17 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMe
 
 func (bw *BuildWorker) buildAPI(ctx context.Context, source builder.Source) error {
 
-	config := source.J5Config()
-
 	commitInfo, err := source.CommitInfo(ctx)
 	if err != nil {
 		return fmt.Errorf("commit info: %w", err)
 	}
-
-	packageName := path.Join(config.Registry.Organization, config.Registry.Name)
 
 	img, err := source.SourceImage(ctx)
 	if err != nil {
 		return fmt.Errorf("source image: %w", err)
 	}
 
-	jdefDoc, err := structure.BuildFromImage(img)
-	if err != nil {
-		return fmt.Errorf("build from image: %w", err)
-	}
-
-	swaggerDoc, err := swagger.BuildSwagger(jdefDoc)
-	if err != nil {
-		return fmt.Errorf("build swagger: %w", err)
-	}
-
-	log.WithFields(ctx, map[string]interface{}{
-		"package": packageName,
-		"version": commitInfo.Hash,
-		"aliases": commitInfo.Aliases,
-	}).Info("uploading jsonapi")
-
-	image, err := proto.Marshal(img)
-	if err != nil {
-		return err
-	}
-
-	jDefJSON, err := json.Marshal(jdefDoc)
-	if err != nil {
-		return err
-	}
-
-	swaggerJSON, err := json.Marshal(swaggerDoc)
-	if err != nil {
-		return err
-	}
-
-	versionDests := make([]string, 0, len(commitInfo.Aliases)+1)
-	versionDests = append(versionDests, commitInfo.Hash)
-	versionDests = append(versionDests, commitInfo.Aliases...)
-	for _, version := range versionDests {
-		p := path.Join(packageName, version)
-		log.WithField(ctx, "path", p).Info("uploading image")
-
-		if err := bw.j5Uploader.Put(ctx, path.Join(p, "image.bin"), bytes.NewReader(image), map[string]string{
-			"Content-Type": "application/octet-stream",
-		}); err != nil {
-			return err
-		}
-		if err := bw.j5Uploader.Put(ctx, path.Join(p, "jdef.json"), bytes.NewReader(jDefJSON), map[string]string{
-			"Content-Type": "application/json",
-		}); err != nil {
-			return err
-		}
-		if err := bw.j5Uploader.Put(ctx, path.Join(p, "swagger.json"), bytes.NewReader(swaggerJSON), map[string]string{
-			"Content-Type": "application/json",
-		}); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return bw.store.UploadJ5Image(ctx, commitInfo, img)
 }
 
 func some[T any](s T) *T {

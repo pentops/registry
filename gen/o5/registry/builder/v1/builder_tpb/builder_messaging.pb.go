@@ -2,72 +2,29 @@
 
 package builder_tpb
 
-import (
-	messaging_pb "github.com/pentops/o5-go/messaging/v1/messaging_pb"
-	protojson "google.golang.org/protobuf/encoding/protojson"
-)
-
 // Service: BuilderTopic
 // Method: BuildProto
-
-func (msg *BuildProtoMessage) O5Message(id string) (*messaging_pb.Message, error) {
-	body, err := protojson.Marshal(msg)
-	if err != nil {
-		return nil, err
-	}
-	return &messaging_pb.Message{
-		DestinationTopic: "j5-builder-input",
-		MessageId:        id,
-		GrpcService:      "o5.registry.builder.v1.BuilderTopic",
-		GrpcMethod:       "BuildProto",
-		Body: &messaging_pb.Any{
-			TypeUrl:  "type.googleapis.com/o5.registry.builder.v1.BuildProtoMessage",
-			Value:    body,
-			Encoding: messaging_pb.WireEncoding_WIRE_ENCODING_PROTOJSON,
-		},
-		Headers: map[string]string{},
-	}, nil
-}
 
 func (msg *BuildProtoMessage) MessagingTopic() string {
 	return "j5-builder-input"
 }
 func (msg *BuildProtoMessage) MessagingHeaders() map[string]string {
 	headers := map[string]string{
-		"grpc-service": "/o5.registry.builder.v1.BuilderTopic/BuildProto",
-		"grpc-message": "o5.registry.builder.v1.BuildProtoMessage",
+		"grpc-service": "/o5.registry.builder.v1.topic.BuilderTopic/BuildProto",
+		"grpc-message": "o5.registry.builder.v1.topic.BuildProtoMessage",
 	}
 	return headers
 }
 
 // Method: BuildAPI
 
-func (msg *BuildAPIMessage) O5Message(id string) (*messaging_pb.Message, error) {
-	body, err := protojson.Marshal(msg)
-	if err != nil {
-		return nil, err
-	}
-	return &messaging_pb.Message{
-		DestinationTopic: "j5-builder-input",
-		MessageId:        id,
-		GrpcService:      "o5.registry.builder.v1.BuilderTopic",
-		GrpcMethod:       "BuildAPI",
-		Body: &messaging_pb.Any{
-			TypeUrl:  "type.googleapis.com/o5.registry.builder.v1.BuildAPIMessage",
-			Value:    body,
-			Encoding: messaging_pb.WireEncoding_WIRE_ENCODING_PROTOJSON,
-		},
-		Headers: map[string]string{},
-	}, nil
-}
-
 func (msg *BuildAPIMessage) MessagingTopic() string {
 	return "j5-builder-input"
 }
 func (msg *BuildAPIMessage) MessagingHeaders() map[string]string {
 	headers := map[string]string{
-		"grpc-service": "/o5.registry.builder.v1.BuilderTopic/BuildAPI",
-		"grpc-message": "o5.registry.builder.v1.BuildAPIMessage",
+		"grpc-service": "/o5.registry.builder.v1.topic.BuilderTopic/BuildAPI",
+		"grpc-message": "o5.registry.builder.v1.topic.BuildAPIMessage",
 	}
 	return headers
 }
