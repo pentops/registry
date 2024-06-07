@@ -86,7 +86,7 @@ func runCombinedServer(ctx context.Context, cfg struct {
 	HTTPPort int    `env:"HTTP_PORT" default:"8081"`
 	GRPCPort int    `env:"GRPC_PORT" default:"8080"`
 	Storage  string `env:"REGISTRY_STORAGE"`
-	*service.DBConfig
+	service.DBConfig
 }) error {
 
 	awsConfig, err := config.LoadDefaultConfig(ctx)
