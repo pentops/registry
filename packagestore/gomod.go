@@ -174,12 +174,6 @@ func (s *PackageStore) UploadGoModule(ctx context.Context, commitInfo *source_j5
 		return err
 	}
 
-	insert := sq.Insert("go_module_version").
-		Columns("package_name", "version", "timestamp", "data")
-	for _, version := range aliases {
-		insert.Values(packageName, version, pkg.CreatedAt.AsTime(), pkgJSON)
-	}
-
 	log.WithFields(ctx, map[string]interface{}{
 		"versions": aliases,
 	}).Info("Storing GoMod Version")
@@ -188,7 +182,17 @@ func (s *PackageStore) UploadGoModule(ctx context.Context, commitInfo *source_j5
 		Isolation: sql.LevelReadCommitted,
 		Retryable: true,
 	}, func(ctx context.Context, tx sqrlx.Transaction) error {
-		_, err := tx.Insert(ctx, insert)
+		for _, version := range aliases {
+			_, err := tx.Insert(ctx, sqrlx.Upsert("go_module_version").
+				Key("package_name", packageName).
+				Key("version", version).
+				Set("timestamp", commitInfo.Time.AsTime()).
+				Set("data", pkgJSON))
+			if err != nil {
+				return err
+			}
+
+		}
 		return err
 	}); err != nil {
 		return err
