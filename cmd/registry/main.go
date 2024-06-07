@@ -21,6 +21,7 @@ import (
 	"github.com/pentops/registry/service"
 	"github.com/pentops/runner"
 	"github.com/pentops/runner/commander"
+	"github.com/pressly/goose"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -36,6 +37,7 @@ func main() {
 	cmdGroup := commander.NewCommandSet()
 
 	cmdGroup.Add("serve", commander.NewCommand(runCombinedServer))
+	cmdGroup.Add("migrate", commander.NewCommand(runMigrate))
 
 	cmdGroup.RunMain("registry", Version)
 }
@@ -65,6 +67,19 @@ func TriggerHandler(githubWorker github_pb.WebhookTopicServer) http.Handler {
 			return
 		}
 	})
+}
+
+func runMigrate(ctx context.Context, cfg struct {
+	MigrationsDir string `env:"MIGRATIONS_DIR" default:"./ext/db"`
+	*service.DBConfig
+}) error {
+
+	db, err := cfg.OpenDatabase(ctx)
+	if err != nil {
+		return err
+	}
+
+	return goose.Up(db, "/migrations")
 }
 
 func runCombinedServer(ctx context.Context, cfg struct {
