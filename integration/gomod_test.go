@@ -30,6 +30,14 @@ func TestGomodStore(t *testing.T) {
 					"go 1.22.3",
 				}, "\n")),
 			},
+			"dir1/file1.go": &fstest.MapFile{
+				Mode: 0644,
+				Data: []byte("package main"),
+			},
+			"dir2/file1.go": &fstest.MapFile{
+				Mode: 0644,
+				Data: []byte("package main"),
+			},
 		}
 
 		if err := uu.PackageStore.UploadGoModule(ctx, &source_j5pb.CommitInfo{

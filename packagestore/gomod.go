@@ -204,19 +204,20 @@ func (s *PackageStore) UploadGoModule(ctx context.Context, commitInfo *source_j5
 
 // Adapts a fs.DirEntry to a zip.File.
 type wrappedFile struct {
-	fs fs.FS
-	d  fs.DirEntry
+	fs   fs.FS
+	path string
+	d    fs.DirEntry
 }
 
 func (f wrappedFile) Path() string {
-	return f.d.Name()
+	return f.path
 }
 
 func (f wrappedFile) Lstat() (os.FileInfo, error) {
 	return f.d.Info()
 }
 func (f wrappedFile) Open() (io.ReadCloser, error) {
-	return f.fs.Open(f.d.Name())
+	return f.fs.Open(f.path)
 }
 
 // Very cut down version of zip.listFilesInDir but with fs.FS instead of os.File
@@ -243,8 +244,9 @@ func listFilesInDir(root fs.FS) ([]zip.File, error) {
 		}
 
 		files = append(files, wrappedFile{
-			d:  d,
-			fs: root,
+			path: path,
+			d:    d,
+			fs:   root,
 		})
 		return nil
 	})
