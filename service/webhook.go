@@ -80,7 +80,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 
 	targets := make([]*github_pb.DeployTargetType, 0, len(repo.Data.Branches))
 	for _, target := range repo.Data.Branches {
-		if target.BranchName == branchName {
+		if target.BranchName == branchName || target.BranchName == "*" {
 			targets = append(targets, target.DeployTargets...)
 		}
 	}
