@@ -63,6 +63,10 @@ func NewS3FS(client S3API, location string) (*S3FS, error) {
 	}, nil
 }
 
+func (s3fs *S3FS) Join(paths ...string) string {
+	return path.Join(paths...)
+}
+
 func (s3fs *S3FS) Put(ctx context.Context, subPath string, body io.Reader, metadata map[string]string) error {
 	key := path.Join(s3fs.prefix, subPath)
 	ctx = log.WithFields(ctx, map[string]interface{}{
@@ -83,14 +87,6 @@ func (s3fs *S3FS) Put(ctx context.Context, subPath string, body io.Reader, metad
 	}
 	log.Info(ctx, "uploaded to s3")
 	return nil
-}
-
-func (s3fs *S3FS) SubFS(subPath string) FS {
-	return &S3FS{
-		bucket: s3fs.bucket,
-		prefix: path.Join(s3fs.prefix, subPath),
-		client: s3fs.client,
-	}
 }
 
 func (s3fs *S3FS) Head(ctx context.Context, subPath string) (*FileInfo, error) {
@@ -121,7 +117,7 @@ func (s3fs *S3FS) Head(ctx context.Context, subPath string) (*FileInfo, error) {
 
 }
 
-func (s3fs *S3FS) Get(ctx context.Context, subPath string) (io.ReadCloser, *FileInfo, error) {
+func (s3fs *S3FS) GetReader(ctx context.Context, subPath string) (io.ReadCloser, *FileInfo, error) {
 	key := path.Join(s3fs.prefix, subPath)
 	ctx = log.WithFields(ctx, map[string]interface{}{
 		"s3Bucket": s3fs.bucket,
@@ -151,19 +147,19 @@ func (s3fs *S3FS) Get(ctx context.Context, subPath string) (io.ReadCloser, *File
 	return obj.Body, fileInfo, nil
 }
 
-func (s3fs *S3FS) GetBytes(ctx context.Context, subPath string) ([]byte, *FileInfo, error) {
-	body, fileInfo, err := s3fs.Get(ctx, subPath)
+func (s3fs *S3FS) GetBytes(ctx context.Context, subPath string) ([]byte, error) {
+	body, _, err := s3fs.GetReader(ctx, subPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer body.Close()
 
 	bytes, err := io.ReadAll(body)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return bytes, fileInfo, nil
+	return bytes, nil
 }
 
 type ListInfo struct {

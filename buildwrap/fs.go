@@ -4,32 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 
-	"github.com/pentops/jsonapi/gen/j5/source/v1/source_j5pb"
-	"github.com/pentops/jsonapi/schema/source"
+	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
+	"github.com/pentops/j5/schema/source"
 )
-
-type RemoteWithMetadata interface {
-	Put(ctx context.Context, path string, body io.Reader, metadata map[string]string) error
-}
-
-type PrefixedRemote struct {
-	remote RemoteWithMetadata
-	prefix string
-}
-
-func SubRemote(rr RemoteWithMetadata, prefix string) *PrefixedRemote {
-	return &PrefixedRemote{
-		remote: rr,
-		prefix: prefix,
-	}
-}
-
-func (pr *PrefixedRemote) Put(ctx context.Context, path string, body io.Reader, metadata map[string]string) error {
-	return pr.remote.Put(ctx, filepath.Join(pr.prefix, path), body, metadata)
-}
 
 type tmpSource struct {
 	*source.Source
@@ -67,6 +48,7 @@ func (bw *BuildWorker) tmpClone(ctx context.Context, commit *source_j5pb.CommitI
 
 type tmpDest struct {
 	root string
+	fs.FS
 }
 
 func newTmpDest() (*tmpDest, error) {
@@ -77,6 +59,7 @@ func newTmpDest() (*tmpDest, error) {
 
 	return &tmpDest{
 		root: dir,
+		FS:   os.DirFS(dir),
 	}, nil
 }
 

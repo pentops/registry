@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             (unknown)
-// source: o5/registry/builder/v1/builder.proto
+// source: o5/registry/builder/v1/topic/builder.proto
 
 package builder_tpb
 
@@ -37,7 +37,7 @@ func NewBuilderTopicClient(cc grpc.ClientConnInterface) BuilderTopicClient {
 
 func (c *builderTopicClient) BuildProto(ctx context.Context, in *BuildProtoMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/o5.registry.builder.v1.BuilderTopic/BuildProto", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/o5.registry.builder.v1.topic.BuilderTopic/BuildProto", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (c *builderTopicClient) BuildProto(ctx context.Context, in *BuildProtoMessa
 
 func (c *builderTopicClient) BuildAPI(ctx context.Context, in *BuildAPIMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/o5.registry.builder.v1.BuilderTopic/BuildAPI", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/o5.registry.builder.v1.topic.BuilderTopic/BuildAPI", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func _BuilderTopic_BuildProto_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/o5.registry.builder.v1.BuilderTopic/BuildProto",
+		FullMethod: "/o5.registry.builder.v1.topic.BuilderTopic/BuildProto",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BuilderTopicServer).BuildProto(ctx, req.(*BuildProtoMessage))
@@ -113,7 +113,7 @@ func _BuilderTopic_BuildAPI_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/o5.registry.builder.v1.BuilderTopic/BuildAPI",
+		FullMethod: "/o5.registry.builder.v1.topic.BuilderTopic/BuildAPI",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BuilderTopicServer).BuildAPI(ctx, req.(*BuildAPIMessage))
@@ -125,7 +125,7 @@ func _BuilderTopic_BuildAPI_Handler(srv interface{}, ctx context.Context, dec fu
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var BuilderTopic_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "o5.registry.builder.v1.BuilderTopic",
+	ServiceName: "o5.registry.builder.v1.topic.BuilderTopic",
 	HandlerType: (*BuilderTopicServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -138,5 +138,5 @@ var BuilderTopic_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "o5/registry/builder/v1/builder.proto",
+	Metadata: "o5/registry/builder/v1/topic/builder.proto",
 }

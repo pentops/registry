@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pentops/jsonapi/builder/builder"
-	"github.com/pentops/jsonapi/builder/docker"
+	"github.com/pentops/j5/builder/builder"
+	"github.com/pentops/j5/builder/docker"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/registry/anyfs"
 	"github.com/pentops/registry/buildwrap"
@@ -17,17 +17,17 @@ import (
 	"github.com/pentops/registry/github"
 	"github.com/pentops/registry/gomodproxy"
 	"github.com/pentops/registry/japi"
-	"github.com/pentops/registry/messaging"
+	"github.com/pentops/registry/packagestore"
+	"github.com/pentops/registry/service"
 	"github.com/pentops/runner"
 	"github.com/pentops/runner/commander"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"gopkg.daemonl.com/log/grpc_log"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/sns"
+	"github.com/pentops/outbox.pg.go/outbox"
 )
 
 var Version = "0.0.0"
@@ -68,12 +68,10 @@ func TriggerHandler(githubWorker github_pb.WebhookTopicServer) http.Handler {
 }
 
 func runCombinedServer(ctx context.Context, cfg struct {
-	HTTPPort         int      `env:"HTTP_PORT" default:"8081"`
-	GRPCPort         int      `env:"GRPC_PORT" default:"8080"`
-	Storage          string   `env:"REGISTRY_STORAGE"`
-	SourceRepos      []string `env:"SOURCE_REPOS"`
-	SourceCheckRepos []string `env:"SOURCE_CHECK_REPOS"`
-	SNSPrefix        string   `env:"SNS_PREFIX"`
+	HTTPPort int    `env:"HTTP_PORT" default:"8081"`
+	GRPCPort int    `env:"GRPC_PORT" default:"8080"`
+	Storage  string `env:"REGISTRY_STORAGE"`
+	*service.DBConfig
 }) error {
 
 	awsConfig, err := config.LoadDefaultConfig(ctx)
@@ -81,20 +79,19 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
+	db, err := cfg.DBConfig.OpenDatabase(ctx)
+	if err != nil {
+		return err
+	}
+
 	s3Client := s3.NewFromConfig(awsConfig)
-	snsClient := sns.NewFromConfig(awsConfig)
 
 	s3fs, err := anyfs.NewS3FS(s3Client, cfg.Storage)
 	if err != nil {
 		return err
 	}
 
-	japiHandler, err := japi.NewRegistry(ctx, s3fs.SubFS("japi"))
-	if err != nil {
-		return err
-	}
-
-	gomodData, err := gomodproxy.NewS3PackageSrc(ctx, s3fs.SubFS("gomod"))
+	pkgStore, err := packagestore.NewPackageStore(db, s3fs)
 	if err != nil {
 		return err
 	}
@@ -110,10 +107,19 @@ func runCombinedServer(ctx context.Context, cfg struct {
 	}
 
 	j5Builder := builder.NewBuilder(dockerWrapper)
-	buildWorker := buildwrap.NewBuildWorker(j5Builder, githubClient, s3fs)
-	publisher := messaging.NewSNSPublisher(snsClient, cfg.SNSPrefix)
+	buildWorker := buildwrap.NewBuildWorker(j5Builder, githubClient, pkgStore)
 
-	githubWorker, err := github.NewWebhookWorker(githubClient, publisher, cfg.SourceRepos, cfg.SourceCheckRepos)
+	refStore, err := service.NewRefStore(db)
+	if err != nil {
+		return err
+	}
+
+	publisher, err := outbox.NewDBPublisher(db)
+	if err != nil {
+		return err
+	}
+
+	githubWorker, err := service.NewWebhookWorker(refStore, githubClient, publisher)
 	if err != nil {
 		return err
 	}
@@ -124,8 +130,8 @@ func runCombinedServer(ctx context.Context, cfg struct {
 
 		genericCORS := cors.Default()
 		mux := http.NewServeMux()
-		mux.Handle("/registry/v1/", genericCORS.Handler(http.StripPrefix("/registry/v1", japiHandler)))
-		mux.Handle("/gopkg/", http.StripPrefix("/gopkg", gomodproxy.Handler(gomodData)))
+		mux.Handle("/registry/v1/", genericCORS.Handler(http.StripPrefix("/registry/v1", japi.Handler(pkgStore))))
+		mux.Handle("/gopkg/", http.StripPrefix("/gopkg", gomodproxy.Handler(pkgStore)))
 		mux.Handle("/trigger/v1/", http.StripPrefix("/trigger/v1", TriggerHandler(githubWorker)))
 
 		httpServer := &http.Server{
@@ -144,7 +150,7 @@ func runCombinedServer(ctx context.Context, cfg struct {
 
 	runGroup.Add("grpcServer", func(ctx context.Context) error {
 		grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
-			grpc_log.UnaryServerInterceptor(log.DefaultContext, log.DefaultTrace, log.DefaultLogger),
+			service.GRPCMiddleware()...,
 		))
 		github_pb.RegisterWebhookTopicServer(grpcServer, githubWorker)
 		builder_tpb.RegisterBuilderTopicServer(grpcServer, buildWorker)

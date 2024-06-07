@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package o5.registry.builder.v1;
+package o5.registry.builder.v1.topic;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/empty.proto";

@@ -11,3 +11,13 @@ plugins:
   - name: go-grpc # 'Official' version
     out: .
     opt: paths=import,module=github.com/pentops/registry
+
+  - name: go-sugar # github.com/pentops/protoc-gen-go-sugar
+    out: .
+    opt: paths=import,module=github.com/pentops/registry
+
+  - name: go-psm # github.com/pentops/protostate
+    out: .
+    opt: paths=import,module=github.com/pentops/registry
+
+
