@@ -10,11 +10,12 @@ import (
 	"github.com/pentops/j5/builder/builder"
 	"github.com/pentops/j5/builder/docker"
 	"github.com/pentops/log.go/log"
+	"github.com/pentops/o5-go/deployer/v1/deployer_tpb"
 	"github.com/pentops/registry/anyfs"
 	"github.com/pentops/registry/buildwrap"
 	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
-	"github.com/pentops/registry/gen/o5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_spb"
+	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
 	"github.com/pentops/registry/github"
 	"github.com/pentops/registry/gomodproxy"
 	"github.com/pentops/registry/japi"
@@ -44,7 +45,7 @@ func main() {
 	cmdGroup.RunMain("registry", Version)
 }
 
-func TriggerHandler(githubWorker github_pb.WebhookTopicServer) http.Handler {
+func TriggerHandler(githubWorker github_tpb.WebhookTopicServer) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// /$owner/$repo/$version
 		parts := strings.Split(r.URL.Path, "/")
@@ -57,7 +58,7 @@ func TriggerHandler(githubWorker github_pb.WebhookTopicServer) http.Handler {
 		repo := parts[2]
 		version := parts[3]
 
-		_, err := githubWorker.Push(r.Context(), &github_pb.PushMessage{
+		_, err := githubWorker.Push(r.Context(), &github_tpb.PushMessage{
 			Owner: owner,
 			Repo:  repo,
 			Ref:   "ignored",
@@ -123,8 +124,13 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		return err
 	}
 
+	dbPublisher, err := outbox.NewDBPublisher(db)
+	if err != nil {
+		return err
+	}
+
 	j5Builder := builder.NewBuilder(dockerWrapper)
-	buildWorker := buildwrap.NewBuildWorker(j5Builder, githubClient, pkgStore)
+	buildWorker := buildwrap.NewBuildWorker(j5Builder, githubClient, pkgStore, dbPublisher)
 
 	refStore, err := service.NewRefStore(db)
 	if err != nil {
@@ -184,10 +190,16 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
 			service.GRPCMiddleware()...,
 		))
-		github_pb.RegisterWebhookTopicServer(grpcServer, githubWorker)
-		builder_tpb.RegisterBuilderTopicServer(grpcServer, buildWorker)
+		builder_tpb.RegisterBuilderReplyTopicServer(grpcServer, githubWorker)
+		builder_tpb.RegisterBuilderRequestTopicServer(grpcServer, buildWorker)
+
+		github_tpb.RegisterWebhookTopicServer(grpcServer, githubWorker)
+
 		github_spb.RegisterGithubCommandServiceServer(grpcServer, githubCommand)
 		github_spb.RegisterGithubQueryServiceServer(grpcServer, githubQuery)
+
+		deployer_tpb.RegisterDeploymentReplyTopicServer(grpcServer, githubWorker)
+
 		reflection.Register(grpcServer)
 
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))

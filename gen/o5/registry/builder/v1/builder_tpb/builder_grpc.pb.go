@@ -19,122 +19,208 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// BuilderTopicClient is the client API for BuilderTopic service.
+// BuilderRequestTopicClient is the client API for BuilderRequestTopic service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type BuilderTopicClient interface {
+type BuilderRequestTopicClient interface {
 	BuildProto(ctx context.Context, in *BuildProtoMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	BuildAPI(ctx context.Context, in *BuildAPIMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
-type builderTopicClient struct {
+type builderRequestTopicClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewBuilderTopicClient(cc grpc.ClientConnInterface) BuilderTopicClient {
-	return &builderTopicClient{cc}
+func NewBuilderRequestTopicClient(cc grpc.ClientConnInterface) BuilderRequestTopicClient {
+	return &builderRequestTopicClient{cc}
 }
 
-func (c *builderTopicClient) BuildProto(ctx context.Context, in *BuildProtoMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *builderRequestTopicClient) BuildProto(ctx context.Context, in *BuildProtoMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/o5.registry.builder.v1.topic.BuilderTopic/BuildProto", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/o5.registry.builder.v1.topic.BuilderRequestTopic/BuildProto", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *builderTopicClient) BuildAPI(ctx context.Context, in *BuildAPIMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *builderRequestTopicClient) BuildAPI(ctx context.Context, in *BuildAPIMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/o5.registry.builder.v1.topic.BuilderTopic/BuildAPI", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/o5.registry.builder.v1.topic.BuilderRequestTopic/BuildAPI", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// BuilderTopicServer is the server API for BuilderTopic service.
-// All implementations must embed UnimplementedBuilderTopicServer
+// BuilderRequestTopicServer is the server API for BuilderRequestTopic service.
+// All implementations must embed UnimplementedBuilderRequestTopicServer
 // for forward compatibility
-type BuilderTopicServer interface {
+type BuilderRequestTopicServer interface {
 	BuildProto(context.Context, *BuildProtoMessage) (*emptypb.Empty, error)
 	BuildAPI(context.Context, *BuildAPIMessage) (*emptypb.Empty, error)
-	mustEmbedUnimplementedBuilderTopicServer()
+	mustEmbedUnimplementedBuilderRequestTopicServer()
 }
 
-// UnimplementedBuilderTopicServer must be embedded to have forward compatible implementations.
-type UnimplementedBuilderTopicServer struct {
+// UnimplementedBuilderRequestTopicServer must be embedded to have forward compatible implementations.
+type UnimplementedBuilderRequestTopicServer struct {
 }
 
-func (UnimplementedBuilderTopicServer) BuildProto(context.Context, *BuildProtoMessage) (*emptypb.Empty, error) {
+func (UnimplementedBuilderRequestTopicServer) BuildProto(context.Context, *BuildProtoMessage) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BuildProto not implemented")
 }
-func (UnimplementedBuilderTopicServer) BuildAPI(context.Context, *BuildAPIMessage) (*emptypb.Empty, error) {
+func (UnimplementedBuilderRequestTopicServer) BuildAPI(context.Context, *BuildAPIMessage) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BuildAPI not implemented")
 }
-func (UnimplementedBuilderTopicServer) mustEmbedUnimplementedBuilderTopicServer() {}
+func (UnimplementedBuilderRequestTopicServer) mustEmbedUnimplementedBuilderRequestTopicServer() {}
 
-// UnsafeBuilderTopicServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to BuilderTopicServer will
+// UnsafeBuilderRequestTopicServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to BuilderRequestTopicServer will
 // result in compilation errors.
-type UnsafeBuilderTopicServer interface {
-	mustEmbedUnimplementedBuilderTopicServer()
+type UnsafeBuilderRequestTopicServer interface {
+	mustEmbedUnimplementedBuilderRequestTopicServer()
 }
 
-func RegisterBuilderTopicServer(s grpc.ServiceRegistrar, srv BuilderTopicServer) {
-	s.RegisterService(&BuilderTopic_ServiceDesc, srv)
+func RegisterBuilderRequestTopicServer(s grpc.ServiceRegistrar, srv BuilderRequestTopicServer) {
+	s.RegisterService(&BuilderRequestTopic_ServiceDesc, srv)
 }
 
-func _BuilderTopic_BuildProto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _BuilderRequestTopic_BuildProto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BuildProtoMessage)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BuilderTopicServer).BuildProto(ctx, in)
+		return srv.(BuilderRequestTopicServer).BuildProto(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/o5.registry.builder.v1.topic.BuilderTopic/BuildProto",
+		FullMethod: "/o5.registry.builder.v1.topic.BuilderRequestTopic/BuildProto",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BuilderTopicServer).BuildProto(ctx, req.(*BuildProtoMessage))
+		return srv.(BuilderRequestTopicServer).BuildProto(ctx, req.(*BuildProtoMessage))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _BuilderTopic_BuildAPI_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _BuilderRequestTopic_BuildAPI_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BuildAPIMessage)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BuilderTopicServer).BuildAPI(ctx, in)
+		return srv.(BuilderRequestTopicServer).BuildAPI(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/o5.registry.builder.v1.topic.BuilderTopic/BuildAPI",
+		FullMethod: "/o5.registry.builder.v1.topic.BuilderRequestTopic/BuildAPI",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BuilderTopicServer).BuildAPI(ctx, req.(*BuildAPIMessage))
+		return srv.(BuilderRequestTopicServer).BuildAPI(ctx, req.(*BuildAPIMessage))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// BuilderTopic_ServiceDesc is the grpc.ServiceDesc for BuilderTopic service.
+// BuilderRequestTopic_ServiceDesc is the grpc.ServiceDesc for BuilderRequestTopic service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var BuilderTopic_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "o5.registry.builder.v1.topic.BuilderTopic",
-	HandlerType: (*BuilderTopicServer)(nil),
+var BuilderRequestTopic_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "o5.registry.builder.v1.topic.BuilderRequestTopic",
+	HandlerType: (*BuilderRequestTopicServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "BuildProto",
-			Handler:    _BuilderTopic_BuildProto_Handler,
+			Handler:    _BuilderRequestTopic_BuildProto_Handler,
 		},
 		{
 			MethodName: "BuildAPI",
-			Handler:    _BuilderTopic_BuildAPI_Handler,
+			Handler:    _BuilderRequestTopic_BuildAPI_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "o5/registry/builder/v1/topic/builder.proto",
+}
+
+// BuilderReplyTopicClient is the client API for BuilderReplyTopic service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type BuilderReplyTopicClient interface {
+	BuildStatus(ctx context.Context, in *BuildStatusMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
+}
+
+type builderReplyTopicClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewBuilderReplyTopicClient(cc grpc.ClientConnInterface) BuilderReplyTopicClient {
+	return &builderReplyTopicClient{cc}
+}
+
+func (c *builderReplyTopicClient) BuildStatus(ctx context.Context, in *BuildStatusMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/o5.registry.builder.v1.topic.BuilderReplyTopic/BuildStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// BuilderReplyTopicServer is the server API for BuilderReplyTopic service.
+// All implementations must embed UnimplementedBuilderReplyTopicServer
+// for forward compatibility
+type BuilderReplyTopicServer interface {
+	BuildStatus(context.Context, *BuildStatusMessage) (*emptypb.Empty, error)
+	mustEmbedUnimplementedBuilderReplyTopicServer()
+}
+
+// UnimplementedBuilderReplyTopicServer must be embedded to have forward compatible implementations.
+type UnimplementedBuilderReplyTopicServer struct {
+}
+
+func (UnimplementedBuilderReplyTopicServer) BuildStatus(context.Context, *BuildStatusMessage) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BuildStatus not implemented")
+}
+func (UnimplementedBuilderReplyTopicServer) mustEmbedUnimplementedBuilderReplyTopicServer() {}
+
+// UnsafeBuilderReplyTopicServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to BuilderReplyTopicServer will
+// result in compilation errors.
+type UnsafeBuilderReplyTopicServer interface {
+	mustEmbedUnimplementedBuilderReplyTopicServer()
+}
+
+func RegisterBuilderReplyTopicServer(s grpc.ServiceRegistrar, srv BuilderReplyTopicServer) {
+	s.RegisterService(&BuilderReplyTopic_ServiceDesc, srv)
+}
+
+func _BuilderReplyTopic_BuildStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BuildStatusMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BuilderReplyTopicServer).BuildStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/o5.registry.builder.v1.topic.BuilderReplyTopic/BuildStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BuilderReplyTopicServer).BuildStatus(ctx, req.(*BuildStatusMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// BuilderReplyTopic_ServiceDesc is the grpc.ServiceDesc for BuilderReplyTopic service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var BuilderReplyTopic_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "o5.registry.builder.v1.topic.BuilderReplyTopic",
+	HandlerType: (*BuilderReplyTopicServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "BuildStatus",
+			Handler:    _BuilderReplyTopic_BuildStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

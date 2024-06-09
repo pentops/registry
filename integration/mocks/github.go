@@ -3,9 +3,11 @@ package mocks
 import (
 	"context"
 	"fmt"
+	"math/rand"
 
 	"github.com/bufbuild/protoyaml-go"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
+	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
 	"github.com/pentops/registry/github"
 	"google.golang.org/protobuf/proto"
 )
@@ -91,6 +93,11 @@ func (gh *GithubMock) GetCommit(ctx context.Context, ref github.RepoRef) (*sourc
 	return commit.info, nil
 }
 
-func (gh *GithubMock) CreateCheckRun(ctx context.Context, ref github.RepoRef, name string, status *github.CheckRunUpdate) (int64, error) {
-	return 1234, nil
+func (gh *GithubMock) CreateCheckRun(ctx context.Context, ref github.RepoRef, name string, status *github.CheckRunUpdate) (*github_tpb.CheckRun, error) {
+	return &github_tpb.CheckRun{
+		Owner:     ref.Owner,
+		Repo:      ref.Repo,
+		CheckName: name,
+		CheckId:   rand.Int63(),
+	}, nil
 }

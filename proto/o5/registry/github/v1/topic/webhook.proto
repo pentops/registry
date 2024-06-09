@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-package o5.registry.github.v1;
+package o5.registry.github.v1.topic;
 
 import "google/protobuf/descriptor.proto";
 import "google/protobuf/empty.proto";
 import "o5/messaging/v1/annotations.proto";
 
-option go_package = "github.com/pentops/registry/gen/o5/registry/github/v1/github_pb";
+option go_package = "github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb";
 
 service WebhookTopic {
   option (o5.messaging.v1.config).broadcast.name = "github-webhook";

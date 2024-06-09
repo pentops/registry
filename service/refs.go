@@ -8,6 +8,7 @@ import (
 
 	sq "github.com/elgris/sqrl"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_pb"
+	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
 	"github.com/pentops/sqrlx.go/sqrlx"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -27,7 +28,7 @@ func NewRefStore(conn sqrlx.Connection) (*RefStore, error) {
 	}, nil
 }
 
-func (rs *RefStore) GetRepo(ctx context.Context, push *github_pb.PushMessage) (*github_pb.RepoState, error) {
+func (rs *RefStore) GetRepo(ctx context.Context, push *github_tpb.PushMessage) (*github_pb.RepoState, error) {
 	qq := sq.
 		Select("state").
 		From("repo").
