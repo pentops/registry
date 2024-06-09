@@ -13,6 +13,8 @@ import (
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
+	"github.com/pentops/o5-go/messaging/v1/messaging_pb"
+	"github.com/pentops/outbox.pg.go/outbox"
 	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/github"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -23,13 +25,18 @@ type Storage interface {
 	UploadJ5Image(ctx context.Context, commitInfo *source_j5pb.CommitInfo, img *source_j5pb.SourceImage) error
 }
 
+type Publisher interface {
+	Publish(ctx context.Context, msg ...outbox.OutboxMessage) error
+}
+
 type BuildWorker struct {
-	builder_tpb.UnimplementedBuilderTopicServer
+	builder_tpb.UnimplementedBuilderRequestTopicServer
 
 	builder J5Builder
 	github  IGithub
 
-	store Storage
+	store     Storage
+	publisher Publisher
 }
 
 type J5Builder interface {
@@ -39,41 +46,33 @@ type J5Builder interface {
 type IGithub interface {
 	GetContent(ctx context.Context, ref github.RepoRef, intoDir string) error
 	GetCommit(ctx context.Context, ref github.RepoRef) (*source_j5pb.CommitInfo, error)
-	UpdateCheckRun(ctx context.Context, ref github.RepoRef, checkRun *builder_tpb.CheckRun, status github.CheckRunUpdate) error
 }
 
-func NewBuildWorker(builder J5Builder, github IGithub, store Storage) *BuildWorker {
-
+func NewBuildWorker(builder J5Builder, github IGithub, store Storage, publisher Publisher) *BuildWorker {
 	return &BuildWorker{
-		builder: builder,
-		github:  github,
-		store:   store,
+		builder:   builder,
+		github:    github,
+		store:     store,
+		publisher: publisher,
 	}
 }
 
-func (bw *BuildWorker) updateCheckRun(ctx context.Context, commit *source_j5pb.CommitInfo, checkRun *builder_tpb.CheckRun, status github.CheckRunUpdate) error {
-	if checkRun == nil {
+func (bw *BuildWorker) replyStatus(ctx context.Context, reply *messaging_pb.RequestMetadata, status builder_tpb.BuildStatus, outcome *builder_tpb.BuildOutcome) error {
+	if reply == nil {
 		return nil
 	}
-
-	if err := bw.github.UpdateCheckRun(ctx, github.RepoRef{
-		Owner: commit.Owner,
-		Repo:  commit.Repo,
-		Ref:   commit.Hash,
-	}, checkRun, status); err != nil {
-		return err
-	}
-
-	return nil
+	return bw.publisher.Publish(ctx, &builder_tpb.BuildStatusMessage{
+		Request: reply,
+		Status:  status,
+		Outcome: outcome,
+	})
 }
 
 func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_tpb.BuildProtoMessage) (*emptypb.Empty, error) {
 
-	if req.CheckRun != nil {
-		if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
-			Status: github.CheckRunStatusInProgress,
-		}); err != nil {
-			return nil, fmt.Errorf("check run: in progress: %w", err)
+	if req.Request != nil {
+		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_IN_PROGRESS, nil); err != nil {
+			return nil, fmt.Errorf("reply status: %w", err)
 		}
 	}
 
@@ -97,23 +96,18 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_tpb.BuildPro
 	err = bw.buildProto(ctx, source, buildSpec.Name, logBuffer)
 
 	if err != nil {
-		if req.CheckRun == nil {
+		if req.Request == nil {
 			return nil, fmt.Errorf("build: %w", err)
 		}
 
 		errorMessage := err.Error()
 		fullText := fmt.Sprintf("%s\n\n```%s```", errorMessage, logBuffer.String())
-		if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
-			Status:     github.CheckRunStatusCompleted,
-			Conclusion: some(github.CheckRunConclusionFailure),
-			Output: &github.CheckRunOutput{
-				Title:   some("proto build error"),
-				Summary: errorMessage,
-				Text:    some(fullText),
-			},
+		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutcome{
+			Title:   "proto build error",
+			Summary: some(errorMessage),
+			Text:    some(fullText),
 		}); err != nil {
-			log.Error(ctx, errorMessage)
-			return nil, fmt.Errorf("build: update checkrun: failure: %w", err)
+			return nil, fmt.Errorf("reply status: %w", err)
 		}
 		return &emptypb.Empty{}, nil
 	}
@@ -124,15 +118,10 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_tpb.BuildPro
 		logStr = logStr[:65535-len(trunc)] + trunc
 	}
 
-	if req.CheckRun == nil {
-		if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
-			Status:     github.CheckRunStatusCompleted,
-			Conclusion: some(github.CheckRunConclusionSuccess),
-			Output: &github.CheckRunOutput{
-				Title:   some("proto build success"),
-				Summary: "proto build success",
-				Text:    some(logStr),
-			},
+	if req.Request != nil {
+		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_SUCCESS, &builder_tpb.BuildOutcome{
+			Title: "proto build success",
+			Text:  some(logStr),
 		}); err != nil {
 			log.Error(ctx, logStr)
 			return nil, fmt.Errorf("update checkrun: completed: %w", err)
@@ -180,11 +169,12 @@ func (bw *BuildWorker) buildProto(ctx context.Context, source builder.Source, bu
 
 func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMessage) (*emptypb.Empty, error) {
 
-	if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
-		Status: github.CheckRunStatusInProgress,
-	}); err != nil {
-		return nil, err
+	if req.Request != nil {
+		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_IN_PROGRESS, nil); err != nil {
+			return nil, fmt.Errorf("reply status: %w", err)
+		}
 	}
+
 	if req.Config.Git != nil {
 		git.ExpandGitAliases(req.Config.Git, req.Commit)
 	}
@@ -205,30 +195,25 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMe
 	err = bw.buildAPI(ctx, source)
 
 	if err != nil {
-		if req.CheckRun == nil {
+		if req.Request == nil {
 			return nil, err
 		}
-
 		errorMessage := err.Error()
-		if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
-			Status:     github.CheckRunStatusCompleted,
-			Conclusion: some(github.CheckRunConclusionFailure),
-			Output: &github.CheckRunOutput{
-				Title:   some("j5 error"),
-				Summary: errorMessage,
-				Text:    some(errorMessage),
-			},
+		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutcome{
+			Title:   "proto build error",
+			Summary: some(errorMessage),
 		}); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("reply status: %w", err)
 		}
 		return &emptypb.Empty{}, nil
 	}
 
-	if err := bw.updateCheckRun(ctx, req.Commit, req.CheckRun, github.CheckRunUpdate{
-		Status:     github.CheckRunStatusCompleted,
-		Conclusion: some(github.CheckRunConclusionSuccess),
-	}); err != nil {
-		return nil, err
+	if req.Request != nil {
+		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_SUCCESS, &builder_tpb.BuildOutcome{
+			Title: "API Build Success",
+		}); err != nil {
+			return nil, fmt.Errorf("update checkrun: completed: %w", err)
+		}
 	}
 
 	return &emptypb.Empty{}, nil

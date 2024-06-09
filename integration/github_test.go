@@ -13,6 +13,7 @@ import (
 	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_spb"
+	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
 	"github.com/pentops/registry/integration/mocks"
 )
 
@@ -60,7 +61,7 @@ func TestO5Trigger(t *testing.T) {
 				}, "\n")},
 		})
 
-		_, err := uu.WebhookTopic.Push(ctx, &github_pb.PushMessage{
+		_, err := uu.WebhookTopic.Push(ctx, &github_tpb.PushMessage{
 			Owner: "owner",
 			Repo:  "repo",
 			Ref:   "refs/heads/ref1",
@@ -124,7 +125,7 @@ func TestJ5Trigger(t *testing.T) {
 			Files: map[string]string{"j5.yaml": string(cfgYaml)},
 		})
 
-		_, err = uu.WebhookTopic.Push(ctx, &github_pb.PushMessage{
+		_, err = uu.WebhookTopic.Push(ctx, &github_tpb.PushMessage{
 			Owner: "owner",
 			Repo:  "repo",
 			Ref:   "refs/heads/ref1",

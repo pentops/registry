@@ -12,26 +12,26 @@ import (
 	"github.com/pentops/sqrlx.go/sqrlx"
 )
 
-type RepoCommandService struct {
+type GithubCommandService struct {
 	db *sqrlx.Wrapper
 
 	stateMachines *state.StateMachines
 	*github_spb.UnimplementedGithubCommandServiceServer
 }
 
-func NewRepoCommandService(conn sqrlx.Connection, sm *state.StateMachines) (*RepoCommandService, error) {
+func NewGithubCommandService(conn sqrlx.Connection, sm *state.StateMachines) (*GithubCommandService, error) {
 	db, err := sqrlx.New(conn, sq.Dollar)
 	if err != nil {
 		return nil, err
 	}
 
-	return &RepoCommandService{
+	return &GithubCommandService{
 		db:            db,
 		stateMachines: sm,
 	}, nil
 }
 
-func (ss *RepoCommandService) ConfigureRepo(ctx context.Context, req *github_spb.ConfigureRepoRequest) (*github_spb.ConfigureRepoResponse, error) {
+func (ss *GithubCommandService) ConfigureRepo(ctx context.Context, req *github_spb.ConfigureRepoRequest) (*github_spb.ConfigureRepoResponse, error) {
 
 	cause, err := CommandCause(ctx)
 	if err != nil {

@@ -10,14 +10,14 @@ import (
 	"github.com/pentops/sqrlx.go/sqrlx"
 )
 
-type RepoQueryService struct {
+type GithubQueryService struct {
 	db *sqrlx.Wrapper
 
 	querySet *github_spb.RepoPSMQuerySet
-	*github_spb.UnimplementedRepoQueryServiceServer
+	*github_spb.UnimplementedGithubQueryServiceServer
 }
 
-func NewRepoQueryService(conn sqrlx.Connection, states *state.StateMachines) (*RepoQueryService, error) {
+func NewGithubQueryService(conn sqrlx.Connection, states *state.StateMachines) (*GithubQueryService, error) {
 	db, err := sqrlx.New(conn, sq.Dollar)
 	if err != nil {
 		return nil, err
@@ -30,25 +30,25 @@ func NewRepoQueryService(conn sqrlx.Connection, states *state.StateMachines) (*R
 		return nil, err
 	}
 
-	return &RepoQueryService{
+	return &GithubQueryService{
 		db:       db,
 		querySet: querySet,
 	}, nil
 }
 
-func (ds *RepoQueryService) ListRepoEvents(ctx context.Context, req *github_spb.ListRepoEventsRequest) (*github_spb.ListRepoEventsResponse, error) {
+func (ds *GithubQueryService) ListRepoEvents(ctx context.Context, req *github_spb.ListRepoEventsRequest) (*github_spb.ListRepoEventsResponse, error) {
 	res := &github_spb.ListRepoEventsResponse{}
 
 	return res, ds.querySet.ListEvents(ctx, ds.db, req, res)
 }
 
-func (ds *RepoQueryService) GetRepo(ctx context.Context, req *github_spb.GetRepoRequest) (*github_spb.GetRepoResponse, error) {
+func (ds *GithubQueryService) GetRepo(ctx context.Context, req *github_spb.GetRepoRequest) (*github_spb.GetRepoResponse, error) {
 	res := &github_spb.GetRepoResponse{}
 
 	return res, ds.querySet.Get(ctx, ds.db, req, res)
 }
 
-func (ds *RepoQueryService) ListRepos(ctx context.Context, req *github_spb.ListReposRequest) (*github_spb.ListReposResponse, error) {
+func (ds *GithubQueryService) ListRepos(ctx context.Context, req *github_spb.ListReposRequest) (*github_spb.ListReposResponse, error) {
 	res := &github_spb.ListReposResponse{}
 
 	return res, ds.querySet.List(ctx, ds.db, req, res)

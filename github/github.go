@@ -18,7 +18,7 @@ import (
 	"github.com/pentops/envconf.go/envconf"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
+	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
 	"golang.org/x/oauth2"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -120,7 +120,7 @@ type RepoRef struct {
 // CreateCheckRun creates a check run at Github for the given commit. If
 // CheckRunUpdate is nil, a check run with status "queued" is created, otherwise
 // details are copied as supplied.
-func (cl Client) CreateCheckRun(ctx context.Context, ref RepoRef, name string, status *CheckRunUpdate) (int64, error) {
+func (cl Client) CreateCheckRun(ctx context.Context, ref RepoRef, name string, status *CheckRunUpdate) (*github_tpb.CheckRun, error) {
 	if status == nil {
 		status = &CheckRunUpdate{
 			Status: CheckRunStatusQueued,
@@ -143,7 +143,17 @@ func (cl Client) CreateCheckRun(ctx context.Context, ref RepoRef, name string, s
 		}
 	}
 	run, _, err := cl.checks.CreateCheckRun(ctx, ref.Owner, ref.Repo, opts)
-	return run.GetID(), err
+	if err != nil {
+		return nil, err
+	}
+
+	context := &github_tpb.CheckRun{
+		CheckId:   run.GetID(),
+		CheckName: name,
+		Owner:     ref.Owner,
+		Repo:      ref.Repo,
+	}
+	return context, nil
 }
 
 type CheckRunStatus string
@@ -173,9 +183,9 @@ type CheckRunOutput struct {
 	Text    *string
 }
 
-func (cl Client) UpdateCheckRun(ctx context.Context, ref RepoRef, checkRun *builder_tpb.CheckRun, status CheckRunUpdate) error {
+func (cl Client) UpdateCheckRun(ctx context.Context, ref RepoRef, checkRun *github_tpb.CheckRun, status CheckRunUpdate) error {
 	opts := github.UpdateCheckRunOptions{
-		Name:   checkRun.Name,
+		Name:   checkRun.CheckName,
 		Status: github.String(string(status.Status)),
 	}
 	if status.Conclusion != nil {
@@ -190,7 +200,7 @@ func (cl Client) UpdateCheckRun(ctx context.Context, ref RepoRef, checkRun *buil
 		}
 	}
 
-	_, _, err := cl.checks.UpdateCheckRun(ctx, ref.Owner, ref.Repo, checkRun.Id, opts)
+	_, _, err := cl.checks.UpdateCheckRun(ctx, ref.Owner, ref.Repo, checkRun.CheckId, opts)
 	return err
 }
 

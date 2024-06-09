@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             (unknown)
-// source: o5/registry/github/v1/webhook.proto
+// source: o5/registry/github/v1/topic/webhook.proto
 
-package github_pb
+package github_tpb
 
 import (
 	context "context"
@@ -36,7 +36,7 @@ func NewWebhookTopicClient(cc grpc.ClientConnInterface) WebhookTopicClient {
 
 func (c *webhookTopicClient) Push(ctx context.Context, in *PushMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/o5.registry.github.v1.WebhookTopic/Push", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/o5.registry.github.v1.topic.WebhookTopic/Push", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func _WebhookTopic_Push_Handler(srv interface{}, ctx context.Context, dec func(i
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/o5.registry.github.v1.WebhookTopic/Push",
+		FullMethod: "/o5.registry.github.v1.topic.WebhookTopic/Push",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WebhookTopicServer).Push(ctx, req.(*PushMessage))
@@ -93,7 +93,7 @@ func _WebhookTopic_Push_Handler(srv interface{}, ctx context.Context, dec func(i
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var WebhookTopic_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "o5.registry.github.v1.WebhookTopic",
+	ServiceName: "o5.registry.github.v1.topic.WebhookTopic",
 	HandlerType: (*WebhookTopicServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -102,5 +102,5 @@ var WebhookTopic_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "o5/registry/github/v1/webhook.proto",
+	Metadata: "o5/registry/github/v1/topic/webhook.proto",
 }

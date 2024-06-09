@@ -4,27 +4,22 @@ package o5.registry.builder.v1.topic;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/empty.proto";
-import "google/protobuf/timestamp.proto";
 import "j5/config/v1/config.proto";
 import "j5/source/v1/image.proto";
 import "o5/messaging/v1/annotations.proto";
+import "o5/messaging/v1/reqres.proto";
 
 option go_package = "github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb";
 
-service BuilderTopic {
-  option (o5.messaging.v1.config).unicast.name = "j5-builder-input";
+service BuilderRequestTopic {
+  option (o5.messaging.v1.config).request.name = "registry-build";
   rpc BuildProto(BuildProtoMessage) returns (google.protobuf.Empty) {}
   rpc BuildAPI(BuildAPIMessage) returns (google.protobuf.Empty) {}
 }
 
-message CheckRun {
-  string name = 1;
-  int64 id = 2;
-}
-
 message BuildProtoMessage {
-  j5.source.v1.CommitInfo commit = 1 [(buf.validate.field).required = true];
-  CheckRun check_run = 2 [(buf.validate.field).required = true];
+  o5.messaging.v1.RequestMetadata request = 1 [(buf.validate.field).required = true];
+  j5.source.v1.CommitInfo commit = 2 [(buf.validate.field).required = true];
 
   // contains one single proto build definition, otherwise is the config
   // as pulled from the source.
@@ -32,10 +27,40 @@ message BuildProtoMessage {
 }
 
 message BuildAPIMessage {
-  j5.source.v1.CommitInfo commit = 1 [(buf.validate.field).required = true];
-  CheckRun check_run = 2 [(buf.validate.field).required = true];
+  o5.messaging.v1.RequestMetadata request = 1 [(buf.validate.field).required = true];
+  j5.source.v1.CommitInfo commit = 2 [(buf.validate.field).required = true];
 
   // contains fields relating to JSON API build, i.e. excludes other build
   // configs.
   j5.config.v1.Config config = 3 [(buf.validate.field).required = true];
+}
+
+service BuilderReplyTopic {
+  option (o5.messaging.v1.config).reply.name = "github-status";
+  rpc BuildStatus(BuildStatusMessage) returns (google.protobuf.Empty) {}
+}
+message BuildStatusMessage {
+  o5.messaging.v1.RequestMetadata request = 1 [(buf.validate.field).required = true];
+  BuildStatus status = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum = {
+      not_in: 0,
+      defined_only: true
+    }
+  ];
+  BuildOutcome outcome = 3 [(buf.validate.field).required = true];
+}
+
+message BuildOutcome {
+  string title = 1;
+  optional string summary = 2;
+  optional string text = 3;
+}
+
+enum BuildStatus {
+  BUILD_STATUS_UNSPECIFIED = 0;
+  BUILD_STATUS_QUEUED = 1;
+  BUILD_STATUS_IN_PROGRESS = 2;
+  BUILD_STATUS_SUCCESS = 3;
+  BUILD_STATUS_FAILURE = 4;
 }

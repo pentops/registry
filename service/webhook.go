@@ -13,10 +13,13 @@ import (
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-go/application/v1/application_pb"
 	"github.com/pentops/o5-go/deployer/v1/deployer_tpb"
+	"github.com/pentops/o5-go/messaging/v1/messaging_pb"
 	"github.com/pentops/outbox.pg.go/outbox"
 	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_pb"
+	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
 	"github.com/pentops/registry/github"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -24,11 +27,11 @@ import (
 type IClient interface {
 	PullConfig(ctx context.Context, ref github.RepoRef, into proto.Message, tryPaths []string) error
 	GetCommit(ctx context.Context, ref github.RepoRef) (*source_j5pb.CommitInfo, error)
-	CreateCheckRun(ctx context.Context, ref github.RepoRef, name string, status *github.CheckRunUpdate) (int64, error)
+	CreateCheckRun(ctx context.Context, ref github.RepoRef, name string, status *github.CheckRunUpdate) (*github_tpb.CheckRun, error)
 }
 
 type RefMatcher interface {
-	GetRepo(ctx context.Context, push *github_pb.PushMessage) (*github_pb.RepoState, error)
+	GetRepo(ctx context.Context, push *github_tpb.PushMessage) (*github_pb.RepoState, error)
 }
 
 type WebhookWorker struct {
@@ -36,7 +39,9 @@ type WebhookWorker struct {
 	refs      RefMatcher
 	publisher Publisher
 
-	github_pb.UnimplementedWebhookTopicServer
+	github_tpb.UnimplementedWebhookTopicServer
+	builder_tpb.UnimplementedBuilderReplyTopicServer
+	deployer_tpb.UnimplementedDeploymentReplyTopicServer
 }
 
 type Publisher interface {
@@ -51,7 +56,36 @@ func NewWebhookWorker(refs RefMatcher, githubClient IClient, publisher Publisher
 	}, nil
 }
 
-func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage) (*emptypb.Empty, error) {
+func (ww *WebhookWorker) BuildStatus(ctx context.Context, message *builder_tpb.BuildStatusMessage) (*emptypb.Empty, error) {
+
+	checkContext := &github_tpb.CheckRun{}
+	err := protojson.Unmarshal(message.Request.Context, checkContext)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal check context: %w", err)
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func (ww *WebhookWorker) githubCheck(ctx context.Context, ref github.RepoRef, checkRunName string) (*messaging_pb.RequestMetadata, error) {
+
+	checkRun, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create check run: %w", err)
+	}
+
+	contextData, err := protojson.Marshal(checkRun)
+	if err != nil {
+		return nil, fmt.Errorf("marshal check run: %w", err)
+	}
+
+	return &messaging_pb.RequestMetadata{
+		ReplyTo: "", // not filtered
+		Context: contextData,
+	}, nil
+}
+
+func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage) (*emptypb.Empty, error) {
 
 	ctx = log.WithFields(ctx, map[string]interface{}{
 		"owner":  event.Owner,
@@ -80,7 +114,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 
 	targets := make([]*github_pb.DeployTargetType, 0, len(repo.Data.Branches))
 	for _, target := range repo.Data.Branches {
-		if target.BranchName == branchName {
+		if target.BranchName == branchName || target.BranchName == "*" {
 			targets = append(targets, target.DeployTargets...)
 		}
 	}
@@ -137,16 +171,11 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 		}
 		if builds.BuildAPI != nil {
 			if repo.Data.ChecksEnabled {
-				checkRunName := "j5-image"
-				checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
+				requestMetadata, err := ww.githubCheck(ctx, ref, "j5-image")
 				if err != nil {
 					return nil, fmt.Errorf("j5 image check run: %w", err)
 				}
-
-				builds.BuildAPI.CheckRun = &builder_tpb.CheckRun{
-					Id:   checkRunID,
-					Name: checkRunName,
-				}
+				builds.BuildAPI.Request = requestMetadata
 			}
 			buildMessages = append(buildMessages, builds.BuildAPI)
 		}
@@ -154,18 +183,13 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 		for _, protoBuild := range builds.ProtoBuilds {
 			if repo.Data.ChecksEnabled {
 				checkRunName := fmt.Sprintf("j5-proto-%s", protoBuild.Config.ProtoBuilds[0].Name)
-				checkRunID, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
+				request, err := ww.githubCheck(ctx, ref, checkRunName)
 				if err != nil {
 					return nil, fmt.Errorf("j5 proto check run: %w", err)
 				}
-
-				protoBuild.CheckRun = &builder_tpb.CheckRun{
-					Id:   checkRunID,
-					Name: checkRunName,
-				}
+				protoBuild.Request = request
 			}
 			buildMessages = append(buildMessages, protoBuild)
-
 		}
 	}
 
@@ -176,6 +200,13 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_pb.PushMessage)
 		}
 
 		for _, build := range builds {
+			if repo.Data.ChecksEnabled {
+				requestMetadata, err := ww.githubCheck(ctx, ref, fmt.Sprintf("o5-deploy-%s", build.EnvironmentId))
+				if err != nil {
+					return nil, fmt.Errorf("o5 deploy check run: %w", err)
+				}
+				build.Request = requestMetadata
+			}
 			buildMessages = append(buildMessages, build)
 		}
 	}

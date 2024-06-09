@@ -19,6 +19,22 @@ func TestJ5Store(t *testing.T) {
 	defer flow.RunSteps(t)
 
 	commitHash := "we5rbvfcb"
+
+	sourceImage := &source_j5pb.SourceImage{
+		Registry: &config_j5pb.RegistryConfig{
+			Organization: "cfgorg",
+			Name:         "cfgrepo",
+		},
+		File: []*descriptorpb.FileDescriptorProto{{
+			Name:    proto.String("test/v1/test.proto"),
+			Package: proto.String("test.v1"),
+		}},
+		Codec: &config_j5pb.CodecOptions{},
+		Packages: []*config_j5pb.PackageConfig{{
+			Name:  "test.v1",
+			Label: "Test Package",
+		}},
+	}
 	flow.Step("Upload J5 Config", func(ctx context.Context, t flowtest.Asserter) {
 		if err := uu.PackageStore.UploadJ5Image(ctx, &source_j5pb.CommitInfo{
 			Owner: "commitorg",
@@ -28,21 +44,7 @@ func TestJ5Store(t *testing.T) {
 			Aliases: []string{
 				"refs/heads/main",
 			},
-		}, &source_j5pb.SourceImage{
-			Registry: &config_j5pb.RegistryConfig{
-				Organization: "cfgorg",
-				Name:         "cfgrepo",
-			},
-			File: []*descriptorpb.FileDescriptorProto{{
-				Name:    proto.String("test/v1/test.proto"),
-				Package: proto.String("test.v1"),
-			}},
-			Codec: &config_j5pb.CodecOptions{},
-			Packages: []*config_j5pb.PackageConfig{{
-				Name:  "test.v1",
-				Label: "Test Package",
-			}},
-		}); err != nil {
+		}, sourceImage); err != nil {
 			t.Fatalf("failed to upload j5 image: %v", err)
 		}
 	})
@@ -56,6 +58,7 @@ func TestJ5Store(t *testing.T) {
 
 		aa.AssertEqual("packages.0.name", "test.v1")
 	})
+
 	flow.Step("Download By Commit", func(ctx context.Context, t flowtest.Asserter) {
 		res := uu.HTTPGet(ctx, "/registry/v1/cfgorg/cfgrepo/"+commitHash+"/jdef.json")
 		t.Equal(200, res.StatusCode)
@@ -65,4 +68,19 @@ func TestJ5Store(t *testing.T) {
 
 		aa.AssertEqual("packages.0.name", "test.v1")
 	})
+
+	flow.Step("Next Commit", func(ctx context.Context, t flowtest.Asserter) {
+		if err := uu.PackageStore.UploadJ5Image(ctx, &source_j5pb.CommitInfo{
+			Owner: "commitorg",
+			Repo:  "commitrepo",
+			Hash:  "commit2",
+			Time:  timestamppb.Now(),
+			Aliases: []string{
+				"refs/heads/main",
+			},
+		}, sourceImage); err != nil {
+			t.Fatalf("failed to upload j5 image: %v", err)
+		}
+	})
+
 }

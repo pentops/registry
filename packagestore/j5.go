@@ -103,12 +103,6 @@ func (s *PackageStore) UploadJ5Image(ctx context.Context, commitInfo *source_j5p
 		return err
 	}
 
-	insert := sq.Insert("j5_version").
-		Columns("owner", "repo", "version", "data")
-	for _, version := range versionDests {
-		insert.Values(img.Registry.Organization, img.Registry.Name, version, pkgJSON)
-	}
-
 	log.WithFields(ctx, map[string]interface{}{
 		"versions": versionDests,
 	}).Info("Storing J5 Version")
@@ -117,8 +111,18 @@ func (s *PackageStore) UploadJ5Image(ctx context.Context, commitInfo *source_j5p
 		Isolation: sql.LevelReadCommitted,
 		Retryable: true,
 	}, func(ctx context.Context, tx sqrlx.Transaction) error {
-		_, err := tx.Insert(ctx, insert)
-		return err
+		for _, version := range versionDests {
+			_, err := tx.Insert(ctx, sqrlx.Upsert("j5_version").
+				Key("owner", img.Registry.Organization).
+				Key("repo", img.Registry.Name).
+				Key("version", version).
+				Set("data", pkgJSON))
+			if err != nil {
+				return err
+			}
+
+		}
+		return nil
 	}); err != nil {
 		return err
 	}
