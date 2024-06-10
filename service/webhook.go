@@ -14,7 +14,7 @@ import (
 	"github.com/pentops/o5-go/application/v1/application_pb"
 	"github.com/pentops/o5-go/deployer/v1/deployer_tpb"
 	"github.com/pentops/o5-go/messaging/v1/messaging_pb"
-	"github.com/pentops/outbox.pg.go/outbox"
+	"github.com/pentops/o5-messaging.go/o5msg"
 	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
@@ -45,7 +45,7 @@ type WebhookWorker struct {
 }
 
 type Publisher interface {
-	Publish(ctx context.Context, msg ...outbox.OutboxMessage) error
+	Publish(ctx context.Context, msg o5msg.Message) error
 }
 
 func NewWebhookWorker(refs RefMatcher, githubClient IClient, publisher Publisher) (*WebhookWorker, error) {
@@ -133,7 +133,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 	o5Envs := []string{}
 	j5Build := false
 
-	buildMessages := []outbox.OutboxMessage{}
+	buildMessages := []o5msg.Message{}
 
 	for _, target := range targets {
 		switch target := target.Type.(type) {
@@ -211,8 +211,8 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 		}
 	}
 
-	if len(buildMessages) > 0 {
-		err := ww.publisher.Publish(ctx, buildMessages...)
+	for _, msg := range buildMessages {
+		err := ww.publisher.Publish(ctx, msg)
 		if err != nil {
 			return nil, fmt.Errorf("publish: %w", err)
 		}

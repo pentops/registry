@@ -8,8 +8,8 @@ import (
 
 	"github.com/pentops/flowtest"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/outbox.pg.go/outbox"
-	"github.com/pentops/outbox.pg.go/outboxtest"
+	"github.com/pentops/o5-messaging.go/outbox"
+	"github.com/pentops/o5-messaging.go/outbox/outboxtest"
 	"github.com/pentops/pgtest.go/pgtest"
 	"github.com/pentops/registry/anyfs"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_spb"
@@ -48,7 +48,7 @@ func NewUniverse(t *testing.T) (*flowtest.Stepper[*testing.T], *Universe) {
 	})
 
 	stepper.PostStepHook(func(ctx context.Context, t flowtest.Asserter) error {
-		uu.Outbox.AssertNoMessages(t)
+		uu.Outbox.AssertEmpty(t)
 		return nil
 	})
 
@@ -69,7 +69,7 @@ func setupUniverse(ctx context.Context, t flowtest.Asserter, uu *Universe) {
 
 	grpcPair := flowtest.NewGRPCPair(t, service.GRPCMiddleware()...)
 
-	outboxPub, err := outbox.NewDBPublisher(conn)
+	outboxPub, err := outbox.NewDirectPublisher(conn, outbox.DefaultSender)
 	if err != nil {
 		t.Fatalf("failed to create outbox publisher: %v", err)
 	}

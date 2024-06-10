@@ -16,17 +16,17 @@ require (
 	github.com/pentops/go-grpc-helpers v0.0.0-20230815045451-2524ee695ebb
 	github.com/pentops/j5 v0.0.0-20240606040938-7f6c198fdc0d
 	github.com/pentops/log.go v0.0.0-20240523172444-85c9292a83db
-	github.com/pentops/o5-go v0.0.0-20240609002711-65864a0f7d38
-	github.com/pentops/outbox.pg.go v0.0.0-20240606184926-7c7f6ceaabbf
+	github.com/pentops/o5-go v0.0.0-20240610214522-dca99930d80e
+	github.com/pentops/o5-messaging.go v0.0.0-20240610220232-02f44a1806f1
 	github.com/pentops/pgtest.go v0.0.0-20240604005819-2035f4562734
-	github.com/pentops/protostate v0.0.0-20240606062858-6ae7d31667ac
+	github.com/pentops/protostate v0.0.0-20240610211526-361e6c3ed773
 	github.com/pentops/runner v0.0.0-20240525192419-d655233635e9
 	github.com/pentops/sqrlx.go v0.0.0-20240523172712-b615a994d8c0
 	github.com/pressly/goose v2.7.0+incompatible
 	github.com/rs/cors v1.10.1
 	golang.org/x/mod v0.18.0
 	golang.org/x/oauth2 v0.18.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20240604185151-ef581f913117
+	google.golang.org/genproto/googleapis/api v0.0.0-20240610135401-a8a62080eff3
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.2-0.20240529085009-ca837e5c658b
 )
@@ -116,7 +116,7 @@ require (
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240604185151-ef581f913117 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240610135401-a8a62080eff3 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

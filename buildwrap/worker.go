@@ -14,7 +14,7 @@ import (
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-go/messaging/v1/messaging_pb"
-	"github.com/pentops/outbox.pg.go/outbox"
+	"github.com/pentops/o5-messaging.go/o5msg"
 	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/github"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -26,7 +26,7 @@ type Storage interface {
 }
 
 type Publisher interface {
-	Publish(ctx context.Context, msg ...outbox.OutboxMessage) error
+	Publish(ctx context.Context, msg o5msg.Message) error
 }
 
 type BuildWorker struct {
@@ -48,7 +48,7 @@ type IGithub interface {
 	GetCommit(ctx context.Context, ref github.RepoRef) (*source_j5pb.CommitInfo, error)
 }
 
-func NewBuildWorker(builder J5Builder, github IGithub, store Storage, publisher Publisher) *BuildWorker {
+func NewBuildWorker(builder J5Builder, github IGithub, store Storage, publisher o5msg.Publisher) *BuildWorker {
 	return &BuildWorker{
 		builder:   builder,
 		github:    github,
