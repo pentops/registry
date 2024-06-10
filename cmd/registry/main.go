@@ -31,7 +31,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/pentops/outbox.pg.go/outbox"
+	"github.com/pentops/o5-messaging.go/outbox"
 )
 
 var Version = "0.0.0"
@@ -124,7 +124,7 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		return err
 	}
 
-	dbPublisher, err := outbox.NewDBPublisher(db)
+	dbPublisher, err := outbox.NewDirectPublisher(db, outbox.DefaultSender)
 	if err != nil {
 		return err
 	}
@@ -137,12 +137,7 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		return err
 	}
 
-	publisher, err := outbox.NewDBPublisher(db)
-	if err != nil {
-		return err
-	}
-
-	githubWorker, err := service.NewWebhookWorker(refStore, githubClient, publisher)
+	githubWorker, err := service.NewWebhookWorker(refStore, githubClient, dbPublisher)
 	if err != nil {
 		return err
 	}
