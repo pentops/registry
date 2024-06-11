@@ -10,38 +10,33 @@ import (
 // BuildStatus
 const (
 	BuildStatus_UNSPECIFIED BuildStatus = 0
-	BuildStatus_QUEUED      BuildStatus = 1
-	BuildStatus_IN_PROGRESS BuildStatus = 2
-	BuildStatus_SUCCESS     BuildStatus = 3
-	BuildStatus_FAILURE     BuildStatus = 4
+	BuildStatus_IN_PROGRESS BuildStatus = 1
+	BuildStatus_SUCCESS     BuildStatus = 2
+	BuildStatus_FAILURE     BuildStatus = 3
 )
 
 var (
 	BuildStatus_name_short = map[int32]string{
 		0: "UNSPECIFIED",
-		1: "QUEUED",
-		2: "IN_PROGRESS",
-		3: "SUCCESS",
-		4: "FAILURE",
+		1: "IN_PROGRESS",
+		2: "SUCCESS",
+		3: "FAILURE",
 	}
 	BuildStatus_value_short = map[string]int32{
 		"UNSPECIFIED": 0,
-		"QUEUED":      1,
-		"IN_PROGRESS": 2,
-		"SUCCESS":     3,
-		"FAILURE":     4,
+		"IN_PROGRESS": 1,
+		"SUCCESS":     2,
+		"FAILURE":     3,
 	}
 	BuildStatus_value_either = map[string]int32{
 		"UNSPECIFIED":              0,
 		"BUILD_STATUS_UNSPECIFIED": 0,
-		"QUEUED":                   1,
-		"BUILD_STATUS_QUEUED":      1,
-		"IN_PROGRESS":              2,
-		"BUILD_STATUS_IN_PROGRESS": 2,
-		"SUCCESS":                  3,
-		"BUILD_STATUS_SUCCESS":     3,
-		"FAILURE":                  4,
-		"BUILD_STATUS_FAILURE":     4,
+		"IN_PROGRESS":              1,
+		"BUILD_STATUS_IN_PROGRESS": 1,
+		"SUCCESS":                  2,
+		"BUILD_STATUS_SUCCESS":     2,
+		"FAILURE":                  3,
+		"BUILD_STATUS_FAILURE":     3,
 	}
 )
 

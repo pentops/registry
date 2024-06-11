@@ -104,7 +104,7 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_tpb.BuildPro
 		fullText := fmt.Sprintf("%s\n\n```%s```", errorMessage, logBuffer.String())
 		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutcome{
 			Title:   "proto build error",
-			Summary: some(errorMessage),
+			Summary: errorMessage,
 			Text:    some(fullText),
 		}); err != nil {
 			return nil, fmt.Errorf("reply status: %w", err)
@@ -201,7 +201,7 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMe
 		errorMessage := err.Error()
 		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutcome{
 			Title:   "proto build error",
-			Summary: some(errorMessage),
+			Summary: errorMessage,
 		}); err != nil {
 			return nil, fmt.Errorf("reply status: %w", err)
 		}

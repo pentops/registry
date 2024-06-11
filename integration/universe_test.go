@@ -12,6 +12,7 @@ import (
 	"github.com/pentops/o5-messaging.go/outbox/outboxtest"
 	"github.com/pentops/pgtest.go/pgtest"
 	"github.com/pentops/registry/anyfs"
+	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_spb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
 	"github.com/pentops/registry/gomodproxy"
@@ -28,6 +29,7 @@ type Universe struct {
 	GithubCommand github_spb.GithubCommandServiceClient
 	GithubQuery   github_spb.GithubQueryServiceClient
 	WebhookTopic  github_tpb.WebhookTopicClient
+	BuilderReply  builder_tpb.BuilderReplyTopicClient
 
 	PackageStore *packagestore.PackageStore
 
@@ -124,6 +126,9 @@ func setupUniverse(ctx context.Context, t flowtest.Asserter, uu *Universe) {
 	}
 	github_spb.RegisterGithubQueryServiceServer(grpcPair.Server, queryService)
 	uu.GithubQuery = github_spb.NewGithubQueryServiceClient(grpcPair.Client)
+
+	builder_tpb.RegisterBuilderReplyTopicServer(grpcPair.Server, webhookWorker)
+	uu.BuilderReply = builder_tpb.NewBuilderReplyTopicClient(grpcPair.Client)
 
 	grpcPair.ServeUntilDone(t, ctx)
 }

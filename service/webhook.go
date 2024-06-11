@@ -28,6 +28,7 @@ type IClient interface {
 	PullConfig(ctx context.Context, ref github.RepoRef, into proto.Message, tryPaths []string) error
 	GetCommit(ctx context.Context, ref github.RepoRef) (*source_j5pb.CommitInfo, error)
 	CreateCheckRun(ctx context.Context, ref github.RepoRef, name string, status *github.CheckRunUpdate) (*github_tpb.CheckRun, error)
+	UpdateCheckRun(ctx context.Context, checkRun *github_tpb.CheckRun, status github.CheckRunUpdate) error
 }
 
 type RefMatcher interface {
@@ -62,6 +63,33 @@ func (ww *WebhookWorker) BuildStatus(ctx context.Context, message *builder_tpb.B
 	err := protojson.Unmarshal(message.Request.Context, checkContext)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal check context: %w", err)
+	}
+
+	status := github.CheckRunUpdate{}
+
+	switch message.Status {
+	case builder_tpb.BuildStatus_IN_PROGRESS:
+		status.Status = github.CheckRunStatusInProgress
+
+	case builder_tpb.BuildStatus_FAILURE:
+		status.Status = github.CheckRunStatusCompleted
+		status.Conclusion = some(github.CheckRunConclusionFailure)
+
+	case builder_tpb.BuildStatus_SUCCESS:
+		status.Status = github.CheckRunStatusCompleted
+		status.Conclusion = some(github.CheckRunConclusionSuccess)
+	}
+
+	if message.Outcome != nil {
+		status.Output = &github.CheckRunOutput{
+			Title:   message.Outcome.Title,
+			Summary: message.Outcome.Summary,
+			Text:    message.Outcome.Text,
+		}
+	}
+
+	if err := ww.github.UpdateCheckRun(ctx, checkContext, status); err != nil {
+		return nil, fmt.Errorf("update check run: %w", err)
 	}
 
 	return &emptypb.Empty{}, nil
@@ -157,7 +185,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 					Status:     github.CheckRunStatusCompleted,
 					Conclusion: some(github.CheckRunConclusionFailure),
 					Output: &github.CheckRunOutput{
-						Title:   some(checkRunError.Title),
+						Title:   checkRunError.Title,
 						Summary: checkRunError.Summary,
 					},
 				})

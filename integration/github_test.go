@@ -90,7 +90,7 @@ func TestJ5Trigger(t *testing.T) {
 			Owner: "owner",
 			Name:  "repo",
 			Config: &github_pb.RepoEventType_Configure{
-				ChecksEnabled: false,
+				ChecksEnabled: true,
 				Branches: []*github_pb.Branch{{
 					BranchName: "ref1",
 					DeployTargets: []*github_pb.DeployTargetType{{
@@ -110,8 +110,9 @@ func TestJ5Trigger(t *testing.T) {
 
 	})
 
+	var buildAPI *builder_tpb.BuildAPIMessage
 	flow.Step("J5 Build", func(ctx context.Context, t flowtest.Asserter) {
-		buildAPI := &builder_tpb.BuildAPIMessage{}
+		buildAPI = &builder_tpb.BuildAPIMessage{}
 
 		cfg := &config_j5pb.Config{}
 
@@ -136,6 +137,29 @@ func TestJ5Trigger(t *testing.T) {
 		}
 
 		uu.Outbox.PopMessage(t, buildAPI)
+
+		t.NotEmpty(buildAPI.Request)
+		if buildAPI.Request == nil {
+			t.Fatalf("unexpected nil request")
+		}
+	})
+
+	flow.Step("J5 Reply", func(ctx context.Context, t flowtest.Asserter) {
+		t.Logf("buildAPI: %v", buildAPI.Request)
+		_, err := uu.BuilderReply.BuildStatus(ctx, &builder_tpb.BuildStatusMessage{
+			Request: buildAPI.Request,
+			Status:  builder_tpb.BuildStatus_BUILD_STATUS_SUCCESS,
+		})
+		t.NoError(err)
+
+		gotStatus := uu.Github.CheckRunUpdates
+		if len(gotStatus) != 1 {
+			t.Fatalf("unexpected number of check runs: %d", len(gotStatus))
+		}
+		got := gotStatus[0]
+
+		t.Equal("owner", got.CheckRun.Owner)
+		t.Equal("repo", got.CheckRun.Repo)
 
 	})
 
