@@ -48,7 +48,7 @@ message BuildStatusMessage {
       defined_only: true
     }
   ];
-  BuildOutcome outcome = 3 [(buf.validate.field).required = true];
+  BuildOutcome outcome = 3;
 }
 
 message BuildOutcome {
