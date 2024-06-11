@@ -7,14 +7,10 @@ blobstores:
 secrets:
   - name: github
 
-sidecarConfig:
-  noDeadLetters: true
-
 databases:
   - name: main
     postgres:
       runOutbox: true
-      dbName: registry
       serverGroup: default
       dbExtensions:
         - "uuid-ossp"
