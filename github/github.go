@@ -137,7 +137,7 @@ func (cl Client) CreateCheckRun(ctx context.Context, ref RepoRef, name string, s
 
 	if status.Output != nil {
 		opts.Output = &github.CheckRunOutput{
-			Title:   status.Output.Title,
+			Title:   github.String(status.Output.Title),
 			Summary: github.String(status.Output.Summary),
 			Text:    status.Output.Text,
 		}
@@ -178,12 +178,12 @@ type CheckRunUpdate struct {
 }
 
 type CheckRunOutput struct {
-	Title   *string
+	Title   string
 	Summary string
 	Text    *string
 }
 
-func (cl Client) UpdateCheckRun(ctx context.Context, ref RepoRef, checkRun *github_tpb.CheckRun, status CheckRunUpdate) error {
+func (cl Client) UpdateCheckRun(ctx context.Context, checkRun *github_tpb.CheckRun, status CheckRunUpdate) error {
 	opts := github.UpdateCheckRunOptions{
 		Name:   checkRun.CheckName,
 		Status: github.String(string(status.Status)),
@@ -194,13 +194,13 @@ func (cl Client) UpdateCheckRun(ctx context.Context, ref RepoRef, checkRun *gith
 
 	if status.Output != nil {
 		opts.Output = &github.CheckRunOutput{
-			Title:   status.Output.Title,
+			Title:   github.String(status.Output.Title),
 			Summary: github.String(status.Output.Summary),
 			Text:    status.Output.Text,
 		}
 	}
 
-	_, _, err := cl.checks.UpdateCheckRun(ctx, ref.Owner, ref.Repo, checkRun.CheckId, opts)
+	_, _, err := cl.checks.UpdateCheckRun(ctx, checkRun.Owner, checkRun.Repo, checkRun.CheckId, opts)
 	return err
 }
 

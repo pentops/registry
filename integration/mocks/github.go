@@ -14,6 +14,13 @@ import (
 
 type GithubMock struct {
 	Repos map[string]GithubRepo
+
+	CheckRunUpdates []CheckRunUpdate
+}
+
+type CheckRunUpdate struct {
+	CheckRun *github_tpb.CheckRun
+	Status   github.CheckRunUpdate
 }
 
 type GithubRepo struct {
@@ -100,4 +107,12 @@ func (gh *GithubMock) CreateCheckRun(ctx context.Context, ref github.RepoRef, na
 		CheckName: name,
 		CheckId:   rand.Int63(),
 	}, nil
+}
+
+func (gh *GithubMock) UpdateCheckRun(ctx context.Context, checkRun *github_tpb.CheckRun, status github.CheckRunUpdate) error {
+	gh.CheckRunUpdates = append(gh.CheckRunUpdates, CheckRunUpdate{
+		CheckRun: checkRun,
+		Status:   status,
+	})
+	return nil
 }

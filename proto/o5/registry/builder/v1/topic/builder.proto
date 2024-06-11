@@ -53,14 +53,13 @@ message BuildStatusMessage {
 
 message BuildOutcome {
   string title = 1;
-  optional string summary = 2;
+  string summary = 2;
   optional string text = 3;
 }
 
 enum BuildStatus {
   BUILD_STATUS_UNSPECIFIED = 0;
-  BUILD_STATUS_QUEUED = 1;
-  BUILD_STATUS_IN_PROGRESS = 2;
-  BUILD_STATUS_SUCCESS = 3;
-  BUILD_STATUS_FAILURE = 4;
+  BUILD_STATUS_IN_PROGRESS = 1;
+  BUILD_STATUS_SUCCESS = 2;
+  BUILD_STATUS_FAILURE = 3;
 }
