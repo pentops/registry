@@ -46,7 +46,7 @@ runtimes:
         port: 8080
 
     subscriptions:
-      - name: "/o5.registry.github.v1.WebhookTopic"
+      - name: "/o5.registry.github.v1.topic.WebhookTopic"
         port: 8080
         envName: webhook
       - name: "/o5.registry.builder.v1.topic.BuilderTopic"
