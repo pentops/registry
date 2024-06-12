@@ -48,7 +48,7 @@ func Handler(store ImageProvider) http.Handler {
 
 		switch format {
 		case "swagger.json":
-			swaggerContent, err := buildSwagger(img)
+			swaggerContent, err := buildSwagger(ctx, img)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -59,7 +59,7 @@ func Handler(store ImageProvider) http.Handler {
 			w.Write(swaggerContent) // nolint: errcheck
 
 		case "jdef.json":
-			jdefContent, err := buildJDef(img)
+			jdefContent, err := buildJDef(ctx, img)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -87,8 +87,8 @@ func Handler(store ImageProvider) http.Handler {
 
 }
 
-func buildSwagger(img *source_j5pb.SourceImage) ([]byte, error) {
-	jdefDoc, err := structure.BuildFromImage(img)
+func buildSwagger(ctx context.Context, img *source_j5pb.SourceImage) ([]byte, error) {
+	jdefDoc, err := structure.BuildFromImage(ctx, img)
 	if err != nil {
 		return nil, err
 	}
@@ -106,8 +106,8 @@ func buildSwagger(img *source_j5pb.SourceImage) ([]byte, error) {
 	return asJson, nil
 }
 
-func buildJDef(img *source_j5pb.SourceImage) ([]byte, error) {
-	image, err := structure.BuildFromImage(img)
+func buildJDef(ctx context.Context, img *source_j5pb.SourceImage) ([]byte, error) {
+	image, err := structure.BuildFromImage(ctx, img)
 	if err != nil {
 		return nil, err
 	}

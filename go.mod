@@ -14,11 +14,11 @@ require (
 	github.com/pentops/envconf.go v0.0.0-20240607014745-65480a3da726
 	github.com/pentops/flowtest v0.0.0-20240607020132-7dda31076e79
 	github.com/pentops/go-grpc-helpers v0.0.0-20230815045451-2524ee695ebb
-	github.com/pentops/j5 v0.0.0-20240611220935-212e7c4e61f2
-	github.com/pentops/log.go v0.0.0-20240523172444-85c9292a83db
+	github.com/pentops/j5 v0.0.0-20240612184929-a822023f4261
+	github.com/pentops/log.go v0.0.0-20240612184720-79634792a21e
 	github.com/pentops/o5-deploy-aws v0.0.0-20240612044148-3b31ec062f7b
 	github.com/pentops/o5-go v0.0.0-20240612044618-47588bd0715f
-	github.com/pentops/o5-messaging v0.0.0-20240611214218-4ac153f68bc9
+	github.com/pentops/o5-messaging v0.0.0-20240612154004-00ecaa53242b
 	github.com/pentops/pgtest.go v0.0.0-20240604005819-2035f4562734
 	github.com/pentops/protostate v0.0.0-20240611232313-1fb3a679db51
 	github.com/pentops/runner v0.0.0-20240525192419-d655233635e9
@@ -69,6 +69,7 @@ require (
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
+	github.com/fatih/color v1.17.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
@@ -87,6 +88,8 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
@@ -116,7 +119,6 @@ require (
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
-	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240610135401-a8a62080eff3 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
