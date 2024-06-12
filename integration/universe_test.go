@@ -8,8 +8,8 @@ import (
 
 	"github.com/pentops/flowtest"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/o5-messaging.go/outbox"
-	"github.com/pentops/o5-messaging.go/outbox/outboxtest"
+	"github.com/pentops/o5-messaging/outbox"
+	"github.com/pentops/o5-messaging/outbox/outboxtest"
 	"github.com/pentops/pgtest.go/pgtest"
 	"github.com/pentops/registry/anyfs"
 	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"

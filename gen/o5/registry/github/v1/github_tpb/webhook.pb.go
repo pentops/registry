@@ -7,7 +7,7 @@
 package github_tpb
 
 import (
-	_ "github.com/pentops/o5-go/messaging/v1/messaging_pb"
+	_ "github.com/pentops/o5-messaging/gen/o5/messaging/v1/messaging_pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	_ "google.golang.org/protobuf/types/descriptorpb"

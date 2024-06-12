@@ -11,10 +11,10 @@ import (
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/j5/schema/source"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/o5-go/application/v1/application_pb"
-	"github.com/pentops/o5-go/deployer/v1/deployer_tpb"
-	"github.com/pentops/o5-go/messaging/v1/messaging_pb"
-	"github.com/pentops/o5-messaging.go/o5msg"
+	"github.com/pentops/o5-deploy-aws/gen/o5/application/v1/application_pb"
+	"github.com/pentops/o5-deploy-aws/gen/o5/aws/deployer/v1/awsdeployer_tpb"
+	"github.com/pentops/o5-messaging/gen/o5/messaging/v1/messaging_pb"
+	"github.com/pentops/o5-messaging/o5msg"
 	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
@@ -42,7 +42,7 @@ type WebhookWorker struct {
 
 	github_tpb.UnimplementedWebhookTopicServer
 	builder_tpb.UnimplementedBuilderReplyTopicServer
-	deployer_tpb.UnimplementedDeploymentReplyTopicServer
+	awsdeployer_tpb.UnimplementedDeploymentReplyTopicServer
 }
 
 type Publisher interface {
@@ -256,7 +256,7 @@ var o5ConfigPaths = []string{
 	"o5.yml",
 }
 
-func (ww *WebhookWorker) o5Build(ctx context.Context, ref github.RepoRef, targetEnvs []string) ([]*deployer_tpb.RequestDeploymentMessage, error) {
+func (ww *WebhookWorker) o5Build(ctx context.Context, ref github.RepoRef, targetEnvs []string) ([]*awsdeployer_tpb.RequestDeploymentMessage, error) {
 	cfg := &application_pb.Application{}
 	err := ww.github.PullConfig(ctx, ref, cfg, o5ConfigPaths)
 	if err != nil {
@@ -266,10 +266,10 @@ func (ww *WebhookWorker) o5Build(ctx context.Context, ref github.RepoRef, target
 		}
 	}
 
-	triggers := make([]*deployer_tpb.RequestDeploymentMessage, 0, len(targetEnvs))
+	triggers := make([]*awsdeployer_tpb.RequestDeploymentMessage, 0, len(targetEnvs))
 
 	for _, envID := range targetEnvs {
-		triggers = append(triggers, &deployer_tpb.RequestDeploymentMessage{
+		triggers = append(triggers, &awsdeployer_tpb.RequestDeploymentMessage{
 			DeploymentId:  uuid.NewString(),
 			Application:   cfg,
 			Version:       ref.Ref,
