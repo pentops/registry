@@ -10,7 +10,7 @@ import (
 	"github.com/pentops/j5/builder/builder"
 	"github.com/pentops/j5/builder/docker"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/o5-go/deployer/v1/deployer_tpb"
+	"github.com/pentops/o5-deploy-aws/gen/o5/aws/deployer/v1/awsdeployer_tpb"
 	"github.com/pentops/registry/anyfs"
 	"github.com/pentops/registry/buildwrap"
 	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
@@ -31,7 +31,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/pentops/o5-messaging.go/outbox"
+	"github.com/pentops/o5-messaging/outbox"
 )
 
 var Version = "0.0.0"
@@ -193,7 +193,7 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		github_spb.RegisterGithubCommandServiceServer(grpcServer, githubCommand)
 		github_spb.RegisterGithubQueryServiceServer(grpcServer, githubQuery)
 
-		deployer_tpb.RegisterDeploymentReplyTopicServer(grpcServer, githubWorker)
+		awsdeployer_tpb.RegisterDeploymentReplyTopicServer(grpcServer, githubWorker)
 
 		reflection.Register(grpcServer)
 

@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pentops/flowtest"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
-	"github.com/pentops/o5-go/deployer/v1/deployer_tpb"
+	"github.com/pentops/o5-deploy-aws/gen/o5/aws/deployer/v1/awsdeployer_tpb"
 	"github.com/pentops/registry/gen/o5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_spb"
@@ -22,7 +22,7 @@ func TestO5Trigger(t *testing.T) {
 	flow, uu := NewUniverse(t)
 	defer flow.RunSteps(t)
 
-	request := &deployer_tpb.RequestDeploymentMessage{}
+	request := &awsdeployer_tpb.RequestDeploymentMessage{}
 	environmentID := uuid.NewString()
 
 	flow.Step("ConfigureRepo", func(ctx context.Context, t flowtest.Asserter) {

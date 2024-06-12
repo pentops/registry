@@ -23,9 +23,14 @@ deps:
     digest: shake256:832cd76e75747f5a073a97d50f6562fe2fd7e96f5fbd4950b5291d623da486409aabf2a09e06c1d26df1692f0301b40b880cbf800dd7ba7f794c764bd53aa15d
   - remote: buf.build
     owner: pentops
+    repository: messaging
+    commit: 675bd3c4763842e0bdef1047f7ab7225
+    digest: shake256:3dc7b4b1091d677d68123e32e134cb6506663166a411ca8a86d7e4d8ee8c85f705326ab507ed4b558f6a8cdb67f66fc78d90cf259b95aa8ace79b0e74820ab5c
+  - remote: buf.build
+    owner: pentops
     repository: o5
-    commit: 14c23bfd207f4c9bb9327693531f020f
-    digest: shake256:e32c09ad3d32cfbc843fe8fb0b5b004a609baf7ea7d58757e99055c7c58bc27689e675d9b6a7b62e2f66ab51221efb09d016e1d62490a3058d6f84deb33a503c
+    commit: e7891d0b748549a9b981f4455a22ae90
+    digest: shake256:d11e289224e748f4d9e6f109ba48568a36d8c811b0e92fea26f363ea4d513fba55bc6d18f31898c32d976d9ef89d658a50752d0c13af69cfb61546afd08d0ba4
   - remote: buf.build
     owner: pentops
     repository: protostate
