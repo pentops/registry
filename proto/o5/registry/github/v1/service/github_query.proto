@@ -10,7 +10,7 @@ import "psm/list/v1/page.proto";
 import "psm/list/v1/query.proto";
 import "psm/state/v1/annotations.proto";
 
-option go_package = "github.com/pentops/registry/gen/o5/registry/github/v1/github_spb";
+option go_package = "github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_spb";
 
 service GithubQueryService {
   option (psm.state.v1.state_query).name = "repo";
