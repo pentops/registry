@@ -15,6 +15,7 @@ import (
 	"github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_spb"
 	"github.com/pentops/registry/internal/integration/mocks"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestO5Trigger(t *testing.T) {
@@ -81,6 +82,15 @@ func TestO5Trigger(t *testing.T) {
 
 }
 
+func mustMarshal(t flowtest.TB, pb proto.Message) string {
+	t.Helper()
+	b, err := protoyaml.Marshal(pb)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	return string(b)
+}
+
 func TestJ5Trigger(t *testing.T) {
 	flow, uu := NewUniverse(t)
 	defer flow.RunSteps(t)
@@ -114,19 +124,33 @@ func TestJ5Trigger(t *testing.T) {
 	flow.Step("J5 Build", func(ctx context.Context, t flowtest.Asserter) {
 		buildAPI = &builder_tpb.BuildAPIMessage{}
 
-		cfg := &config_j5pb.Config{}
-
-		cfgYaml, err := protoyaml.Marshal(cfg)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
 		uu.Github.TestPush("owner", "repo", mocks.GithubCommit{
-			SHA:   "after",
-			Files: map[string]string{"j5.yaml": string(cfgYaml)},
+			SHA: "after",
+			Files: map[string]string{
+				"j5.yaml": mustMarshal(t, &config_j5pb.Config{
+					Bundles: []*config_j5pb.BundleConfig{{
+						Dir: "bundle1",
+					}, {
+						Dir: "bundle2",
+					}},
+					Registry: &config_j5pb.RegistryConfig{
+						Organization: "owner",
+						Name:         "repo",
+					},
+				}),
+				"bundle1/j5.yaml": mustMarshal(t, &config_j5pb.Config{
+					Registry: nil,
+				}),
+				"bundle2/j5.yaml": mustMarshal(t, &config_j5pb.Config{
+					Registry: &config_j5pb.RegistryConfig{
+						Organization: "owner",
+						Name:         "repo1",
+					},
+				}),
+			},
 		})
 
-		_, err = uu.WebhookTopic.Push(ctx, &github_tpb.PushMessage{
+		_, err := uu.WebhookTopic.Push(ctx, &github_tpb.PushMessage{
 			Owner: "owner",
 			Repo:  "repo",
 			Ref:   "refs/heads/ref1",
@@ -142,6 +166,8 @@ func TestJ5Trigger(t *testing.T) {
 		if buildAPI.Request == nil {
 			t.Fatalf("unexpected nil request")
 		}
+
+		t.Equal([]string{".", "bundle2"}, buildAPI.Bundles)
 	})
 
 	flow.Step("J5 Reply", func(ctx context.Context, t flowtest.Asserter) {

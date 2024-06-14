@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/pentops/j5/builder/git"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/j5/schema/source"
@@ -197,20 +199,20 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 				return nil, fmt.Errorf("j5 build: %w", err)
 			}
 		}
-		if builds.BuildAPI != nil {
+		for _, apiBuild := range builds.APIBuilds {
 			if repo.Data.ChecksEnabled {
 				requestMetadata, err := ww.githubCheck(ctx, ref, "j5-image")
 				if err != nil {
 					return nil, fmt.Errorf("j5 image check run: %w", err)
 				}
-				builds.BuildAPI.Request = requestMetadata
+				apiBuild.Request = requestMetadata
 			}
-			buildMessages = append(buildMessages, builds.BuildAPI)
+			buildMessages = append(buildMessages, apiBuild)
 		}
 
 		for _, protoBuild := range builds.ProtoBuilds {
 			if repo.Data.ChecksEnabled {
-				checkRunName := fmt.Sprintf("j5-proto-%s", protoBuild.Config.ProtoBuilds[0].Name)
+				checkRunName := fmt.Sprintf("j5-proto-%s", protoBuild.Name)
 				request, err := ww.githubCheck(ctx, ref, checkRunName)
 				if err != nil {
 					return nil, fmt.Errorf("j5 proto check run: %w", err)
@@ -290,7 +292,7 @@ func (e CheckRunError) Error() string {
 }
 
 type j5Buildset struct {
-	BuildAPI    *builder_tpb.BuildAPIMessage
+	APIBuilds   []*builder_tpb.BuildAPIMessage
 	ProtoBuilds []*builder_tpb.BuildProtoMessage
 }
 
@@ -313,40 +315,65 @@ func (ww *WebhookWorker) j5Build(ctx context.Context, ref github.RepoRef) (*j5Bu
 		}
 	}
 
+	if cfg.Git != nil {
+		git.ExpandGitAliases(cfg.Git, commitInfo)
+	}
+
 	output := &j5Buildset{}
 
 	{
-		subConfig := &config_j5pb.Config{
-			Packages: cfg.Packages,
-			Options:  cfg.Options,
-			Registry: cfg.Registry,
-			Git:      cfg.Git,
+
+		registryPaths := map[string]struct{}{}
+
+		bundleRoots := make([]string, 0, len(cfg.Bundles))
+		if cfg.Registry != nil {
+			bundleRoots = append(bundleRoots, ".")
+			key := fmt.Sprintf("%s/%s", cfg.Registry.Organization, cfg.Registry.Name)
+			registryPaths[key] = struct{}{}
 		}
 
-		req := &builder_tpb.BuildAPIMessage{
-			Commit: commitInfo,
-			Config: subConfig,
-		}
+		for _, bundle := range cfg.Bundles {
+			subCfg := &config_j5pb.Config{}
+			cfgPath := path.Join(bundle.Dir, "j5.yaml")
+			err = ww.github.PullConfig(ctx, ref, subCfg, []string{cfgPath})
+			if err != nil {
+				log.WithError(ctx, err).Error("Config Error")
+				return nil, &CheckRunError{
+					Title:   "j5 config error",
+					Summary: fmt.Sprintf("Pulling config for bundle '%s': %s", cfgPath, err.Error()),
+				}
+			}
 
-		output.BuildAPI = req
+			if subCfg.Registry != nil {
+				bundleRoots = append(bundleRoots, bundle.Dir)
+
+				key := fmt.Sprintf("%s/%s", subCfg.Registry.Organization, subCfg.Registry.Name)
+				if _, ok := registryPaths[key]; ok {
+					return nil, &CheckRunError{
+						Title:   "j5 config error",
+						Summary: fmt.Sprintf("Duplicate registry repo '%s'", key),
+					}
+				}
+
+				registryPaths[key] = struct{}{}
+
+			}
+		}
+		if len(bundleRoots) > 0 {
+			req := &builder_tpb.BuildAPIMessage{
+				Commit:  commitInfo,
+				Bundles: bundleRoots,
+			}
+			output.APIBuilds = append(output.APIBuilds, req)
+		}
 	}
 
 	for _, dockerBuild := range cfg.ProtoBuilds {
-		subConfig := &config_j5pb.Config{
-			ProtoBuilds: []*config_j5pb.ProtoBuildConfig{dockerBuild},
-			Packages:    cfg.Packages,
-			Options:     cfg.Options,
-			Registry:    cfg.Registry,
-			Git:         cfg.Git,
-		}
-
 		req := &builder_tpb.BuildProtoMessage{
 			Commit: commitInfo,
-			Config: subConfig,
+			Name:   dockerBuild.Name,
 		}
-
 		output.ProtoBuilds = append(output.ProtoBuilds, req)
-
 	}
 
 	return output, nil

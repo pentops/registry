@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/pentops/j5/builder/builder"
-	"github.com/pentops/j5/builder/git"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
@@ -76,24 +75,20 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_tpb.BuildPro
 		}
 	}
 
-	if req.Config.Git != nil {
-		git.ExpandGitAliases(req.Config.Git, req.Commit)
-	}
-
-	source, err := bw.tmpClone(ctx, req.Commit)
+	clone, err := bw.tmpClone(ctx, req.Commit)
 	if err != nil {
 		return nil, err
 	}
 
-	defer source.Close()
+	defer clone.close()
 
-	if len(req.Config.ProtoBuilds) != 1 {
-		return nil, fmt.Errorf("expected exactly one proto build")
+	source, err := clone.sourceForBundle(ctx, ".") // TODO: Support sub-bundles for proto build.
+	if err != nil {
+		return nil, err
 	}
-	buildSpec := req.Config.ProtoBuilds[0]
 
 	logBuffer := &bytes.Buffer{}
-	err = bw.buildProto(ctx, source, buildSpec.Name, logBuffer)
+	err = bw.buildProto(ctx, source, req.Name, logBuffer)
 
 	if err != nil {
 		if req.Request == nil {
@@ -175,37 +170,36 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMe
 		}
 	}
 
-	if req.Config.Git != nil {
-		git.ExpandGitAliases(req.Config.Git, req.Commit)
-	}
-
 	source, err := bw.tmpClone(ctx, req.Commit)
 	if err != nil {
 		return nil, err
 	}
 
-	defer source.Close()
-
-	if req.Config.Git != nil {
-		git.ExpandGitAliases(req.Config.Git, req.Commit)
-	}
+	defer source.close()
 
 	log.WithField(ctx, "commit", req.Commit).Info("Build API")
 
-	err = bw.buildAPI(ctx, source)
-
-	if err != nil {
-		if req.Request == nil {
+	for _, bundle := range req.Bundles {
+		subSource, err := source.sourceForBundle(ctx, bundle)
+		if err != nil {
 			return nil, err
 		}
-		errorMessage := err.Error()
-		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutcome{
-			Title:   "proto build error",
-			Summary: errorMessage,
-		}); err != nil {
-			return nil, fmt.Errorf("reply status: %w", err)
+
+		err = bw.buildAPI(ctx, subSource)
+
+		if err != nil {
+			if req.Request == nil {
+				return nil, err
+			}
+			errorMessage := err.Error()
+			if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutcome{
+				Title:   "proto build error",
+				Summary: errorMessage,
+			}); err != nil {
+				return nil, fmt.Errorf("reply status: %w", err)
+			}
+			return &emptypb.Empty{}, nil
 		}
-		return &emptypb.Empty{}, nil
 	}
 
 	if req.Request != nil {
@@ -237,14 +231,4 @@ func (bw *BuildWorker) buildAPI(ctx context.Context, source builder.Source) erro
 
 func some[T any](s T) *T {
 	return &s
-}
-
-func (bw *BuildWorker) clone(ctx context.Context, commit *source_j5pb.CommitInfo, into string) error {
-
-	ref := github.RepoRef{
-		Owner: commit.Owner,
-		Repo:  commit.Repo,
-		Ref:   commit.Hash,
-	}
-	return bw.github.GetContent(ctx, ref, into)
 }
