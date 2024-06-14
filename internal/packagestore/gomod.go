@@ -155,7 +155,7 @@ func (s *PackageStore) UploadGoModule(ctx context.Context, commitInfo *source_j5
 		return err
 	}
 
-	aliases := []string{canonicalVersion}
+	aliases := []string{canonicalVersion, commitInfo.Hash}
 	for _, alias := range commitInfo.Aliases {
 		aliases = append(aliases, strings.TrimPrefix(alias, "refs/heads/"))
 	}

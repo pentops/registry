@@ -7,7 +7,7 @@
 package github_spb
 
 import (
-	_ "github.com/pentops/o5-go/auth/v1/auth_pb"
+	_ "github.com/pentops/o5-auth/gen/o5/auth/v1/auth_pb"
 	github_pb "github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_pb"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"

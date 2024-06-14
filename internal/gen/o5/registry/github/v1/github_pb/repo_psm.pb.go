@@ -8,7 +8,6 @@ import (
 	psm_pb "github.com/pentops/protostate/gen/state/v1/psm_pb"
 	psm "github.com/pentops/protostate/psm"
 	sqrlx "github.com/pentops/sqrlx.go/sqrlx"
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // PSM RepoPSM
@@ -23,15 +22,6 @@ type RepoPSM = psm.StateMachine[
 ]
 
 type RepoPSMDB = psm.DBStateMachine[
-	*RepoKeys,      // implements psm.IKeyset
-	*RepoState,     // implements psm.IState
-	RepoStatus,     // implements psm.IStatusEnum
-	*RepoStateData, // implements psm.IStateData
-	*RepoEvent,     // implements psm.IEvent
-	RepoPSMEvent,   // implements psm.IInnerEvent
-]
-
-type RepoPSMEventer = psm.Eventer[
 	*RepoKeys,      // implements psm.IKeyset
 	*RepoState,     // implements psm.IState
 	RepoStatus,     // implements psm.IStatusEnum
@@ -68,6 +58,13 @@ func (msg *RepoKeys) PSMIsSet() bool {
 // PSMFullName returns the full name of state machine with package prefix
 func (msg *RepoKeys) PSMFullName() string {
 	return "o5.registry.github.v1.repo"
+}
+func (msg *RepoKeys) PSMKeyValues() (map[string]string, error) {
+	keyset := map[string]string{
+		"owner": msg.Owner,
+		"name":  msg.Name,
+	}
+	return keyset, nil
 }
 
 // EXTEND RepoState with the psm.IState interface
@@ -217,51 +214,7 @@ func (*RepoEventType_RemoveBranch) PSMEventKey() RepoPSMEventKey {
 	return RepoPSMEventRemoveBranch
 }
 
-type RepoPSMTableSpec = psm.PSMTableSpec[
-	*RepoKeys,      // implements psm.IKeyset
-	*RepoState,     // implements psm.IState
-	RepoStatus,     // implements psm.IStatusEnum
-	*RepoStateData, // implements psm.IStateData
-	*RepoEvent,     // implements psm.IEvent
-	RepoPSMEvent,   // implements psm.IInnerEvent
-]
-
-var DefaultRepoPSMTableSpec = RepoPSMTableSpec{
-	TableMap: psm.TableMap{
-		State: psm.StateTableSpec{
-			TableName: "repo",
-			Root:      &psm.FieldSpec{ColumnName: "state"},
-		},
-		Event: psm.EventTableSpec{
-			TableName:     "repo_event",
-			Root:          &psm.FieldSpec{ColumnName: "data"},
-			ID:            &psm.FieldSpec{ColumnName: "id"},
-			Timestamp:     &psm.FieldSpec{ColumnName: "timestamp"},
-			Sequence:      &psm.FieldSpec{ColumnName: "sequence"},
-			StateSnapshot: &psm.FieldSpec{ColumnName: "state"},
-		},
-		KeyColumns: []psm.KeyColumn{{
-			ColumnName: "owner",
-			ProtoName:  protoreflect.Name("owner"),
-			Primary:    true,
-			Required:   true,
-		}, {
-			ColumnName: "name",
-			ProtoName:  protoreflect.Name("name"),
-			Primary:    true,
-			Required:   true,
-		}},
-	},
-	KeyValues: func(keys *RepoKeys) (map[string]string, error) {
-		keyset := map[string]string{
-			"owner": keys.Owner,
-			"name":  keys.Name,
-		}
-		return keyset, nil
-	},
-}
-
-func DefaultRepoPSMConfig() *psm.StateMachineConfig[
+func RepoPSMBuilder() *psm.StateMachineConfig[
 	*RepoKeys,      // implements psm.IKeyset
 	*RepoState,     // implements psm.IState
 	RepoStatus,     // implements psm.IStatusEnum
@@ -269,35 +222,17 @@ func DefaultRepoPSMConfig() *psm.StateMachineConfig[
 	*RepoEvent,     // implements psm.IEvent
 	RepoPSMEvent,   // implements psm.IInnerEvent
 ] {
-	return psm.NewStateMachineConfig[
+	return &psm.StateMachineConfig[
 		*RepoKeys,      // implements psm.IKeyset
 		*RepoState,     // implements psm.IState
 		RepoStatus,     // implements psm.IStatusEnum
 		*RepoStateData, // implements psm.IStateData
 		*RepoEvent,     // implements psm.IEvent
 		RepoPSMEvent,   // implements psm.IInnerEvent
-	](DefaultRepoPSMTableSpec)
+	]{}
 }
 
-func NewRepoPSM(config *psm.StateMachineConfig[
-	*RepoKeys,      // implements psm.IKeyset
-	*RepoState,     // implements psm.IState
-	RepoStatus,     // implements psm.IStatusEnum
-	*RepoStateData, // implements psm.IStateData
-	*RepoEvent,     // implements psm.IEvent
-	RepoPSMEvent,   // implements psm.IInnerEvent
-]) (*RepoPSM, error) {
-	return psm.NewStateMachine[
-		*RepoKeys,      // implements psm.IKeyset
-		*RepoState,     // implements psm.IState
-		RepoStatus,     // implements psm.IStatusEnum
-		*RepoStateData, // implements psm.IStateData
-		*RepoEvent,     // implements psm.IEvent
-		RepoPSMEvent,   // implements psm.IInnerEvent
-	](config)
-}
-
-func RepoPSMMutation[SE RepoPSMEvent](cb func(*RepoStateData, SE) error) psm.PSMMutationFunc[
+func RepoPSMMutation[SE RepoPSMEvent](cb func(*RepoStateData, SE) error) psm.TransitionMutation[
 	*RepoKeys,      // implements psm.IKeyset
 	*RepoState,     // implements psm.IState
 	RepoStatus,     // implements psm.IStatusEnum
@@ -306,7 +241,7 @@ func RepoPSMMutation[SE RepoPSMEvent](cb func(*RepoStateData, SE) error) psm.PSM
 	RepoPSMEvent,   // implements psm.IInnerEvent
 	SE,             // Specific event type for the transition
 ] {
-	return psm.PSMMutationFunc[
+	return psm.TransitionMutation[
 		*RepoKeys,      // implements psm.IKeyset
 		*RepoState,     // implements psm.IState
 		RepoStatus,     // implements psm.IStatusEnum
@@ -326,7 +261,7 @@ type RepoPSMHookBaton = psm.HookBaton[
 	RepoPSMEvent,   // implements psm.IInnerEvent
 ]
 
-func RepoPSMHook[SE RepoPSMEvent](cb func(context.Context, sqrlx.Transaction, RepoPSMHookBaton, *RepoState, SE) error) psm.PSMHookFunc[
+func RepoPSMLogicHook[SE RepoPSMEvent](cb func(context.Context, RepoPSMHookBaton, *RepoState, SE) error) psm.TransitionLogicHook[
 	*RepoKeys,      // implements psm.IKeyset
 	*RepoState,     // implements psm.IState
 	RepoStatus,     // implements psm.IStatusEnum
@@ -335,7 +270,7 @@ func RepoPSMHook[SE RepoPSMEvent](cb func(context.Context, sqrlx.Transaction, Re
 	RepoPSMEvent,   // implements psm.IInnerEvent
 	SE,             // Specific event type for the transition
 ] {
-	return psm.PSMHookFunc[
+	return psm.TransitionLogicHook[
 		*RepoKeys,      // implements psm.IKeyset
 		*RepoState,     // implements psm.IState
 		RepoStatus,     // implements psm.IStatusEnum
@@ -345,7 +280,55 @@ func RepoPSMHook[SE RepoPSMEvent](cb func(context.Context, sqrlx.Transaction, Re
 		SE,             // Specific event type for the transition
 	](cb)
 }
-func RepoPSMGeneralHook(cb func(context.Context, sqrlx.Transaction, RepoPSMHookBaton, *RepoState, *RepoEvent) error) psm.GeneralStateHook[
+func RepoPSMDataHook[SE RepoPSMEvent](cb func(context.Context, sqrlx.Transaction, *RepoState, SE) error) psm.TransitionDataHook[
+	*RepoKeys,      // implements psm.IKeyset
+	*RepoState,     // implements psm.IState
+	RepoStatus,     // implements psm.IStatusEnum
+	*RepoStateData, // implements psm.IStateData
+	*RepoEvent,     // implements psm.IEvent
+	RepoPSMEvent,   // implements psm.IInnerEvent
+	SE,             // Specific event type for the transition
+] {
+	return psm.TransitionDataHook[
+		*RepoKeys,      // implements psm.IKeyset
+		*RepoState,     // implements psm.IState
+		RepoStatus,     // implements psm.IStatusEnum
+		*RepoStateData, // implements psm.IStateData
+		*RepoEvent,     // implements psm.IEvent
+		RepoPSMEvent,   // implements psm.IInnerEvent
+		SE,             // Specific event type for the transition
+	](cb)
+}
+func RepoPSMLinkHook[SE RepoPSMEvent, DK psm.IKeyset, DIE psm.IInnerEvent](
+	linkDestination psm.LinkDestination[DK, DIE],
+	cb func(context.Context, *RepoState, SE) (DK, DIE, error),
+) psm.LinkHook[
+	*RepoKeys,      // implements psm.IKeyset
+	*RepoState,     // implements psm.IState
+	RepoStatus,     // implements psm.IStatusEnum
+	*RepoStateData, // implements psm.IStateData
+	*RepoEvent,     // implements psm.IEvent
+	RepoPSMEvent,   // implements psm.IInnerEvent
+	SE,             // Specific event type for the transition
+	DK,             // Destination Keys
+	DIE,            // Destination Inner Event
+] {
+	return psm.LinkHook[
+		*RepoKeys,      // implements psm.IKeyset
+		*RepoState,     // implements psm.IState
+		RepoStatus,     // implements psm.IStatusEnum
+		*RepoStateData, // implements psm.IStateData
+		*RepoEvent,     // implements psm.IEvent
+		RepoPSMEvent,   // implements psm.IInnerEvent
+		SE,             // Specific event type for the transition
+		DK,             // Destination Keys
+		DIE,            // Destination Inner Event
+	]{
+		Derive:      cb,
+		Destination: linkDestination,
+	}
+}
+func RepoPSMGeneralLogicHook(cb func(context.Context, RepoPSMHookBaton, *RepoState, *RepoEvent) error) psm.GeneralLogicHook[
 	*RepoKeys,      // implements psm.IKeyset
 	*RepoState,     // implements psm.IState
 	RepoStatus,     // implements psm.IStatusEnum
@@ -353,7 +336,41 @@ func RepoPSMGeneralHook(cb func(context.Context, sqrlx.Transaction, RepoPSMHookB
 	*RepoEvent,     // implements psm.IEvent
 	RepoPSMEvent,   // implements psm.IInnerEvent
 ] {
-	return psm.GeneralStateHook[
+	return psm.GeneralLogicHook[
+		*RepoKeys,      // implements psm.IKeyset
+		*RepoState,     // implements psm.IState
+		RepoStatus,     // implements psm.IStatusEnum
+		*RepoStateData, // implements psm.IStateData
+		*RepoEvent,     // implements psm.IEvent
+		RepoPSMEvent,   // implements psm.IInnerEvent
+	](cb)
+}
+func RepoPSMGeneralStateDataHook(cb func(context.Context, sqrlx.Transaction, *RepoState) error) psm.GeneralStateDataHook[
+	*RepoKeys,      // implements psm.IKeyset
+	*RepoState,     // implements psm.IState
+	RepoStatus,     // implements psm.IStatusEnum
+	*RepoStateData, // implements psm.IStateData
+	*RepoEvent,     // implements psm.IEvent
+	RepoPSMEvent,   // implements psm.IInnerEvent
+] {
+	return psm.GeneralStateDataHook[
+		*RepoKeys,      // implements psm.IKeyset
+		*RepoState,     // implements psm.IState
+		RepoStatus,     // implements psm.IStatusEnum
+		*RepoStateData, // implements psm.IStateData
+		*RepoEvent,     // implements psm.IEvent
+		RepoPSMEvent,   // implements psm.IInnerEvent
+	](cb)
+}
+func RepoPSMGeneralEventDataHook(cb func(context.Context, sqrlx.Transaction, *RepoState, *RepoEvent) error) psm.GeneralEventDataHook[
+	*RepoKeys,      // implements psm.IKeyset
+	*RepoState,     // implements psm.IState
+	RepoStatus,     // implements psm.IStatusEnum
+	*RepoStateData, // implements psm.IStateData
+	*RepoEvent,     // implements psm.IEvent
+	RepoPSMEvent,   // implements psm.IInnerEvent
+] {
+	return psm.GeneralEventDataHook[
 		*RepoKeys,      // implements psm.IKeyset
 		*RepoState,     // implements psm.IState
 		RepoStatus,     // implements psm.IStatusEnum
