@@ -20,19 +20,13 @@ service BuilderRequestTopic {
 message BuildProtoMessage {
   o5.messaging.v1.RequestMetadata request = 1 [(buf.validate.field).required = true];
   j5.source.v1.CommitInfo commit = 2 [(buf.validate.field).required = true];
-
-  // contains one single proto build definition, otherwise is the config
-  // as pulled from the source.
-  j5.config.v1.Config config = 3 [(buf.validate.field).required = true];
+  string name = 3 [(buf.validate.field).required = true];
 }
 
 message BuildAPIMessage {
   o5.messaging.v1.RequestMetadata request = 1 [(buf.validate.field).required = true];
   j5.source.v1.CommitInfo commit = 2 [(buf.validate.field).required = true];
-
-  // contains fields relating to JSON API build, i.e. excludes other build
-  // configs.
-  j5.config.v1.Config config = 3 [(buf.validate.field).required = true];
+  repeated string bundles = 3;
 }
 
 service BuilderReplyTopic {
@@ -44,7 +38,7 @@ message BuildStatusMessage {
   BuildStatus status = 2 [
     (buf.validate.field).required = true,
     (buf.validate.field).enum = {
-      not_in: 0,
+      not_in: 0
       defined_only: true
     }
   ];

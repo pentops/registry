@@ -10,14 +10,16 @@ import (
 
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/j5/schema/source"
+	"github.com/pentops/registry/internal/github"
 )
 
 type tmpSource struct {
-	*source.Source
-	dir string
+	//*source.Source
+	commit *source_j5pb.CommitInfo
+	dir    string
 }
 
-func (ts *tmpSource) Close() error {
+func (ts *tmpSource) close() error {
 	return os.RemoveAll(ts.dir)
 }
 
@@ -28,22 +30,29 @@ func (bw *BuildWorker) tmpClone(ctx context.Context, commit *source_j5pb.CommitI
 	}
 
 	// Clone
-	err = bw.clone(ctx, commit, workDir)
-	if err != nil {
+	ref := github.RepoRef{
+		Owner: commit.Owner,
+		Repo:  commit.Repo,
+		Ref:   commit.Hash,
+	}
+	if err := bw.github.GetContent(ctx, ref, workDir); err != nil {
 		os.RemoveAll(workDir)
 		return nil, fmt.Errorf("clone: %w", err)
 	}
 
-	buildSource, err := source.ReadLocalSource(ctx, commit, workDir)
-	if err != nil {
-		os.RemoveAll(workDir)
-		return nil, fmt.Errorf("build source: %w", err)
-	}
-
 	return &tmpSource{
 		dir:    workDir,
-		Source: buildSource,
+		commit: commit,
+		//Source: buildSource,
 	}, nil
+}
+
+func (src tmpSource) sourceForBundle(ctx context.Context, bundleRoot string) (*source.Source, error) {
+	buildSource, err := source.ReadLocalSource(ctx, src.commit, os.DirFS(src.dir), bundleRoot)
+	if err != nil {
+		return nil, fmt.Errorf("build source: %w", err)
+	}
+	return buildSource, nil
 }
 
 type tmpDest struct {
