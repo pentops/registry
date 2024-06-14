@@ -18,13 +18,13 @@ service BuilderRequestTopic {
 }
 
 message BuildProtoMessage {
-  o5.messaging.v1.RequestMetadata request = 1 [(buf.validate.field).required = true];
+  o5.messaging.v1.RequestMetadata request = 1;
   j5.source.v1.CommitInfo commit = 2 [(buf.validate.field).required = true];
   string name = 3 [(buf.validate.field).required = true];
 }
 
 message BuildAPIMessage {
-  o5.messaging.v1.RequestMetadata request = 1 [(buf.validate.field).required = true];
+  o5.messaging.v1.RequestMetadata request = 1;
   j5.source.v1.CommitInfo commit = 2 [(buf.validate.field).required = true];
   repeated string bundles = 3;
 }
