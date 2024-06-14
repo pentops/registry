@@ -8,7 +8,7 @@ package github_spb
 
 import (
 	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	_ "github.com/pentops/o5-go/auth/v1/auth_pb"
+	_ "github.com/pentops/o5-auth/gen/o5/auth/v1/auth_pb"
 	psml_pb "github.com/pentops/protostate/gen/list/v1/psml_pb"
 	_ "github.com/pentops/protostate/gen/state/v1/psm_pb"
 	github_pb "github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_pb"

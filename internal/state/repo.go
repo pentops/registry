@@ -6,10 +6,9 @@ import (
 )
 
 func NewRepoPSM() (*github_pb.RepoPSM, error) {
-	config := github_pb.DefaultRepoPSMConfig().
-		SystemActor(psm.MustSystemActor("216B6C2E-D996-492C-B80C-9AAD0CCFEEC4"))
-
-	sm, err := github_pb.NewRepoPSM(config)
+	sm, err := github_pb.RepoPSMBuilder().
+		SystemActor(psm.MustSystemActor("216B6C2E-D996-492C-B80C-9AAD0CCFEEC4")).
+		BuildStateMachine()
 	if err != nil {
 		return nil, err
 	}
