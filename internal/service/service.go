@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/pentops/go-grpc-helpers/grpcerror"
 	"github.com/pentops/go-grpc-helpers/protovalidatemw"
 	"github.com/pentops/log.go/grpc_log"
 	"github.com/pentops/log.go/log"
@@ -19,7 +18,6 @@ import (
 func GRPCMiddleware() []grpc.UnaryServerInterceptor {
 	return []grpc.UnaryServerInterceptor{
 		grpc_log.UnaryServerInterceptor(log.DefaultContext, log.DefaultTrace, log.DefaultLogger),
-		grpcerror.UnaryServerInterceptor(log.DefaultLogger),
 		PSMActionMiddleware(actorExtractor),
 		protovalidatemw.UnaryServerInterceptor(),
 	}
