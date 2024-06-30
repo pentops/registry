@@ -9,20 +9,21 @@ require (
 	github.com/bradleyfalzon/ghinstallation v1.1.1
 	github.com/bufbuild/protoyaml-go v0.1.9
 	github.com/elgris/sqrl v0.0.0-20210727210741-7e0198b30236
+	github.com/go-git/go-git/v5 v5.12.0
 	github.com/google/go-github/v58 v58.0.0
 	github.com/google/uuid v1.6.0
 	github.com/pentops/envconf.go v0.0.0-20240607014745-65480a3da726
-	github.com/pentops/flowtest v0.0.0-20240607020132-7dda31076e79
+	github.com/pentops/flowtest v0.0.0-20240623020118-02bf89f30b87
 	github.com/pentops/go-grpc-helpers v0.0.0-20230815045451-2524ee695ebb
-	github.com/pentops/j5 v0.0.0-20240617170546-f8e2f9bac8e3
-	github.com/pentops/log.go v0.0.0-20240612184720-79634792a21e
+	github.com/pentops/j5 v0.0.0-20240630233950-623dde7a966a
+	github.com/pentops/log.go v0.0.0-20240618224413-ed85018bafd9
 	github.com/pentops/o5-auth v0.0.0-20240614180342-3765ffa80762
-	github.com/pentops/o5-deploy-aws v0.0.0-20240615005846-6a18f2563493
+	github.com/pentops/o5-deploy-aws v0.0.0-20240629014003-8ce7ad800f9d
 	github.com/pentops/o5-messaging v0.0.0-20240614163039-d8f7b29ba565
 	github.com/pentops/pgtest.go v0.0.0-20240604005819-2035f4562734
-	github.com/pentops/protostate v0.0.0-20240614171324-55fcf0652c6e
+	github.com/pentops/protostate v0.0.0-20240618224345-07873fade6ae
 	github.com/pentops/runner v0.0.0-20240525192419-d655233635e9
-	github.com/pentops/sqrlx.go v0.0.0-20240523172712-b615a994d8c0
+	github.com/pentops/sqrlx.go v0.0.0-20240618224315-b9b023d5f689
 	github.com/pressly/goose v2.7.0+incompatible
 	github.com/rs/cors v1.11.0
 	golang.org/x/mod v0.18.0
@@ -73,7 +74,6 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
-	github.com/go-git/go-git/v5 v5.12.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -83,6 +83,7 @@ require (
 	github.com/google/go-github/v29 v29.0.3 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
+	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jhump/protoreflect v1.16.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -100,6 +101,7 @@ require (
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
+	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/skeema/knownhosts v1.2.2 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/stretchr/testify v1.9.0 // indirect

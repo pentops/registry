@@ -301,7 +301,7 @@ func RepoPSMDataHook[SE RepoPSMEvent](cb func(context.Context, sqrlx.Transaction
 }
 func RepoPSMLinkHook[SE RepoPSMEvent, DK psm.IKeyset, DIE psm.IInnerEvent](
 	linkDestination psm.LinkDestination[DK, DIE],
-	cb func(context.Context, *RepoState, SE) (DK, DIE, error),
+	cb func(context.Context, *RepoState, SE, func(DK, DIE)) error,
 ) psm.LinkHook[
 	*RepoKeys,      // implements psm.IKeyset
 	*RepoState,     // implements psm.IState

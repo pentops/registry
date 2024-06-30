@@ -1,10 +1,14 @@
 ---
+bundles:
+  - name: registry
+    dir: proto
+
 
 generate:
   - name: go
-    src:
-      - ./proto
-    out: .
+    inputs:
+      - local: registry
+    output: .
     opts:
       paths: import
       module: github.com/pentops/registry
@@ -12,7 +16,8 @@ generate:
       - base: go
       - base: go-sugar
       - base: go-grpc
-      - base: go-messaging
+      - base: go-psm
+      - base: go-o5-messaging
 
 plugins:
   - name: go
@@ -21,18 +26,24 @@ plugins:
       image: ghcr.io/pentops/protoc-gen-go:v1.32.0
 
   - name: go-grpc
-    type: PLUGIN_PROTO
+    base: go
     docker:
       image: ghcr.io/pentops/protoc-gen-go-grpc:v1.3.0
 
   - name: go-sugar
-    type: PLUGIN_PROTO
+    base: go
     docker:
       image: ghcr.io/pentops/protoc-gen-go-sugar:19495b5f5ac3fd3964a03031396d83f1bc1341ca
 
-  - name: go-messaging
+  - name: go-psm
+    base: go
+    docker:
+      image: ghcr.io/pentops/protoc-gen-go-protostate:07873fade6ae6e078124d38250498fcec068b6cd
+
+  - name: go-o5-messaging
+    base: go
     type: PLUGIN_PROTO
     docker:
-      image: ghcr.io/pentops/protoc-gen-go-messaging:9f9694311c7c2ad1d88dd6d0d3d5ece61f3c3e2c
+      image: ghcr.io/pentops/protoc-gen-go-o5-messaging:d8f7b29ba56513be908c4d5d2c6adee57f1ee174
       env:
         - PROTOC_GEN_GO_MESSAGING_EXTRA_HEADERS=api-version:$GIT_HASH

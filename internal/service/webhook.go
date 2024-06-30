@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/pentops/j5/builder/git"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/j5/schema/source"
@@ -20,6 +19,7 @@ import (
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
 	"github.com/pentops/registry/internal/gen/o5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_pb"
+	"github.com/pentops/registry/internal/git"
 	"github.com/pentops/registry/internal/github"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -135,7 +135,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 
 	repo, err := ww.refs.GetRepo(ctx, event)
 	if err != nil {
-		return nil, fmt.Errorf("target envs: %w", err)
+		return nil, fmt.Errorf("get repo: %w", err)
 	}
 	if repo == nil {
 		log.Info(ctx, "No repo config, nothing to do")
@@ -177,27 +177,37 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 		}
 	}
 
+	configError := func(err error) error {
+		if !repo.Data.ChecksEnabled {
+			return err
+		}
+
+		checkRunError := &CheckRunError{}
+		if !errors.As(err, checkRunError) {
+			return err
+		}
+
+		log.WithError(ctx, err).Error("j5 config error, reporting check run")
+
+		_, err = ww.github.CreateCheckRun(ctx, ref, "j5-config", &github.CheckRunUpdate{
+			Status:     github.CheckRunStatusCompleted,
+			Conclusion: some(github.CheckRunConclusionFailure),
+			Output: &github.CheckRunOutput{
+				Title:   checkRunError.Title,
+				Summary: checkRunError.Summary,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("create check run: %w", err)
+		}
+		return nil
+	}
+
 	if j5Build {
 		builds, err := ww.j5Build(ctx, ref)
 		if err != nil {
-			checkRunError := &CheckRunError{}
-			if repo.Data.ChecksEnabled && errors.As(err, checkRunError) {
-				log.WithError(ctx, err).Error("j5 config error, reporting check run")
-				_, err := ww.github.CreateCheckRun(ctx, ref, "j5-config", &github.CheckRunUpdate{
-					Status:     github.CheckRunStatusCompleted,
-					Conclusion: some(github.CheckRunConclusionFailure),
-					Output: &github.CheckRunOutput{
-						Title:   checkRunError.Title,
-						Summary: checkRunError.Summary,
-					},
-				})
-				if err != nil {
-					return nil, fmt.Errorf("create check run: %w", err)
-				}
+			return nil, configError(err)
 
-			} else {
-				return nil, fmt.Errorf("j5 build: %w", err)
-			}
 		}
 		for _, apiBuild := range builds.APIBuilds {
 			if repo.Data.ChecksEnabled {
@@ -293,7 +303,7 @@ func (e CheckRunError) Error() string {
 
 type j5Buildset struct {
 	APIBuilds   []*builder_tpb.BuildAPIMessage
-	ProtoBuilds []*builder_tpb.BuildProtoMessage
+	ProtoBuilds []*builder_tpb.PublishMessage
 }
 
 func (ww *WebhookWorker) j5Build(ctx context.Context, ref github.RepoRef) (*j5Buildset, error) {
@@ -305,7 +315,7 @@ func (ww *WebhookWorker) j5Build(ctx context.Context, ref github.RepoRef) (*j5Bu
 
 	ref.Ref = commitInfo.Hash
 
-	cfg := &config_j5pb.Config{}
+	cfg := &config_j5pb.RepoConfigFile{}
 	err = ww.github.PullConfig(ctx, ref, cfg, source.ConfigPaths)
 	if err != nil {
 		log.WithError(ctx, err).Error("Config Error")
@@ -319,61 +329,58 @@ func (ww *WebhookWorker) j5Build(ctx context.Context, ref github.RepoRef) (*j5Bu
 		git.ExpandGitAliases(cfg.Git, commitInfo)
 	}
 
+	type namedBundle struct {
+		name     string
+		registry *config_j5pb.RegistryConfig
+		publish  []*config_j5pb.PublishConfig
+	}
+
+	bundles := make([]namedBundle, 0, len(cfg.Bundles)+1)
+	for _, bundle := range cfg.Bundles {
+		bundleConfig := &config_j5pb.BundleConfigFile{}
+		if err := ww.github.PullConfig(ctx, ref, bundleConfig, []string{path.Join(bundle.Dir, "j5.yaml")}); err != nil {
+			return nil, &CheckRunError{
+				Title:   "j5 bundle config error",
+				Summary: fmt.Sprintf("Pulling %s/j5.yaml: %s", bundle.Dir, err.Error()),
+			}
+		}
+		bundles = append(bundles, namedBundle{
+			registry: bundleConfig.Registry,
+			name:     bundle.Name,
+			publish:  bundleConfig.Publish,
+		})
+	}
+
+	if cfg.Registry != nil {
+		// root is also a bundle.
+		bundles = append(bundles, namedBundle{
+			name:     "",
+			registry: cfg.Registry,
+			publish:  cfg.Publish,
+		})
+
+	}
+
 	output := &j5Buildset{}
 
-	{
-
-		registryPaths := map[string]struct{}{}
-
-		bundleRoots := make([]string, 0, len(cfg.Bundles))
-		if cfg.Registry != nil {
-			bundleRoots = append(bundleRoots, ".")
-			key := fmt.Sprintf("%s/%s", cfg.Registry.Organization, cfg.Registry.Name)
-			registryPaths[key] = struct{}{}
-		}
-
-		for _, bundle := range cfg.Bundles {
-			subCfg := &config_j5pb.Config{}
-			cfgPath := path.Join(bundle.Dir, "j5.yaml")
-			err = ww.github.PullConfig(ctx, ref, subCfg, []string{cfgPath})
-			if err != nil {
-				log.WithError(ctx, err).Error("Config Error")
-				return nil, &CheckRunError{
-					Title:   "j5 config error",
-					Summary: fmt.Sprintf("Pulling config for bundle '%s': %s", cfgPath, err.Error()),
-				}
-			}
-
-			if subCfg.Registry != nil {
-				bundleRoots = append(bundleRoots, bundle.Dir)
-
-				key := fmt.Sprintf("%s/%s", subCfg.Registry.Organization, subCfg.Registry.Name)
-				if _, ok := registryPaths[key]; ok {
-					return nil, &CheckRunError{
-						Title:   "j5 config error",
-						Summary: fmt.Sprintf("Duplicate registry repo '%s'", key),
-					}
-				}
-
-				registryPaths[key] = struct{}{}
-
-			}
-		}
-		if len(bundleRoots) > 0 {
+	for _, bundle := range bundles {
+		if bundle.registry != nil {
 			req := &builder_tpb.BuildAPIMessage{
-				Commit:  commitInfo,
-				Bundles: bundleRoots,
+				Commit: commitInfo,
+				Bundle: bundle.name,
 			}
 			output.APIBuilds = append(output.APIBuilds, req)
 		}
-	}
 
-	for _, dockerBuild := range cfg.ProtoBuilds {
-		req := &builder_tpb.BuildProtoMessage{
-			Commit: commitInfo,
-			Name:   dockerBuild.Name,
+		for _, publish := range bundle.publish {
+			req := &builder_tpb.PublishMessage{
+				Commit: commitInfo,
+				Name:   publish.Name,
+				Bundle: bundle.name,
+			}
+			output.ProtoBuilds = append(output.ProtoBuilds, req)
 		}
-		output.ProtoBuilds = append(output.ProtoBuilds, req)
+
 	}
 
 	return output, nil

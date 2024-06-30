@@ -10,6 +10,7 @@ import (
 	"github.com/pentops/flowtest"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/o5-deploy-aws/gen/o5/aws/deployer/v1/awsdeployer_tpb"
+	"github.com/pentops/o5-messaging/outbox/outboxtest"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
 	"github.com/pentops/registry/internal/gen/o5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_pb"
@@ -120,28 +121,29 @@ func TestJ5Trigger(t *testing.T) {
 
 	})
 
-	var buildAPI *builder_tpb.BuildAPIMessage
+	var buildRoot *builder_tpb.BuildAPIMessage
 	flow.Step("J5 Build", func(ctx context.Context, t flowtest.Asserter) {
-		buildAPI = &builder_tpb.BuildAPIMessage{}
 
 		uu.Github.TestPush("owner", "repo", mocks.GithubCommit{
 			SHA: "after",
 			Files: map[string]string{
-				"j5.yaml": mustMarshal(t, &config_j5pb.Config{
-					Bundles: []*config_j5pb.BundleConfig{{
-						Dir: "bundle1",
+				"j5.yaml": mustMarshal(t, &config_j5pb.RepoConfigFile{
+					Bundles: []*config_j5pb.BundleReference{{
+						Dir:  "proto/b1",
+						Name: "bundle1",
 					}, {
-						Dir: "bundle2",
+						Dir:  "proto/b2",
+						Name: "bundle2",
 					}},
 					Registry: &config_j5pb.RegistryConfig{
 						Organization: "owner",
 						Name:         "repo",
 					},
 				}),
-				"bundle1/j5.yaml": mustMarshal(t, &config_j5pb.Config{
+				"proto/b1/j5.yaml": mustMarshal(t, &config_j5pb.BundleConfigFile{
 					Registry: nil,
 				}),
-				"bundle2/j5.yaml": mustMarshal(t, &config_j5pb.Config{
+				"proto/b2/j5.yaml": mustMarshal(t, &config_j5pb.BundleConfigFile{
 					Registry: &config_j5pb.RegistryConfig{
 						Organization: "owner",
 						Name:         "repo1",
@@ -160,20 +162,28 @@ func TestJ5Trigger(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		uu.Outbox.PopMessage(t, buildAPI)
+		buildRoot = &builder_tpb.BuildAPIMessage{}
+		uu.Outbox.PopMessage(t, buildRoot, outboxtest.MessageBodyMatches(func(b *builder_tpb.BuildAPIMessage) bool {
+			return b.Bundle == ""
+		}))
+		build2 := &builder_tpb.BuildAPIMessage{}
+		uu.Outbox.PopMessage(t, build2, outboxtest.MessageBodyMatches(func(b *builder_tpb.BuildAPIMessage) bool {
+			t.Logf("bundle: %q", b.Bundle)
+			return b.Bundle == "bundle2"
+		}))
 
-		t.NotEmpty(buildAPI.Request)
-		if buildAPI.Request == nil {
-			t.Fatalf("unexpected nil request")
-		}
+		t.NotEmpty(buildRoot.Request)
+		t.NotEmpty(build2.Request)
 
-		t.Equal([]string{".", "bundle2"}, buildAPI.Bundles)
+		t.Equal("", buildRoot.Bundle)
+		t.Equal("bundle2", build2.Bundle)
+
 	})
 
 	flow.Step("J5 Reply", func(ctx context.Context, t flowtest.Asserter) {
-		t.Logf("buildAPI: %v", buildAPI.Request)
+		t.Logf("buildAPI: %v", buildRoot.Request)
 		_, err := uu.BuilderReply.BuildStatus(ctx, &builder_tpb.BuildStatusMessage{
-			Request: buildAPI.Request,
+			Request: buildRoot.Request,
 			Status:  builder_tpb.BuildStatus_BUILD_STATUS_SUCCESS,
 		})
 		t.NoError(err)

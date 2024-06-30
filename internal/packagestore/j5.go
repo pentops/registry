@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	sq "github.com/elgris/sqrl"
+	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/registry/internal/gen/o5/registry/registry/v1/registry_pb"
@@ -54,9 +55,9 @@ func (s *PackageStore) GetJ5Image(ctx context.Context, orgName, imageName, versi
 	return img, nil
 }
 
-func (s *PackageStore) UploadJ5Image(ctx context.Context, commitInfo *source_j5pb.CommitInfo, img *source_j5pb.SourceImage) error {
+func (s *PackageStore) UploadJ5Image(ctx context.Context, commitInfo *source_j5pb.CommitInfo, img *source_j5pb.SourceImage, registry *config_j5pb.RegistryConfig) error {
 
-	packageName := path.Join(img.Registry.Organization, img.Registry.Name)
+	packageName := path.Join(registry.Organization, registry.Name)
 
 	log.WithFields(ctx, map[string]interface{}{
 		"package": packageName,
@@ -64,8 +65,8 @@ func (s *PackageStore) UploadJ5Image(ctx context.Context, commitInfo *source_j5p
 		"repo":    commitInfo.Repo,
 		"version": commitInfo.Hash,
 		"aliases": commitInfo.Aliases,
-		"j5Org":   img.Registry.Organization,
-		"j5Name":  img.Registry.Name,
+		"j5Org":   registry.Organization,
+		"j5Name":  registry.Name,
 	}).Info("uploading jsonapi")
 
 	root := s.fs.Join("repo", commitInfo.Owner, commitInfo.Repo, "commit", commitInfo.Hash, "j5", packageName)
@@ -91,8 +92,8 @@ func (s *PackageStore) UploadJ5Image(ctx context.Context, commitInfo *source_j5p
 	}
 
 	pkg := &registry_pb.J5Package{
-		Owner:      img.Registry.Organization,
-		Name:       img.Registry.Name,
+		Owner:      registry.Organization,
+		Name:       registry.Name,
 		Version:    commitInfo.Hash,
 		StorageKey: storageKey,
 		Aliases:    versionDests,
@@ -113,8 +114,8 @@ func (s *PackageStore) UploadJ5Image(ctx context.Context, commitInfo *source_j5p
 	}, func(ctx context.Context, tx sqrlx.Transaction) error {
 		for _, version := range versionDests {
 			_, err := tx.Insert(ctx, sqrlx.Upsert("j5_version").
-				Key("owner", img.Registry.Organization).
-				Key("repo", img.Registry.Name).
+				Key("owner", registry.Organization).
+				Key("repo", registry.Name).
 				Key("version", version).
 				Set("data", pkgJSON))
 			if err != nil {

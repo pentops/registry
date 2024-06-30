@@ -11,6 +11,7 @@ import (
 	"github.com/pentops/j5/builder/builder"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
+	"github.com/pentops/j5/schema/source"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-messaging/gen/o5/messaging/v1/messaging_pb"
 	"github.com/pentops/o5-messaging/o5msg"
@@ -21,7 +22,7 @@ import (
 
 type Storage interface {
 	UploadGoModule(ctx context.Context, commitInfo *source_j5pb.CommitInfo, fs fs.FS) error
-	UploadJ5Image(ctx context.Context, commitInfo *source_j5pb.CommitInfo, img *source_j5pb.SourceImage) error
+	UploadJ5Image(ctx context.Context, commitInfo *source_j5pb.CommitInfo, img *source_j5pb.SourceImage, reg *config_j5pb.RegistryConfig) error
 }
 
 type Publisher interface {
@@ -39,7 +40,7 @@ type BuildWorker struct {
 }
 
 type J5Builder interface {
-	BuildProto(ctx context.Context, source builder.Source, dest builder.FS, builderName string, logWriter io.Writer) error
+	RunPublishBuild(ctx context.Context, input source.Input, dst builder.FS, build *config_j5pb.PublishConfig, errOut io.Writer) error
 }
 
 type IGithub interface {
@@ -67,7 +68,7 @@ func (bw *BuildWorker) replyStatus(ctx context.Context, reply *messaging_pb.Requ
 	})
 }
 
-func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_tpb.BuildProtoMessage) (*emptypb.Empty, error) {
+func (bw *BuildWorker) Publish(ctx context.Context, req *builder_tpb.PublishMessage) (*emptypb.Empty, error) {
 
 	if req.Request != nil {
 		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_IN_PROGRESS, nil); err != nil {
@@ -82,13 +83,13 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_tpb.BuildPro
 
 	defer clone.close()
 
-	source, err := clone.sourceForBundle(ctx, ".") // TODO: Support sub-bundles for proto build.
+	source, err := clone.getSource(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	logBuffer := &bytes.Buffer{}
-	err = bw.buildProto(ctx, source, req.Name, logBuffer)
+	err = bw.buildProto(ctx, source, req, logBuffer)
 
 	if err != nil {
 		if req.Request == nil {
@@ -126,32 +127,54 @@ func (bw *BuildWorker) BuildProto(ctx context.Context, req *builder_tpb.BuildPro
 	return &emptypb.Empty{}, nil
 }
 
-func (bw *BuildWorker) buildProto(ctx context.Context, source builder.Source, builderName string, logWriter io.Writer) error {
+func (bw *BuildWorker) buildProto(ctx context.Context, src builder.Source, req *builder_tpb.PublishMessage, logWriter io.Writer) error {
 	dest, err := newTmpDest()
 	if err != nil {
 		return fmt.Errorf("make tmp dest: %w", err)
 	}
 	defer dest.Close()
 
-	buildSpec, err := source.PackageBuildConfig(builderName)
+	bundle, err := src.NamedInput(req.Bundle)
 	if err != nil {
-		return err
+		return fmt.Errorf("named input: %w", err)
 	}
 
-	commitInfo, err := source.CommitInfo(ctx)
+	cfg, err := bundle.J5Config()
 	if err != nil {
-		return err
+		return fmt.Errorf("j5 config: %w", err)
+	}
+
+	var publishConfig *config_j5pb.PublishConfig
+	for _, publish := range cfg.Publish {
+		if publish.Name == req.Name {
+			publishConfig = publish
+			break
+		}
+	}
+	if publishConfig == nil {
+		return fmt.Errorf("publish config %q not found", req.Name)
 	}
 
 	// Build
-	if err := bw.builder.BuildProto(ctx, source, dest, builderName, io.MultiWriter(os.Stderr, logWriter)); err != nil {
+	if err := bw.builder.RunPublishBuild(ctx, bundle, dest, publishConfig, io.MultiWriter(os.Stderr, logWriter)); err != nil {
 		return err
 	}
 
 	// Package And Upload
-	switch buildSpec.PackageType.(type) {
-	case *config_j5pb.ProtoBuildConfig_GoProxy_:
-		err := bw.store.UploadGoModule(ctx, commitInfo, dest)
+	switch pkg := publishConfig.OutputFormat.Type.(type) {
+	case *config_j5pb.OutputType_GoProxy_:
+
+		gomodFile, err := src.SourceFile(ctx, pkg.GoProxy.GoModFile)
+		if err != nil {
+			return err
+		}
+
+		err = dest.Put(ctx, "go.mod", bytes.NewReader(gomodFile))
+		if err != nil {
+			return err
+		}
+
+		err = bw.store.UploadGoModule(ctx, req.Commit, dest)
 		if err != nil {
 			return fmt.Errorf("upload go module: %w", err)
 		}
@@ -170,36 +193,33 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMe
 		}
 	}
 
-	source, err := bw.tmpClone(ctx, req.Commit)
+	sourceClone, err := bw.tmpClone(ctx, req.Commit)
 	if err != nil {
 		return nil, err
 	}
 
-	defer source.close()
+	defer sourceClone.close()
+	source, err := sourceClone.getSource(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	log.WithField(ctx, "commit", req.Commit).Info("Build API")
 
-	for _, bundle := range req.Bundles {
-		subSource, err := source.sourceForBundle(ctx, bundle)
-		if err != nil {
+	err = bw.buildAPI(ctx, source, req)
+
+	if err != nil {
+		if req.Request == nil {
 			return nil, err
 		}
-
-		err = bw.buildAPI(ctx, subSource)
-
-		if err != nil {
-			if req.Request == nil {
-				return nil, err
-			}
-			errorMessage := err.Error()
-			if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutcome{
-				Title:   "proto build error",
-				Summary: errorMessage,
-			}); err != nil {
-				return nil, fmt.Errorf("reply status: %w", err)
-			}
-			return &emptypb.Empty{}, nil
+		errorMessage := err.Error()
+		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutcome{
+			Title:   "proto build error",
+			Summary: errorMessage,
+		}); err != nil {
+			return nil, fmt.Errorf("reply status: %w", err)
 		}
+		return &emptypb.Empty{}, nil
 	}
 
 	if req.Request != nil {
@@ -214,19 +234,23 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMe
 
 }
 
-func (bw *BuildWorker) buildAPI(ctx context.Context, source builder.Source) error {
+func (bw *BuildWorker) buildAPI(ctx context.Context, src builder.Source, req *builder_tpb.BuildAPIMessage) error {
 
-	commitInfo, err := source.CommitInfo(ctx)
+	input, err := src.NamedInput(req.Bundle)
 	if err != nil {
-		return fmt.Errorf("commit info: %w", err)
+		return fmt.Errorf("named input: %w", err)
+	}
+	bundleConfig, err := input.J5Config()
+	if err != nil {
+		return fmt.Errorf("j5 config: %w", err)
 	}
 
-	img, err := source.SourceImage(ctx)
+	img, err := input.SourceImage(ctx)
 	if err != nil {
 		return fmt.Errorf("source image: %w", err)
 	}
 
-	return bw.store.UploadJ5Image(ctx, commitInfo, img)
+	return bw.store.UploadJ5Image(ctx, req.Commit, img, bundleConfig.Registry)
 }
 
 func some[T any](s T) *T {

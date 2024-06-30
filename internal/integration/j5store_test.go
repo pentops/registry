@@ -20,16 +20,15 @@ func TestJ5Store(t *testing.T) {
 
 	commitHash := "we5rbvfcb"
 
+	regConfig := &config_j5pb.RegistryConfig{
+		Organization: "cfgorg",
+		Name:         "cfgrepo",
+	}
 	sourceImage := &source_j5pb.SourceImage{
-		Registry: &config_j5pb.RegistryConfig{
-			Organization: "cfgorg",
-			Name:         "cfgrepo",
-		},
 		File: []*descriptorpb.FileDescriptorProto{{
 			Name:    proto.String("test/v1/test.proto"),
 			Package: proto.String("test.v1"),
 		}},
-		Codec: &config_j5pb.CodecOptions{},
 		Packages: []*config_j5pb.PackageConfig{{
 			Name:  "test.v1",
 			Label: "Test Package",
@@ -44,7 +43,7 @@ func TestJ5Store(t *testing.T) {
 			Aliases: []string{
 				"refs/heads/main",
 			},
-		}, sourceImage); err != nil {
+		}, sourceImage, regConfig); err != nil {
 			t.Fatalf("failed to upload j5 image: %v", err)
 		}
 	})
@@ -78,7 +77,7 @@ func TestJ5Store(t *testing.T) {
 			Aliases: []string{
 				"refs/heads/main",
 			},
-		}, sourceImage); err != nil {
+		}, sourceImage, regConfig); err != nil {
 			t.Fatalf("failed to upload j5 image: %v", err)
 		}
 	})
