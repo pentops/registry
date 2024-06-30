@@ -21,8 +21,8 @@ func NewBuilderRequestTopicTxSender[C any](sender o5msg.TxSender[C]) *BuilderReq
 		Service: "o5.registry.builder.v1.topic.BuilderRequestTopic",
 		Methods: []o5msg.MethodDescriptor{
 			{
-				Name:    "BuildProto",
-				Message: (*BuildProtoMessage).ProtoReflect(nil).Descriptor(),
+				Name:    "Publish",
+				Message: (*PublishMessage).ProtoReflect(nil).Descriptor(),
 			},
 			{
 				Name:    "BuildAPI",
@@ -42,8 +42,8 @@ func NewBuilderRequestTopicCollector[C any](collector o5msg.Collector[C]) *Build
 		Service: "o5.registry.builder.v1.topic.BuilderRequestTopic",
 		Methods: []o5msg.MethodDescriptor{
 			{
-				Name:    "BuildProto",
-				Message: (*BuildProtoMessage).ProtoReflect(nil).Descriptor(),
+				Name:    "Publish",
+				Message: (*PublishMessage).ProtoReflect(nil).Descriptor(),
 			},
 			{
 				Name:    "BuildAPI",
@@ -63,8 +63,8 @@ func NewBuilderRequestTopicPublisher(publisher o5msg.Publisher) *BuilderRequestT
 		Service: "o5.registry.builder.v1.topic.BuilderRequestTopic",
 		Methods: []o5msg.MethodDescriptor{
 			{
-				Name:    "BuildProto",
-				Message: (*BuildProtoMessage).ProtoReflect(nil).Descriptor(),
+				Name:    "Publish",
+				Message: (*PublishMessage).ProtoReflect(nil).Descriptor(),
 			},
 			{
 				Name:    "BuildAPI",
@@ -75,27 +75,27 @@ func NewBuilderRequestTopicPublisher(publisher o5msg.Publisher) *BuilderRequestT
 	return &BuilderRequestTopicPublisher{publisher: publisher}
 }
 
-// Method: BuildProto
+// Method: Publish
 
-func (msg *BuildProtoMessage) O5MessageHeader() o5msg.Header {
+func (msg *PublishMessage) O5MessageHeader() o5msg.Header {
 	header := o5msg.Header{
 		GrpcService:      "o5.registry.builder.v1.topic.BuilderRequestTopic",
-		GrpcMethod:       "BuildProto",
+		GrpcMethod:       "Publish",
 		Headers:          map[string]string{},
 		DestinationTopic: "registry-build_request",
 	}
 	return header
 }
 
-func (send BuilderRequestTopicTxSender[C]) BuildProto(ctx context.Context, sendContext C, msg *BuildProtoMessage) error {
+func (send BuilderRequestTopicTxSender[C]) Publish(ctx context.Context, sendContext C, msg *PublishMessage) error {
 	return send.sender.Send(ctx, sendContext, msg)
 }
 
-func (collect BuilderRequestTopicCollector[C]) BuildProto(sendContext C, msg *BuildProtoMessage) {
+func (collect BuilderRequestTopicCollector[C]) Publish(sendContext C, msg *PublishMessage) {
 	collect.collector.Collect(sendContext, msg)
 }
 
-func (publish BuilderRequestTopicPublisher) BuildProto(ctx context.Context, msg *BuildProtoMessage) {
+func (publish BuilderRequestTopicPublisher) Publish(ctx context.Context, msg *PublishMessage) {
 	publish.publisher.Publish(ctx, msg)
 }
 

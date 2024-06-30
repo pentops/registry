@@ -1,19 +1,14 @@
-registry:
-  organization: pentops
-  name: registry
+---
+options:
+  trimSubPackages:
+    - service
+    - topic
 
 packages:
   - name: o5.registry.registry.v1
   - name: o5.registry.github.v1
 
-
-
-options:
-  trimSubPackages:
-    - service
-    - topic
-  wrapOneof: true
-  shortEnums:
-    unspecifiedSuffix: UNSPECIFIED
-    strictUnmarshal: true
-
+publish:
+  registry:
+    organization: pentops
+    name: registry

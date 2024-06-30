@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pentops/j5/builder/builder"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/j5/schema/source"
 	"github.com/pentops/registry/internal/github"
@@ -47,11 +48,12 @@ func (bw *BuildWorker) tmpClone(ctx context.Context, commit *source_j5pb.CommitI
 	}, nil
 }
 
-func (src tmpSource) sourceForBundle(ctx context.Context, bundleRoot string) (*source.Source, error) {
-	buildSource, err := source.ReadLocalSource(ctx, src.commit, os.DirFS(src.dir), bundleRoot)
+func (src tmpSource) getSource(ctx context.Context) (builder.Source, error) {
+	buildSource, err := source.ReadLocalSource(ctx, os.DirFS(src.dir))
 	if err != nil {
 		return nil, fmt.Errorf("build source: %w", err)
 	}
+
 	return buildSource, nil
 }
 

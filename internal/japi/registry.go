@@ -7,10 +7,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/pentops/j5/codec"
+	"github.com/pentops/j5/gen/j5/schema/v1/schema_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
-	"github.com/pentops/j5/schema/jdef"
+	"github.com/pentops/j5/schema/export"
 	"github.com/pentops/j5/schema/structure"
-	"github.com/pentops/j5/schema/swagger"
 	"github.com/pentops/log.go/log"
 	"google.golang.org/protobuf/proto"
 )
@@ -46,9 +47,32 @@ func Handler(store ImageProvider) http.Handler {
 			return
 		}
 
+		if format == "image.bin" {
+			w.Header().Set("Content-Type", "application/octet-stream")
+			w.WriteHeader(http.StatusOK)
+			imgBytes, err := proto.Marshal(img)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			w.Write(imgBytes) // nolint: errcheck
+		}
+
 		switch format {
+		case "api.json":
+			descriptorContent, err := buildDescriptorJSON(img)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write(descriptorContent) // nolint: errcheck
+
 		case "swagger.json":
-			swaggerContent, err := buildSwagger(ctx, img)
+			swaggerContent, err := buildSwagger(img)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -59,7 +83,7 @@ func Handler(store ImageProvider) http.Handler {
 			w.Write(swaggerContent) // nolint: errcheck
 
 		case "jdef.json":
-			jdefContent, err := buildJDef(ctx, img)
+			jdefContent, err := buildJDef(img)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -69,17 +93,6 @@ func Handler(store ImageProvider) http.Handler {
 			w.WriteHeader(http.StatusOK)
 			w.Write(jdefContent) // nolint: errcheck
 
-		case "image.bin":
-			w.Header().Set("Content-Type", "application/octet-stream")
-			w.WriteHeader(http.StatusOK)
-			imgBytes, err := proto.Marshal(img)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			w.Write(imgBytes) // nolint: errcheck
-
 		default:
 			http.Error(w, fmt.Sprintf("unknown API format %s", format), http.StatusNotFound)
 		}
@@ -87,13 +100,42 @@ func Handler(store ImageProvider) http.Handler {
 
 }
 
-func buildSwagger(ctx context.Context, img *source_j5pb.SourceImage) ([]byte, error) {
-	jdefDoc, err := structure.BuildFromImage(ctx, img)
+func buildDescriptor(img *source_j5pb.SourceImage) (*schema_j5pb.API, error) {
+	reflectAPI, err := structure.ReflectFromSource(img)
 	if err != nil {
 		return nil, err
 	}
 
-	swaggerDoc, err := swagger.BuildSwagger(jdefDoc)
+	descriptorAPI, err := reflectAPI.ToJ5Proto()
+	if err != nil {
+		return nil, err
+	}
+
+	err = structure.ResolveProse(img, descriptorAPI)
+	if err != nil {
+		return nil, err
+	}
+
+	return descriptorAPI, nil
+}
+
+func buildDescriptorJSON(img *source_j5pb.SourceImage) ([]byte, error) {
+	descriptorAPI, err := buildDescriptor(img)
+	if err != nil {
+		return nil, err
+	}
+
+	encoder := codec.NewCodec()
+	return encoder.ProtoToJSON(descriptorAPI.ProtoReflect())
+}
+
+func buildSwagger(img *source_j5pb.SourceImage) ([]byte, error) {
+	descriptorAPI, err := buildDescriptor(img)
+	if err != nil {
+		return nil, err
+	}
+
+	swaggerDoc, err := export.BuildSwagger(descriptorAPI)
 	if err != nil {
 		return nil, err
 	}
@@ -106,13 +148,13 @@ func buildSwagger(ctx context.Context, img *source_j5pb.SourceImage) ([]byte, er
 	return asJson, nil
 }
 
-func buildJDef(ctx context.Context, img *source_j5pb.SourceImage) ([]byte, error) {
-	image, err := structure.BuildFromImage(ctx, img)
+func buildJDef(img *source_j5pb.SourceImage) ([]byte, error) {
+	descriptorAPI, err := buildDescriptor(img)
 	if err != nil {
 		return nil, err
 	}
 
-	jDefJSON, err := jdef.FromProto(image)
+	jDefJSON, err := export.FromProto(descriptorAPI)
 	if err != nil {
 		return nil, err
 	}

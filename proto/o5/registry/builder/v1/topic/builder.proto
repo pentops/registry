@@ -4,7 +4,6 @@ package o5.registry.builder.v1.topic;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/empty.proto";
-import "j5/config/v1/config.proto";
 import "j5/source/v1/image.proto";
 import "o5/messaging/v1/annotations.proto";
 import "o5/messaging/v1/reqres.proto";
@@ -13,20 +12,21 @@ option go_package = "github.com/pentops/registry/internal/gen/o5/registry/builde
 
 service BuilderRequestTopic {
   option (o5.messaging.v1.config).request.name = "registry-build";
-  rpc BuildProto(BuildProtoMessage) returns (google.protobuf.Empty) {}
+  rpc Publish(PublishMessage) returns (google.protobuf.Empty) {}
   rpc BuildAPI(BuildAPIMessage) returns (google.protobuf.Empty) {}
 }
 
-message BuildProtoMessage {
+message PublishMessage {
   o5.messaging.v1.RequestMetadata request = 1;
   j5.source.v1.CommitInfo commit = 2 [(buf.validate.field).required = true];
-  string name = 3 [(buf.validate.field).required = true];
+  string bundle = 3 [(buf.validate.field).required = true];
+  string name = 4 [(buf.validate.field).required = true];
 }
 
 message BuildAPIMessage {
   o5.messaging.v1.RequestMetadata request = 1;
   j5.source.v1.CommitInfo commit = 2 [(buf.validate.field).required = true];
-  repeated string bundles = 3;
+  string bundle = 3 [(buf.validate.field).required = true];
 }
 
 service BuilderReplyTopic {
