@@ -15,7 +15,7 @@ require (
 	github.com/pentops/envconf.go v0.0.0-20240607014745-65480a3da726
 	github.com/pentops/flowtest v0.0.0-20240623020118-02bf89f30b87
 	github.com/pentops/go-grpc-helpers v0.0.0-20230815045451-2524ee695ebb
-	github.com/pentops/j5 v0.0.0-20240701155246-db40ecad900d
+	github.com/pentops/j5 v0.0.0-20240702182823-0eb17dcd1d58
 	github.com/pentops/log.go v0.0.0-20240618224413-ed85018bafd9
 	github.com/pentops/o5-auth v0.0.0-20240614180342-3765ffa80762
 	github.com/pentops/o5-deploy-aws v0.0.0-20240629014003-8ce7ad800f9d
