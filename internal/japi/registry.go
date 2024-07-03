@@ -57,6 +57,7 @@ func Handler(store ImageProvider) http.Handler {
 			}
 
 			w.Write(imgBytes) // nolint: errcheck
+			return
 		}
 
 		switch format {
