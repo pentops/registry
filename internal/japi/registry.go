@@ -2,16 +2,13 @@ package japi
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/pentops/j5/builder"
 	"github.com/pentops/j5/codec"
-	"github.com/pentops/j5/gen/j5/schema/v1/schema_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
-	"github.com/pentops/j5/schema/export"
-	"github.com/pentops/j5/schema/structure"
 	"github.com/pentops/log.go/log"
 	"google.golang.org/protobuf/proto"
 )
@@ -101,27 +98,8 @@ func Handler(store ImageProvider) http.Handler {
 
 }
 
-func buildDescriptor(img *source_j5pb.SourceImage) (*schema_j5pb.API, error) {
-	reflectAPI, err := structure.ReflectFromSource(img)
-	if err != nil {
-		return nil, err
-	}
-
-	descriptorAPI, err := reflectAPI.ToJ5Proto()
-	if err != nil {
-		return nil, err
-	}
-
-	err = structure.ResolveProse(img, descriptorAPI)
-	if err != nil {
-		return nil, err
-	}
-
-	return descriptorAPI, nil
-}
-
 func buildDescriptorJSON(img *source_j5pb.SourceImage) ([]byte, error) {
-	descriptorAPI, err := buildDescriptor(img)
+	descriptorAPI, err := builder.DescriptorFromSource(img)
 	if err != nil {
 		return nil, err
 	}
@@ -131,17 +109,12 @@ func buildDescriptorJSON(img *source_j5pb.SourceImage) ([]byte, error) {
 }
 
 func buildSwagger(img *source_j5pb.SourceImage) ([]byte, error) {
-	descriptorAPI, err := buildDescriptor(img)
+	descriptorAPI, err := builder.DescriptorFromSource(img)
 	if err != nil {
 		return nil, err
 	}
 
-	swaggerDoc, err := export.BuildSwagger(descriptorAPI)
-	if err != nil {
-		return nil, err
-	}
-
-	asJson, err := json.Marshal(swaggerDoc)
+	asJson, err := builder.SwaggerFromDescriptor(descriptorAPI)
 	if err != nil {
 		return nil, err
 	}
@@ -150,17 +123,12 @@ func buildSwagger(img *source_j5pb.SourceImage) ([]byte, error) {
 }
 
 func buildJDef(img *source_j5pb.SourceImage) ([]byte, error) {
-	descriptorAPI, err := buildDescriptor(img)
+	descriptorAPI, err := builder.DescriptorFromSource(img)
 	if err != nil {
 		return nil, err
 	}
 
-	jDefJSON, err := export.FromProto(descriptorAPI)
-	if err != nil {
-		return nil, err
-	}
-
-	jDefJSONBytes, err := json.Marshal(jDefJSON)
+	jDefJSONBytes, err := builder.JDefFromDescriptor(descriptorAPI)
 	if err != nil {
 		return nil, err
 	}

@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
-	"github.com/pentops/j5/schema/source"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-deploy-aws/gen/o5/application/v1/application_pb"
 	"github.com/pentops/o5-deploy-aws/gen/o5/aws/deployer/v1/awsdeployer_tpb"
@@ -306,6 +305,11 @@ type j5Buildset struct {
 	ProtoBuilds []*builder_tpb.PublishMessage
 }
 
+var configPaths = []string{
+	"j5.yaml",
+	"ext/j5/j5.yaml",
+}
+
 func (ww *WebhookWorker) j5Build(ctx context.Context, ref github.RepoRef) (*j5Buildset, error) {
 
 	commitInfo, err := ww.github.GetCommit(ctx, ref)
@@ -316,7 +320,7 @@ func (ww *WebhookWorker) j5Build(ctx context.Context, ref github.RepoRef) (*j5Bu
 	ref.Ref = commitInfo.Hash
 
 	cfg := &config_j5pb.RepoConfigFile{}
-	err = ww.github.PullConfig(ctx, ref, cfg, source.ConfigPaths)
+	err = ww.github.PullConfig(ctx, ref, cfg, configPaths)
 	if err != nil {
 		log.WithError(ctx, err).Error("Config Error")
 		return nil, &CheckRunError{
