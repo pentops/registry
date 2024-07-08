@@ -7,8 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pentops/j5/builder/builder"
-	"github.com/pentops/j5/builder/docker"
+	"github.com/pentops/j5/builder"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-deploy-aws/gen/o5/aws/deployer/v1/awsdeployer_tpb"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
@@ -114,7 +113,7 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		return err
 	}
 
-	dockerWrapper, err := docker.NewDockerWrapper(docker.DefaultRegistryAuths)
+	dockerWrapper, err := builder.NewRunner(builder.DefaultRegistryAuths)
 	if err != nil {
 		return err
 	}
@@ -130,6 +129,7 @@ func runCombinedServer(ctx context.Context, cfg struct {
 	}
 
 	j5Builder := builder.NewBuilder(dockerWrapper)
+
 	buildWorker := buildwrap.NewBuildWorker(j5Builder, githubClient, pkgStore, dbPublisher)
 
 	refStore, err := service.NewRefStore(db)

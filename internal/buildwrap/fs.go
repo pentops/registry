@@ -8,9 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pentops/j5/builder/builder"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
-	"github.com/pentops/j5/schema/source"
 	"github.com/pentops/registry/internal/github"
 )
 
@@ -48,13 +46,8 @@ func (bw *BuildWorker) tmpClone(ctx context.Context, commit *source_j5pb.CommitI
 	}, nil
 }
 
-func (src tmpSource) getSource(ctx context.Context) (builder.Source, error) {
-	buildSource, err := source.ReadLocalSource(ctx, os.DirFS(src.dir))
-	if err != nil {
-		return nil, fmt.Errorf("build source: %w", err)
-	}
-
-	return buildSource, nil
+func (src tmpSource) fs() fs.FS {
+	return os.DirFS(src.dir)
 }
 
 type tmpDest struct {
@@ -74,7 +67,7 @@ func newTmpDest() (*tmpDest, error) {
 	}, nil
 }
 
-func (local *tmpDest) Put(ctx context.Context, subPath string, body io.Reader) error {
+func (local *tmpDest) PutFile(ctx context.Context, subPath string, body io.Reader) error {
 	key := filepath.Join(local.root, subPath)
 	err := os.MkdirAll(filepath.Dir(key), 0755)
 	if err != nil {

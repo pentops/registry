@@ -6,12 +6,10 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 
-	"github.com/pentops/j5/builder/builder"
+	"github.com/pentops/j5/builder"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
-	"github.com/pentops/j5/schema/source"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-messaging/gen/o5/messaging/v1/messaging_pb"
 	"github.com/pentops/o5-messaging/o5msg"
@@ -40,7 +38,7 @@ type BuildWorker struct {
 }
 
 type J5Builder interface {
-	RunPublishBuild(ctx context.Context, input source.Input, dst builder.FS, build *config_j5pb.PublishConfig, errOut io.Writer) error
+	Publish(ctx context.Context, pc builder.PluginContext, input builder.Input, cfg *config_j5pb.PublishConfig) error
 }
 
 type IGithub interface {
@@ -83,13 +81,8 @@ func (bw *BuildWorker) Publish(ctx context.Context, req *builder_tpb.PublishMess
 
 	defer clone.close()
 
-	source, err := clone.getSource(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	logBuffer := &bytes.Buffer{}
-	err = bw.buildProto(ctx, source, req, logBuffer)
+	err = bw.runPublish(ctx, clone.fs(), req, logBuffer)
 
 	if err != nil {
 		if req.Request == nil {
@@ -127,19 +120,26 @@ func (bw *BuildWorker) Publish(ctx context.Context, req *builder_tpb.PublishMess
 	return &emptypb.Empty{}, nil
 }
 
-func (bw *BuildWorker) buildProto(ctx context.Context, src builder.Source, req *builder_tpb.PublishMessage, logWriter io.Writer) error {
+func (bw *BuildWorker) runPublish(ctx context.Context, sourceDir fs.FS, req *builder_tpb.PublishMessage, logBuffer io.Writer) error {
+
 	dest, err := newTmpDest()
 	if err != nil {
 		return fmt.Errorf("make tmp dest: %w", err)
 	}
 	defer dest.Close()
 
-	bundle, err := src.NamedInput(req.Bundle)
-	if err != nil {
-		return fmt.Errorf("named input: %w", err)
+	pc := builder.PluginContext{
+		Variables: map[string]string{}, // TODO: Commit / Source Info
+		ErrOut:    logBuffer,
+		Dest:      dest,
 	}
 
-	cfg, err := bundle.J5Config()
+	input, err := builder.NewFSInput(ctx, sourceDir, req.Bundle)
+	if err != nil {
+		return fmt.Errorf("new fs input: %w", err)
+	}
+
+	cfg, err := input.J5Config()
 	if err != nil {
 		return fmt.Errorf("j5 config: %w", err)
 	}
@@ -156,23 +156,13 @@ func (bw *BuildWorker) buildProto(ctx context.Context, src builder.Source, req *
 	}
 
 	// Build
-	if err := bw.builder.RunPublishBuild(ctx, bundle, dest, publishConfig, io.MultiWriter(os.Stderr, logWriter)); err != nil {
+	if err := bw.builder.Publish(ctx, pc, input, publishConfig); err != nil {
 		return err
 	}
 
 	// Package And Upload
-	switch pkg := publishConfig.OutputFormat.Type.(type) {
+	switch publishConfig.OutputFormat.Type.(type) {
 	case *config_j5pb.OutputType_GoProxy_:
-
-		gomodFile, err := src.SourceFile(ctx, pkg.GoProxy.GoModFile)
-		if err != nil {
-			return err
-		}
-
-		err = dest.Put(ctx, "go.mod", bytes.NewReader(gomodFile))
-		if err != nil {
-			return err
-		}
 
 		err = bw.store.UploadGoModule(ctx, req.Commit, dest)
 		if err != nil {
@@ -199,14 +189,10 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMe
 	}
 
 	defer sourceClone.close()
-	source, err := sourceClone.getSource(ctx)
-	if err != nil {
-		return nil, err
-	}
 
 	log.WithField(ctx, "commit", req.Commit).Info("Build API")
 
-	err = bw.buildAPI(ctx, source, req)
+	err = bw.buildAPI(ctx, sourceClone.fs(), req)
 
 	if err != nil {
 		if req.Request == nil {
@@ -234,12 +220,13 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMe
 
 }
 
-func (bw *BuildWorker) buildAPI(ctx context.Context, src builder.Source, req *builder_tpb.BuildAPIMessage) error {
+func (bw *BuildWorker) buildAPI(ctx context.Context, sourceDir fs.FS, req *builder_tpb.BuildAPIMessage) error {
 
-	input, err := src.NamedInput(req.Bundle)
+	input, err := builder.NewFSInput(ctx, sourceDir, req.Bundle)
 	if err != nil {
-		return fmt.Errorf("named input: %w", err)
+		return fmt.Errorf("new fs input: %w", err)
 	}
+
 	bundleConfig, err := input.J5Config()
 	if err != nil {
 		return fmt.Errorf("j5 config: %w", err)
