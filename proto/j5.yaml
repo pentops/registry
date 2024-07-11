@@ -8,9 +8,6 @@ packages:
   - name: o5.registry.registry.v1
   - name: o5.registry.github.v1
 
-publish:
-  - name: registry
-
 registry:
   organization: pentops
   name: registry
