@@ -161,6 +161,9 @@ func (bw *BuildWorker) runPublish(ctx context.Context, sourceDir fs.FS, req *bui
 	}
 
 	// Package And Upload
+	if publishConfig.OutputFormat == nil || publishConfig.OutputFormat.Type == nil {
+		return fmt.Errorf("output format not set")
+	}
 	switch publishConfig.OutputFormat.Type.(type) {
 	case *config_j5pb.OutputType_GoProxy_:
 
