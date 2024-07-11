@@ -6,6 +6,7 @@ import (
 
 	sq "github.com/elgris/sqrl"
 	"github.com/google/uuid"
+	"github.com/pentops/o5-auth/o5auth"
 	"github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_spb"
 	"github.com/pentops/registry/internal/state"
@@ -33,7 +34,7 @@ func NewGithubCommandService(conn sqrlx.Connection, sm *state.StateMachines) (*G
 
 func (ss *GithubCommandService) ConfigureRepo(ctx context.Context, req *github_spb.ConfigureRepoRequest) (*github_spb.ConfigureRepoResponse, error) {
 
-	cause, err := CommandCause(ctx)
+	action, err := o5auth.GetAuthenticatedAction(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +46,7 @@ func (ss *GithubCommandService) ConfigureRepo(ctx context.Context, req *github_s
 		},
 		EventID:   uuid.NewString(),
 		Timestamp: time.Now(),
-		Cause:     cause,
+		Action:    action,
 		Event:     req.Config,
 	}
 

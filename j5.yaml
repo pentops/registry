@@ -21,35 +21,25 @@ generate:
 plugins:
   - name: go
     type: PLUGIN_PROTO
-    command:
-      cmd: protoc-gen-go
-      docker:
-        image: ghcr.io/pentops/protoc-gen-go:v1.32.0
+    docker:
+      image: ghcr.io/pentops/protoc-gen-go:v1.32.0
 
   - name: go-grpc
     base: go
-    command:
-      cmd: protoc-gen-go-grpc
-      docker:
-        image: ghcr.io/pentops/protoc-gen-go-grpc:v1.3.0
+    docker:
+      image: ghcr.io/pentops/protoc-gen-go-grpc:v1.3.0
 
   - name: go-sugar
     base: go
-    command:
-      cmd: protoc-gen-go-sugar
-      docker:
-        image: ghcr.io/pentops/protoc-gen-go-sugar:19495b5f5ac3fd3964a03031396d83f1bc1341ca
+    docker:
+      image: ghcr.io/pentops/protoc-gen-go-sugar:19495b5f5ac3fd3964a03031396d83f1bc1341ca
 
   - name: go-psm
     base: go
-    command:
-      cmd: protoc-gen-go-psm
-      docker:
-        image: ghcr.io/pentops/protoc-gen-go-protostate:07873fade6ae6e078124d38250498fcec068b6cd
+    docker:
+      image: ghcr.io/pentops/protoc-gen-go-protostate:a2c1e3576cf1ca4827cead8129d87371b48ec072
 
   - name: go-o5-messaging
     base: go
-    command:
-      cmd: protoc-gen-go-o5-messaging
-      docker:
-        image: ghcr.io/pentops/protoc-gen-go-o5-messaging:caef57f4978baf2d288c5396efe2dd79b334db1c
+    docker:
+      image: ghcr.io/pentops/protoc-gen-go-o5-messaging:caef57f4978baf2d288c5396efe2dd79b334db1c

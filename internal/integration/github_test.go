@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pentops/flowtest"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
+	"github.com/pentops/o5-auth/o5auth"
 	"github.com/pentops/o5-deploy-aws/gen/o5/aws/deployer/v1/awsdeployer_tpb"
 	"github.com/pentops/o5-messaging/outbox/outboxtest"
 	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
@@ -16,8 +18,27 @@ import (
 	"github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_spb"
 	"github.com/pentops/registry/internal/integration/mocks"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
+
+func withTestActor(ctx context.Context) context.Context {
+
+	jwt := map[string]interface{}{
+		"sub": "test/" + uuid.NewString(),
+	}
+	jwtJSON, err := json.Marshal(jwt)
+	if err != nil {
+		panic(err)
+	}
+
+	md := metadata.MD{o5auth.VerifiedJWTHeader: []string{
+		string(jwtJSON),
+	}}
+
+	ctx = metadata.NewOutgoingContext(ctx, md)
+	return ctx
+}
 
 func TestO5Trigger(t *testing.T) {
 
@@ -28,6 +49,7 @@ func TestO5Trigger(t *testing.T) {
 	environmentID := uuid.NewString()
 
 	flow.Step("ConfigureRepo", func(ctx context.Context, t flowtest.Asserter) {
+		ctx = withTestActor(ctx)
 		res, err := uu.GithubCommand.ConfigureRepo(ctx, &github_spb.ConfigureRepoRequest{
 			Owner: "owner",
 			Name:  "repo",
@@ -97,6 +119,7 @@ func TestJ5Trigger(t *testing.T) {
 	defer flow.RunSteps(t)
 
 	flow.Step("ConfigureRepo", func(ctx context.Context, t flowtest.Asserter) {
+		ctx = withTestActor(ctx)
 		res, err := uu.GithubCommand.ConfigureRepo(ctx, &github_spb.ConfigureRepoRequest{
 			Owner: "owner",
 			Name:  "repo",
