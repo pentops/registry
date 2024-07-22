@@ -1,8 +1,8 @@
 ---
 options:
-  trimSubPackages:
-    - service
-    - topic
+  subPackages:
+    - name: "service"
+    - name: "topic"
 
 packages:
   - name: o5.registry.registry.v1
