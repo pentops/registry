@@ -25,11 +25,11 @@ import (
 )
 
 type Universe struct {
-	Outbox        *outboxtest.OutboxAsserter
-	GithubCommand github_spb.GithubCommandServiceClient
-	GithubQuery   github_spb.GithubQueryServiceClient
-	WebhookTopic  github_tpb.WebhookTopicClient
-	BuilderReply  builder_tpb.BuilderReplyTopicClient
+	Outbox       *outboxtest.OutboxAsserter
+	RepoCommand  github_spb.RepoCommandServiceClient
+	RepoQuery    github_spb.RepoQueryServiceClient
+	WebhookTopic github_tpb.WebhookTopicClient
+	BuilderReply builder_tpb.BuilderReplyTopicClient
 
 	PackageStore *packagestore.PackageStore
 
@@ -117,15 +117,15 @@ func setupUniverse(ctx context.Context, t flowtest.Asserter, uu *Universe) {
 	if err != nil {
 		t.Fatalf("failed to create github command service: %v", err)
 	}
-	github_spb.RegisterGithubCommandServiceServer(grpcPair.Server, commandService)
-	uu.GithubCommand = github_spb.NewGithubCommandServiceClient(grpcPair.Client)
+	github_spb.RegisterRepoCommandServiceServer(grpcPair.Server, commandService)
+	uu.RepoCommand = github_spb.NewRepoCommandServiceClient(grpcPair.Client)
 
 	queryService, err := service.NewGithubQueryService(conn, states)
 	if err != nil {
 		t.Fatalf("failed to create github query service: %v", err)
 	}
-	github_spb.RegisterGithubQueryServiceServer(grpcPair.Server, queryService)
-	uu.GithubQuery = github_spb.NewGithubQueryServiceClient(grpcPair.Client)
+	github_spb.RegisterRepoQueryServiceServer(grpcPair.Server, queryService)
+	uu.RepoQuery = github_spb.NewRepoQueryServiceClient(grpcPair.Client)
 
 	builder_tpb.RegisterBuilderReplyTopicServer(grpcPair.Server, webhookWorker)
 	uu.BuilderReply = builder_tpb.NewBuilderReplyTopicClient(grpcPair.Client)

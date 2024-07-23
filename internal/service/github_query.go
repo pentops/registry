@@ -14,7 +14,7 @@ type GithubQueryService struct {
 	db *sqrlx.Wrapper
 
 	querySet *github_spb.RepoPSMQuerySet
-	*github_spb.UnimplementedGithubQueryServiceServer
+	*github_spb.UnimplementedRepoQueryServiceServer
 }
 
 func NewGithubQueryService(conn sqrlx.Connection, states *state.StateMachines) (*GithubQueryService, error) {

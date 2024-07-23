@@ -3,23 +3,23 @@ syntax = "proto3";
 package o5.registry.github.v1;
 
 import "buf/validate/validate.proto";
-import "psm/list/v1/annotations.proto";
-import "psm/state/v1/annotations.proto";
+import "j5/list/v1/annotations.proto";
+import "j5/ext/v1/annotations.proto";
 import "psm/state/v1/metadata.proto";
 
 option go_package = "github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_pb";
 
 message RepoKeys {
-  option (psm.state.v1.psm).name = "repo";
+  option (j5.ext.v1.psm).entity_name = "repo";
 
   string owner = 1 [
     (buf.validate.field).required = true,
-    (psm.state.v1.field).primary_key = true
+    (j5.ext.v1.key).primary_key = true
   ];
 
   string name = 2 [
     (buf.validate.field).required = true,
-    (psm.state.v1.field).primary_key = true
+    (j5.ext.v1.key).primary_key = true
   ];
 }
 
@@ -28,7 +28,7 @@ message RepoState {
 
   RepoKeys keys = 2 [(buf.validate.field).required = true];
 
-  RepoStatus status = 3 [(psm.list.v1.field).enum.filtering = {
+  RepoStatus status = 3 [(j5.list.v1.field).enum.filtering = {
     filterable: true,
     default_filters: ["REPO_STATUS_ACTIVE"],
   }];
@@ -54,7 +54,7 @@ message RepoEvent {
 
 message RepoEventType {
   oneof type {
-    option (psm.list.v1.oneof).filtering.filterable = true;
+    option (j5.list.v1.oneof).filtering.filterable = true;
 
     Configure configure = 1;
 
