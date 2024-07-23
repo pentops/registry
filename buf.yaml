@@ -9,7 +9,6 @@ deps:
   - buf.build/pentops/auth
   - buf.build/pentops/j5
   - buf.build/pentops/protostate
-  - buf.build/pentops/listify
   - buf.build/pentops/messaging
 
 lint:

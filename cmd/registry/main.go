@@ -190,8 +190,8 @@ func runCombinedServer(ctx context.Context, cfg struct {
 
 		github_tpb.RegisterWebhookTopicServer(grpcServer, githubWorker)
 
-		github_spb.RegisterGithubCommandServiceServer(grpcServer, githubCommand)
-		github_spb.RegisterGithubQueryServiceServer(grpcServer, githubQuery)
+		github_spb.RegisterRepoCommandServiceServer(grpcServer, githubCommand)
+		github_spb.RegisterRepoQueryServiceServer(grpcServer, githubQuery)
 
 		awsdeployer_tpb.RegisterDeploymentReplyTopicServer(grpcServer, githubWorker)
 

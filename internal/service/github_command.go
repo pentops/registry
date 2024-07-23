@@ -17,7 +17,7 @@ type GithubCommandService struct {
 	db *sqrlx.Wrapper
 
 	stateMachines *state.StateMachines
-	*github_spb.UnimplementedGithubCommandServiceServer
+	*github_spb.UnimplementedRepoCommandServiceServer
 }
 
 func NewGithubCommandService(conn sqrlx.Connection, sm *state.StateMachines) (*GithubCommandService, error) {

@@ -50,7 +50,7 @@ func TestO5Trigger(t *testing.T) {
 
 	flow.Step("ConfigureRepo", func(ctx context.Context, t flowtest.Asserter) {
 		ctx = withTestActor(ctx)
-		res, err := uu.GithubCommand.ConfigureRepo(ctx, &github_spb.ConfigureRepoRequest{
+		res, err := uu.RepoCommand.ConfigureRepo(ctx, &github_spb.ConfigureRepoRequest{
 			Owner: "owner",
 			Name:  "repo",
 			Config: &github_pb.RepoEventType_Configure{
@@ -120,7 +120,7 @@ func TestJ5Trigger(t *testing.T) {
 
 	flow.Step("ConfigureRepo", func(ctx context.Context, t flowtest.Asserter) {
 		ctx = withTestActor(ctx)
-		res, err := uu.GithubCommand.ConfigureRepo(ctx, &github_spb.ConfigureRepoRequest{
+		res, err := uu.RepoCommand.ConfigureRepo(ctx, &github_spb.ConfigureRepoRequest{
 			Owner: "owner",
 			Name:  "repo",
 			Config: &github_pb.RepoEventType_Configure{

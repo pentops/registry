@@ -3,17 +3,19 @@ syntax = "proto3";
 package o5.registry.github.v1.service;
 
 import "google/api/annotations.proto";
+import "j5/ext/v1/annotations.proto";
 import "o5/auth/v1/annotations.proto";
 import "o5/registry/github/v1/repo.proto";
 
 option go_package = "github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_spb";
 
-service GithubCommandService {
+service RepoCommandService {
   option (o5.auth.v1.default_auth).none = {};
+  option (j5.ext.v1.service).state_command.entity = "repo";
 
   rpc ConfigureRepo(ConfigureRepoRequest) returns (ConfigureRepoResponse) {
     option (google.api.http) = {
-      post: "/registry/github/v1/c/repo/{owner}/{name}/configure",
+      post: "/registry/github/v1/c/repo/{owner}/{name}/configure"
       body: "*"
     };
   }

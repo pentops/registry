@@ -4,31 +4,31 @@ package o5.registry.github.v1.service;
 
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
+import "j5/ext/v1/annotations.proto";
 import "o5/auth/v1/annotations.proto";
 import "o5/registry/github/v1/repo.proto";
-import "psm/list/v1/page.proto";
-import "psm/list/v1/query.proto";
-import "psm/state/v1/annotations.proto";
+import "j5/list/v1/page.proto";
+import "j5/list/v1/query.proto";
 
 option go_package = "github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_spb";
 
-service GithubQueryService {
-  option (psm.state.v1.state_query).name = "repo";
+service RepoQueryService {
+  option (j5.ext.v1.service).state_query.entity = "repo";
   option (o5.auth.v1.default_auth).none = {};
 
   rpc GetRepo(GetRepoRequest) returns (GetRepoResponse) {
     option (google.api.http) = {get: "/registry/github/v1/q/repo/{owner}/{name}"};
-    option (psm.state.v1.state_query_method).get = true;
+    option (j5.ext.v1.method).state_query.get = true;
   }
 
   rpc ListRepos(ListReposRequest) returns (ListReposResponse) {
     option (google.api.http) = {get: "/registry/github/v1/q/repo"};
-    option (psm.state.v1.state_query_method).list = true;
+    option (j5.ext.v1.method).state_query.list = true;
   }
 
   rpc ListRepoEvents(ListRepoEventsRequest) returns (ListRepoEventsResponse) {
     option (google.api.http) = {get: "/registry/github/v1/q/repo/{owner}/{name}/events"};
-    option (psm.state.v1.state_query_method).list_events = true;
+    option (j5.ext.v1.method).state_query.list_events = true;
   }
 }
 
@@ -42,24 +42,24 @@ message GetRepoResponse {
 }
 
 message ListReposRequest {
-  psm.list.v1.PageRequest page = 100;
-  psm.list.v1.QueryRequest query = 101;
+  j5.list.v1.PageRequest page = 100;
+  j5.list.v1.QueryRequest query = 101;
 }
 
 message ListReposResponse {
   repeated o5.registry.github.v1.RepoState repos = 1 [(buf.validate.field).repeated = {max_items: 10}];
-  psm.list.v1.PageResponse page = 100;
+  j5.list.v1.PageResponse page = 100;
 }
 
 message ListRepoEventsRequest {
   string owner = 1;
   string name = 2;
 
-  psm.list.v1.PageRequest page = 100;
-  psm.list.v1.QueryRequest query = 101;
+  j5.list.v1.PageRequest page = 100;
+  j5.list.v1.QueryRequest query = 101;
 }
 
 message ListRepoEventsResponse {
   repeated o5.registry.github.v1.RepoEvent events = 1 [(buf.validate.field).repeated = {max_items: 10}];
-  psm.list.v1.PageResponse page = 100;
+  j5.list.v1.PageResponse page = 100;
 }
