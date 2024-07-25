@@ -5,16 +5,14 @@ package o5.registry.github.v1.service;
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "j5/ext/v1/annotations.proto";
-import "o5/auth/v1/annotations.proto";
-import "o5/registry/github/v1/repo.proto";
 import "j5/list/v1/page.proto";
 import "j5/list/v1/query.proto";
+import "o5/registry/github/v1/repo.proto";
 
 option go_package = "github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_spb";
 
 service RepoQueryService {
   option (j5.ext.v1.service).state_query.entity = "repo";
-  option (o5.auth.v1.default_auth).none = {};
 
   rpc GetRepo(GetRepoRequest) returns (GetRepoResponse) {
     option (google.api.http) = {get: "/registry/github/v1/q/repo/{owner}/{name}"};
