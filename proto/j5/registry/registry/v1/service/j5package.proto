@@ -10,16 +10,16 @@ option go_package = "github.com/pentops/registry/internal/gen/j5/registry/regist
 
 service DownloadService {
   rpc DownloadImage(DownloadImageRequest) returns (google.api.HttpBody) {
-    option (google.api.http) = {get: "/registry/v1/{organization}/{name}/{version}/image.bin"};
+    option (google.api.http) = {get: "/registry/v1/{owner}/{name}/{version}/image.bin"};
   }
   rpc DownloadSwagger(DownloadSwaggerRequest) returns (google.api.HttpBody) {
-    option (google.api.http) = {get: "/registry/v1/{organization}/{name}/{version}/swagger.json"};
+    option (google.api.http) = {get: "/registry/v1/{owner}/{name}/{version}/swagger.json"};
   }
   rpc DownloadJDef(DownloadJDefRequest) returns (google.api.HttpBody) {
-    option (google.api.http) = {get: "/registry/v1/{organization}/{name}/{version}/jdef.json"};
+    option (google.api.http) = {get: "/registry/v1/{owner}/{name}/{version}/jdef.json"};
   }
   rpc DownloadClientAPI(DownloadClientAPIRequest) returns (DownloadClientAPIResponse) {
-    option (google.api.http) = {get: "/registry/v1/{organization}/{name}/{version}/api.json"};
+    option (google.api.http) = {get: "/registry/v1/{owner}/{name}/{version}/api.json"};
   }
 }
 

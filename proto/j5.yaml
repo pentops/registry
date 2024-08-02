@@ -9,6 +9,26 @@ packages:
   - name: j5.registry.github.v1
 
 registry:
-  organization: pentops
+  owner: pentops
   name: registry
 
+dependencies:
+  - bufRegistry:
+      owner: bufbuild
+      name: protovalidate
+
+  - bufRegistry:
+      owner: googleapis
+      name: googleapis
+
+  - registry:
+      owner: pentops
+      name: j5
+
+  - registry:
+      owner: pentops
+      name: messaging
+
+  - registry:
+      owner: pentops
+      name: protostate
