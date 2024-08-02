@@ -15,6 +15,7 @@ import (
 	"github.com/pentops/o5-messaging/o5msg"
 	"github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/internal/github"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -53,6 +54,10 @@ func NewBuildWorker(builder J5Builder, github IGithub, store Storage, publisher 
 		store:     store,
 		publisher: publisher,
 	}
+}
+
+func (bw *BuildWorker) RegisterGRPC(s *grpc.Server) {
+	builder_tpb.RegisterBuilderRequestTopicServer(s, bw)
 }
 
 func (bw *BuildWorker) replyStatus(ctx context.Context, reply *messaging_pb.RequestMetadata, status builder_tpb.BuildStatus, outcome *builder_tpb.BuildOutcome) error {

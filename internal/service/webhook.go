@@ -20,6 +20,7 @@ import (
 	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/internal/git"
 	"github.com/pentops/registry/internal/github"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -33,7 +34,7 @@ type IClient interface {
 }
 
 type RefMatcher interface {
-	GetRepo(ctx context.Context, push *github_tpb.PushMessage) (*github_pb.RepoState, error)
+	GetRepo(ctx context.Context, owner string, name string) (*github_pb.RepoState, error)
 }
 
 type WebhookWorker struct {
@@ -56,6 +57,12 @@ func NewWebhookWorker(refs RefMatcher, githubClient IClient, publisher Publisher
 		publisher: publisher,
 		refs:      refs,
 	}, nil
+}
+
+func (ww *WebhookWorker) RegisterGRPC(srv *grpc.Server) {
+	github_tpb.RegisterWebhookTopicServer(srv, ww)
+	builder_tpb.RegisterBuilderReplyTopicServer(srv, ww)
+	awsdeployer_tpb.RegisterDeploymentReplyTopicServer(srv, ww)
 }
 
 func (ww *WebhookWorker) BuildStatus(ctx context.Context, message *builder_tpb.BuildStatusMessage) (*emptypb.Empty, error) {
@@ -130,9 +137,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 
 	branchName := strings.TrimPrefix(event.Ref, "refs/heads/")
 
-	//repo := fmt.Sprintf("%s/%s", event.Owner, event.Repo)
-
-	repo, err := ww.refs.GetRepo(ctx, event)
+	repo, err := ww.refs.GetRepo(ctx, event.Owner, event.Repo)
 	if err != nil {
 		return nil, fmt.Errorf("get repo: %w", err)
 	}
@@ -154,10 +159,24 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 	}
 
 	ref := github.RepoRef{
-		Owner: event.Owner,
-		Repo:  event.Repo,
+		Owner: repo.Keys.Owner,
+		Repo:  repo.Keys.Name,
 		Ref:   event.After,
 	}
+
+	err = ww.buildTargets(ctx, ref, targets, repo.Data.ChecksEnabled)
+	if err != nil {
+		return nil, fmt.Errorf("build targets: %w", err)
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func (ww *WebhookWorker) buildTarget(ctx context.Context, ref github.RepoRef, target *github_pb.DeployTargetType) error {
+	return ww.buildTargets(ctx, ref, []*github_pb.DeployTargetType{target}, false)
+}
+
+func (ww *WebhookWorker) buildTargets(ctx context.Context, ref github.RepoRef, targets []*github_pb.DeployTargetType, checks bool) error {
 
 	o5Envs := []string{}
 	j5Build := false
@@ -172,12 +191,12 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 		case *github_pb.DeployTargetType_J5Build_:
 			j5Build = true
 		default:
-			return nil, fmt.Errorf("unknown target type: %T", target)
+			return fmt.Errorf("unknown target type: %T", target)
 		}
 	}
 
 	configError := func(err error) error {
-		if !repo.Data.ChecksEnabled {
+		if !checks {
 			return err
 		}
 
@@ -205,14 +224,14 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 	if j5Build {
 		builds, err := ww.j5Build(ctx, ref)
 		if err != nil {
-			return nil, configError(err)
+			return configError(err)
 
 		}
 		for _, apiBuild := range builds.APIBuilds {
-			if repo.Data.ChecksEnabled {
+			if checks {
 				requestMetadata, err := ww.githubCheck(ctx, ref, "j5-image")
 				if err != nil {
-					return nil, fmt.Errorf("j5 image check run: %w", err)
+					return fmt.Errorf("j5 image check run: %w", err)
 				}
 				apiBuild.Request = requestMetadata
 			}
@@ -220,11 +239,11 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 		}
 
 		for _, protoBuild := range builds.ProtoBuilds {
-			if repo.Data.ChecksEnabled {
+			if checks {
 				checkRunName := fmt.Sprintf("j5-proto-%s", protoBuild.Name)
 				request, err := ww.githubCheck(ctx, ref, checkRunName)
 				if err != nil {
-					return nil, fmt.Errorf("j5 proto check run: %w", err)
+					return fmt.Errorf("j5 proto check run: %w", err)
 				}
 				protoBuild.Request = request
 			}
@@ -235,14 +254,14 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 	if len(o5Envs) > 0 {
 		builds, err := ww.o5Build(ctx, ref, o5Envs)
 		if err != nil {
-			return nil, fmt.Errorf("o5 build: %w", err)
+			return fmt.Errorf("o5 build: %w", err)
 		}
 
 		for _, build := range builds {
-			if repo.Data.ChecksEnabled {
+			if checks {
 				requestMetadata, err := ww.githubCheck(ctx, ref, fmt.Sprintf("o5-deploy-%s", build.EnvironmentId))
 				if err != nil {
-					return nil, fmt.Errorf("o5 deploy check run: %w", err)
+					return fmt.Errorf("o5 deploy check run: %w", err)
 				}
 				build.Request = requestMetadata
 			}
@@ -253,11 +272,11 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 	for _, msg := range buildMessages {
 		err := ww.publisher.Publish(ctx, msg)
 		if err != nil {
-			return nil, fmt.Errorf("publish: %w", err)
+			return fmt.Errorf("publish: %w", err)
 		}
 	}
 
-	return &emptypb.Empty{}, nil
+	return nil
 }
 
 var o5ConfigPaths = []string{

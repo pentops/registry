@@ -17,7 +17,7 @@ func TestGomodStore(t *testing.T) {
 	flow, uu := NewUniverse(t)
 	defer flow.RunSteps(t)
 
-	commitHash := "we5rbvfcb"
+	commitHash := "we5rbvfcb94vjn69nv6j95dn"
 	flow.Step("Upload Go Module", func(ctx context.Context, t flowtest.Asserter) {
 
 		files := fstest.MapFS{
@@ -49,7 +49,7 @@ func TestGomodStore(t *testing.T) {
 				"refs/heads/main",
 			},
 		}, files); err != nil {
-			t.Fatalf("failed to upload j5 image: %v", err)
+			t.Fatalf("failed to upload go module: %v", err)
 		}
 	})
 
@@ -64,10 +64,17 @@ func TestGomodStore(t *testing.T) {
 		if !ok {
 			t.Fatalf("missing version")
 		}
+		parts := strings.Split(val.(string), "-")
+		if len(parts) != 3 {
+			t.Fatalf("unexpected version: %v", val)
+		}
+		t.Equal("v0.0.0", parts[0])
+
 		if !strings.HasPrefix(val.(string), "v0.0.0-") {
 			t.Fatalf("unexpected version: %v", val)
 		}
-		if !strings.HasSuffix(val.(string), commitHash) {
+
+		if !strings.HasPrefix(commitHash, parts[2]) {
 			t.Fatalf("unexpected version: %v", val)
 		}
 	})
@@ -85,7 +92,7 @@ func TestGomodStore(t *testing.T) {
 	flow.Step("Go Mod Zip", func(ctx context.Context, t flowtest.Asserter) {
 		res := uu.HTTPGet(ctx, "/gopkg/example.com/org/repo/@v/main.zip")
 		t.Equal(200, res.StatusCode)
-		t.Log(string(res.Body))
+		//	t.Log(string(res.Body))
 	})
 
 	flow.Step("List", func(ctx context.Context, t flowtest.Asserter) {

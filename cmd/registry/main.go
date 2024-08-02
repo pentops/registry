@@ -5,26 +5,19 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"strings"
 
 	"github.com/pentops/j5/builder"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/o5-deploy-aws/gen/o5/aws/deployer/v1/awsdeployer_tpb"
-	"github.com/pentops/registry/gen/j5/registry/github/v1/github_tpb"
 	"github.com/pentops/registry/internal/anyfs"
 	"github.com/pentops/registry/internal/buildwrap"
-	"github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb"
-	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_spb"
 	"github.com/pentops/registry/internal/github"
 	"github.com/pentops/registry/internal/gomodproxy"
-	"github.com/pentops/registry/internal/japi"
 	"github.com/pentops/registry/internal/packagestore"
 	"github.com/pentops/registry/internal/service"
 	"github.com/pentops/registry/internal/state"
 	"github.com/pentops/runner"
 	"github.com/pentops/runner/commander"
 	"github.com/pressly/goose"
-	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
@@ -42,33 +35,6 @@ func main() {
 	cmdGroup.Add("migrate", commander.NewCommand(runMigrate))
 
 	cmdGroup.RunMain("registry", Version)
-}
-
-func TriggerHandler(githubWorker github_tpb.WebhookTopicServer) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// /$owner/$repo/$version
-		parts := strings.Split(r.URL.Path, "/")
-		if len(parts) != 4 {
-			http.Error(w, "invalid path", http.StatusNotFound)
-			return
-		}
-
-		owner := parts[1]
-		repo := parts[2]
-		version := parts[3]
-
-		_, err := githubWorker.Push(r.Context(), &github_tpb.PushMessage{
-			Owner: owner,
-			Repo:  repo,
-			Ref:   "ignored",
-			After: version,
-		})
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	})
 }
 
 func runMigrate(ctx context.Context, cfg struct {
@@ -147,7 +113,7 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		return err
 	}
 
-	githubCommand, err := service.NewGithubCommandService(db, stateMachines)
+	githubCommand, err := service.NewGithubCommandService(db, stateMachines, githubWorker)
 	if err != nil {
 		return err
 	}
@@ -157,19 +123,16 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		return err
 	}
 
+	registryDownloadService := service.NewRegistryService(pkgStore)
+
 	runGroup := runner.NewGroup(runner.WithName("main"), runner.WithCancelOnSignals())
 
 	runGroup.Add("httpServer", func(ctx context.Context) error {
-
-		genericCORS := cors.Default()
-		mux := http.NewServeMux()
-		mux.Handle("/registry/v1/", genericCORS.Handler(http.StripPrefix("/registry/v1", japi.Handler(pkgStore))))
-		mux.Handle("/gopkg/", http.StripPrefix("/gopkg", gomodproxy.Handler(pkgStore)))
-		mux.Handle("/trigger/v1/", http.StripPrefix("/trigger/v1", TriggerHandler(githubWorker)))
+		handler := gomodproxy.Handler(pkgStore)
 
 		httpServer := &http.Server{
 			Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
-			Handler: mux,
+			Handler: handler,
 		}
 		log.WithField(ctx, "port", cfg.HTTPPort).Info("Begin Registry Server")
 
@@ -185,15 +148,12 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
 			service.GRPCMiddleware()...,
 		))
-		builder_tpb.RegisterBuilderReplyTopicServer(grpcServer, githubWorker)
-		builder_tpb.RegisterBuilderRequestTopicServer(grpcServer, buildWorker)
 
-		github_tpb.RegisterWebhookTopicServer(grpcServer, githubWorker)
-
-		github_spb.RegisterRepoCommandServiceServer(grpcServer, githubCommand)
-		github_spb.RegisterRepoQueryServiceServer(grpcServer, githubQuery)
-
-		awsdeployer_tpb.RegisterDeploymentReplyTopicServer(grpcServer, githubWorker)
+		githubWorker.RegisterGRPC(grpcServer)
+		buildWorker.RegisterGRPC(grpcServer)
+		githubCommand.RegisterGRPC(grpcServer)
+		githubQuery.RegisterGRPC(grpcServer)
+		registryDownloadService.RegisterGRPC(grpcServer)
 
 		reflection.Register(grpcServer)
 

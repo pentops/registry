@@ -159,8 +159,8 @@ func TestJ5Trigger(t *testing.T) {
 						Name: "bundle2",
 					}},
 					Registry: &config_j5pb.RegistryConfig{
-						Organization: "owner",
-						Name:         "repo",
+						Owner: "owner",
+						Name:  "repo",
 					},
 				}),
 				"proto/b1/j5.yaml": mustMarshal(t, &config_j5pb.BundleConfigFile{
@@ -168,8 +168,8 @@ func TestJ5Trigger(t *testing.T) {
 				}),
 				"proto/b2/j5.yaml": mustMarshal(t, &config_j5pb.BundleConfigFile{
 					Registry: &config_j5pb.RegistryConfig{
-						Organization: "owner",
-						Name:         "repo1",
+						Owner: "owner",
+						Name:  "repo1",
 					},
 				}),
 			},

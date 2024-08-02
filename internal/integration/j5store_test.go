@@ -8,6 +8,7 @@ import (
 	"github.com/pentops/flowtest/jsontest"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
+	"github.com/pentops/registry/internal/gen/j5/registry/registry/v1/registry_spb"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -21,8 +22,8 @@ func TestJ5Store(t *testing.T) {
 	commitHash := "we5rbvfcb"
 
 	regConfig := &config_j5pb.RegistryConfig{
-		Organization: "cfgorg",
-		Name:         "cfgrepo",
+		Owner: "cfgorg",
+		Name:  "cfgrepo",
 	}
 	sourceImage := &source_j5pb.SourceImage{
 		File: []*descriptorpb.FileDescriptorProto{{
@@ -49,21 +50,27 @@ func TestJ5Store(t *testing.T) {
 	})
 
 	flow.Step("Download By Branch", func(ctx context.Context, t flowtest.Asserter) {
-		res := uu.HTTPGet(ctx, "/registry/v1/cfgorg/cfgrepo/main/jdef.json")
-		t.Equal(200, res.StatusCode)
-		t.Log(string(res.Body))
+		res, err := uu.RegistryDownload.DownloadJDef(ctx, &registry_spb.DownloadJDefRequest{
+			Owner:   "cfgorg",
+			Name:    "cfgrepo",
+			Version: "main",
+		})
+		t.NoError(err)
 
-		aa := jsontest.NewTestAsserter(t, res.Body)
+		aa := jsontest.NewTestAsserter(t, res.Data)
 
 		aa.AssertEqual("packages.0.name", "test.v1")
 	})
 
 	flow.Step("Download By Commit", func(ctx context.Context, t flowtest.Asserter) {
-		res := uu.HTTPGet(ctx, "/registry/v1/cfgorg/cfgrepo/"+commitHash+"/jdef.json")
-		t.Equal(200, res.StatusCode)
-		t.Log(string(res.Body))
+		res, err := uu.RegistryDownload.DownloadJDef(ctx, &registry_spb.DownloadJDefRequest{
+			Owner:   "cfgorg",
+			Name:    "cfgrepo",
+			Version: commitHash,
+		})
+		t.NoError(err)
 
-		aa := jsontest.NewTestAsserter(t, res.Body)
+		aa := jsontest.NewTestAsserter(t, res.Data)
 
 		aa.AssertEqual("packages.0.name", "test.v1")
 	})

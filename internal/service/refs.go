@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	sq "github.com/elgris/sqrl"
-	"github.com/pentops/registry/gen/j5/registry/github/v1/github_tpb"
 	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/sqrlx.go/sqrlx"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -28,13 +27,13 @@ func NewRefStore(conn sqrlx.Connection) (*RefStore, error) {
 	}, nil
 }
 
-func (rs *RefStore) GetRepo(ctx context.Context, push *github_tpb.PushMessage) (*github_pb.RepoState, error) {
+func (rs *RefStore) GetRepo(ctx context.Context, owner string, name string) (*github_pb.RepoState, error) {
 	qq := sq.
 		Select("state").
 		From("repo").
 		Where(sq.Eq{
-			"owner": push.Owner,
-			"name":  push.Repo,
+			"owner": owner,
+			"name":  name,
 		})
 
 	var stateBytes []byte

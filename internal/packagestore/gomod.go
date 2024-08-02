@@ -34,6 +34,10 @@ func (src *PackageStore) getGomodVersion(ctx context.Context, packageName, versi
 			}), pkg)
 
 	if errors.Is(err, sql.ErrNoRows) {
+		log.WithFields(ctx, map[string]interface{}{
+			"package": packageName,
+			"version": version,
+		}).Info("GoMod Version not found")
 		return nil, gomodproxy.VersionNotFoundError(version)
 	} else if err != nil {
 		return nil, err
