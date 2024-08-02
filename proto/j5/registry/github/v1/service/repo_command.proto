@@ -17,6 +17,13 @@ service RepoCommandService {
       body: "*"
     };
   }
+
+  rpc Trigger(TriggerRequest) returns (TriggerResponse) {
+    option (google.api.http) = {
+      post: "/registry/github/v1/c/repo/{owner}/{name}/trigger"
+      body: "*"
+    };
+  }
 }
 
 message ConfigureRepoRequest {
@@ -29,3 +36,13 @@ message ConfigureRepoRequest {
 message ConfigureRepoResponse {
   j5.registry.github.v1.RepoState repo = 1;
 }
+
+message TriggerRequest {
+  string owner = 1;
+  string repo = 2;
+  string commit = 3;
+
+  j5.registry.github.v1.DeployTargetType target = 4;
+}
+
+message TriggerResponse {}

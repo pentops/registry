@@ -52,12 +52,15 @@ func (s *PackageStore) GetJ5Image(ctx context.Context, orgName, imageName, versi
 		return nil, err
 	}
 
+	// package version is the 'canonical' version (commit hash)
+	img.Version = &pkg.Version
+
 	return img, nil
 }
 
 func (s *PackageStore) UploadJ5Image(ctx context.Context, commitInfo *source_j5pb.CommitInfo, img *source_j5pb.SourceImage, registry *config_j5pb.RegistryConfig) error {
 
-	packageName := path.Join(registry.Organization, registry.Name)
+	packageName := path.Join(registry.Owner, registry.Name)
 
 	log.WithFields(ctx, map[string]interface{}{
 		"package": packageName,
@@ -65,7 +68,7 @@ func (s *PackageStore) UploadJ5Image(ctx context.Context, commitInfo *source_j5p
 		"repo":    commitInfo.Repo,
 		"version": commitInfo.Hash,
 		"aliases": commitInfo.Aliases,
-		"j5Org":   registry.Organization,
+		"j5Org":   registry.Owner,
 		"j5Name":  registry.Name,
 	}).Info("uploading jsonapi")
 
@@ -92,7 +95,7 @@ func (s *PackageStore) UploadJ5Image(ctx context.Context, commitInfo *source_j5p
 	}
 
 	pkg := &registry_pb.J5Package{
-		Owner:      registry.Organization,
+		Owner:      registry.Owner,
 		Name:       registry.Name,
 		Version:    commitInfo.Hash,
 		StorageKey: storageKey,
@@ -114,7 +117,7 @@ func (s *PackageStore) UploadJ5Image(ctx context.Context, commitInfo *source_j5p
 	}, func(ctx context.Context, tx sqrlx.Transaction) error {
 		for _, version := range versionDests {
 			_, err := tx.Insert(ctx, sqrlx.Upsert("j5_version").
-				Key("owner", registry.Organization).
+				Key("owner", registry.Owner).
 				Key("repo", registry.Name).
 				Key("version", version).
 				Set("data", pkgJSON))

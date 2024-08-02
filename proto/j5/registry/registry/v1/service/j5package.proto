@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package j5.registry.registry.v1.service;
+
+import "google/api/annotations.proto";
+import "google/api/httpbody.proto";
+import "j5/client/v1/client.proto";
+
+option go_package = "github.com/pentops/registry/internal/gen/j5/registry/registry/v1/registry_spb";
+
+service DownloadService {
+  rpc DownloadImage(DownloadImageRequest) returns (google.api.HttpBody) {
+    option (google.api.http) = {get: "/registry/v1/{organization}/{name}/{version}/image.bin"};
+  }
+  rpc DownloadSwagger(DownloadSwaggerRequest) returns (google.api.HttpBody) {
+    option (google.api.http) = {get: "/registry/v1/{organization}/{name}/{version}/swagger.json"};
+  }
+  rpc DownloadJDef(DownloadJDefRequest) returns (google.api.HttpBody) {
+    option (google.api.http) = {get: "/registry/v1/{organization}/{name}/{version}/jdef.json"};
+  }
+  rpc DownloadClientAPI(DownloadClientAPIRequest) returns (DownloadClientAPIResponse) {
+    option (google.api.http) = {get: "/registry/v1/{organization}/{name}/{version}/api.json"};
+  }
+}
+
+message DownloadImageRequest {
+  string owner = 1;
+  string name = 2;
+  string version = 3;
+}
+
+message DownloadSwaggerRequest {
+  string owner = 1;
+  string name = 2;
+  string version = 3;
+}
+
+message DownloadJDefRequest {
+  string owner = 1;
+  string name = 2;
+  string version = 3;
+}
+
+message DownloadClientAPIRequest {
+  string owner = 1;
+  string name = 2;
+  string version = 3;
+}
+
+message DownloadClientAPIResponse {
+  string version = 1;
+  j5.client.v1.API api = 2;
+}

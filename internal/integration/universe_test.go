@@ -15,21 +15,22 @@ import (
 	"github.com/pentops/registry/internal/anyfs"
 	"github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_spb"
+	"github.com/pentops/registry/internal/gen/j5/registry/registry/v1/registry_spb"
 	"github.com/pentops/registry/internal/gomodproxy"
 	"github.com/pentops/registry/internal/integration/mocks"
-	"github.com/pentops/registry/internal/japi"
 	"github.com/pentops/registry/internal/packagestore"
 	"github.com/pentops/registry/internal/service"
 	"github.com/pentops/registry/internal/state"
-	"github.com/rs/cors"
 )
 
 type Universe struct {
-	Outbox       *outboxtest.OutboxAsserter
-	RepoCommand  github_spb.RepoCommandServiceClient
-	RepoQuery    github_spb.RepoQueryServiceClient
-	WebhookTopic github_tpb.WebhookTopicClient
-	BuilderReply builder_tpb.BuilderReplyTopicClient
+	Outbox *outboxtest.OutboxAsserter
+
+	RepoCommand      github_spb.RepoCommandServiceClient
+	RepoQuery        github_spb.RepoQueryServiceClient
+	WebhookTopic     github_tpb.WebhookTopicClient
+	BuilderReply     builder_tpb.BuilderReplyTopicClient
+	RegistryDownload registry_spb.DownloadServiceClient
 
 	PackageStore *packagestore.PackageStore
 
@@ -98,37 +99,34 @@ func setupUniverse(ctx context.Context, t flowtest.Asserter, uu *Universe) {
 
 	uu.PackageStore = pkgStore
 
-	{
-		genericCORS := cors.Default()
-		mux := http.NewServeMux()
-		mux.Handle("/registry/v1/", genericCORS.Handler(http.StripPrefix("/registry/v1", japi.Handler(pkgStore))))
-		mux.Handle("/gopkg/", http.StripPrefix("/gopkg", gomodproxy.Handler(pkgStore)))
-		uu.HTTPHandler = mux
-	}
+	uu.HTTPHandler = gomodproxy.Handler(pkgStore)
 
 	webhookWorker, err := service.NewWebhookWorker(refs, uu.Github, outboxPub)
 	if err != nil {
 		t.Fatalf("failed to create webhook worker: %v", err)
 	}
-	github_tpb.RegisterWebhookTopicServer(grpcPair.Server, webhookWorker)
-	uu.WebhookTopic = github_tpb.NewWebhookTopicClient(grpcPair.Client)
+	webhookWorker.RegisterGRPC(grpcPair.Server)
 
-	commandService, err := service.NewGithubCommandService(conn, states)
+	commandService, err := service.NewGithubCommandService(conn, states, webhookWorker)
 	if err != nil {
 		t.Fatalf("failed to create github command service: %v", err)
 	}
-	github_spb.RegisterRepoCommandServiceServer(grpcPair.Server, commandService)
-	uu.RepoCommand = github_spb.NewRepoCommandServiceClient(grpcPair.Client)
+	commandService.RegisterGRPC(grpcPair.Server)
 
 	queryService, err := service.NewGithubQueryService(conn, states)
 	if err != nil {
 		t.Fatalf("failed to create github query service: %v", err)
 	}
-	github_spb.RegisterRepoQueryServiceServer(grpcPair.Server, queryService)
-	uu.RepoQuery = github_spb.NewRepoQueryServiceClient(grpcPair.Client)
+	queryService.RegisterGRPC(grpcPair.Server)
 
-	builder_tpb.RegisterBuilderReplyTopicServer(grpcPair.Server, webhookWorker)
+	registryService := service.NewRegistryService(pkgStore)
+	registryService.RegisterGRPC(grpcPair.Server)
+
+	uu.WebhookTopic = github_tpb.NewWebhookTopicClient(grpcPair.Client)
+	uu.RepoCommand = github_spb.NewRepoCommandServiceClient(grpcPair.Client)
+	uu.RepoQuery = github_spb.NewRepoQueryServiceClient(grpcPair.Client)
 	uu.BuilderReply = builder_tpb.NewBuilderReplyTopicClient(grpcPair.Client)
+	uu.RegistryDownload = registry_spb.NewDownloadServiceClient(grpcPair.Client)
 
 	grpcPair.ServeUntilDone(t, ctx)
 }
@@ -152,8 +150,8 @@ func (uu *Universe) HTTPGet(ctx context.Context, path string) HTTPResponse {
 
 	log.WithFields(ctx, map[string]interface{}{
 		"status": res.Code,
-		"body":   string(out.Body),
-		"path":   path,
+		//"body":   string(out.Body),
+		"path": path,
 	}).Info("HTTP GET")
 
 	return out

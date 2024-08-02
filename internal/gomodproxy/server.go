@@ -112,10 +112,13 @@ func ParseRequestPath(requestPath string) (ParsedRequest, error) {
 	request := ParsedRequest{}
 
 	parts := strings.Split(requestPath, "/")
-	if parts[0] != "" {
+	if len(parts) < 2 || parts[0] != "" {
 		return request, StatusError{Code: http.StatusNotFound, Err: fmt.Errorf("invalid path")}
 	}
 	parts = parts[1:]
+	if parts[0] == "gopkg" {
+		parts = parts[1:]
+	}
 
 	moduleParts := make([]string, 0, len(parts)-1)
 	found := false

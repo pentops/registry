@@ -8,6 +8,7 @@ import (
 	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_spb"
 	"github.com/pentops/registry/internal/state"
 	"github.com/pentops/sqrlx.go/sqrlx"
+	"google.golang.org/grpc"
 )
 
 type GithubQueryService struct {
@@ -34,6 +35,10 @@ func NewGithubQueryService(conn sqrlx.Connection, states *state.StateMachines) (
 		db:       db,
 		querySet: querySet,
 	}, nil
+}
+
+func (ds *GithubQueryService) RegisterGRPC(srv *grpc.Server) {
+	github_spb.RegisterRepoQueryServiceServer(srv, ds)
 }
 
 func (ds *GithubQueryService) ListRepoEvents(ctx context.Context, req *github_spb.ListRepoEventsRequest) (*github_spb.ListRepoEventsResponse, error) {
