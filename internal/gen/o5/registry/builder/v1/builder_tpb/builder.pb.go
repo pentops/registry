@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.32.0
 // 	protoc        (unknown)
-// source: o5/registry/builder/v1/topic/builder.proto
+// source: j5/registry/builder/v1/topic/builder.proto
 
 package builder_tpb
 
@@ -216,7 +216,7 @@ type BuildStatusMessage struct {
 	unknownFields protoimpl.UnknownFields
 
 	Request *messaging_pb.RequestMetadata `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
-	Status  BuildStatus                   `protobuf:"varint,2,opt,name=status,proto3,enum=o5.registry.builder.v1.topic.BuildStatus" json:"status,omitempty"`
+	Status  BuildStatus                   `protobuf:"varint,2,opt,name=status,proto3,enum=j5.registry.builder.v1.topic.BuildStatus" json:"status,omitempty"`
 	Outcome *BuildOutcome                 `protobuf:"bytes,3,opt,name=outcome,proto3" json:"outcome,omitempty"`
 }
 
@@ -449,29 +449,29 @@ func file_o5_registry_builder_v1_topic_builder_proto_rawDescGZIP() []byte {
 var file_o5_registry_builder_v1_topic_builder_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_o5_registry_builder_v1_topic_builder_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_o5_registry_builder_v1_topic_builder_proto_goTypes = []interface{}{
-	(BuildStatus)(0),                     // 0: o5.registry.builder.v1.topic.BuildStatus
-	(*PublishMessage)(nil),               // 1: o5.registry.builder.v1.topic.PublishMessage
-	(*BuildAPIMessage)(nil),              // 2: o5.registry.builder.v1.topic.BuildAPIMessage
-	(*BuildStatusMessage)(nil),           // 3: o5.registry.builder.v1.topic.BuildStatusMessage
-	(*BuildOutcome)(nil),                 // 4: o5.registry.builder.v1.topic.BuildOutcome
+	(BuildStatus)(0),                     // 0: j5.registry.builder.v1.topic.BuildStatus
+	(*PublishMessage)(nil),               // 1: j5.registry.builder.v1.topic.PublishMessage
+	(*BuildAPIMessage)(nil),              // 2: j5.registry.builder.v1.topic.BuildAPIMessage
+	(*BuildStatusMessage)(nil),           // 3: j5.registry.builder.v1.topic.BuildStatusMessage
+	(*BuildOutcome)(nil),                 // 4: j5.registry.builder.v1.topic.BuildOutcome
 	(*messaging_pb.RequestMetadata)(nil), // 5: o5.messaging.v1.RequestMetadata
 	(*source_j5pb.CommitInfo)(nil),       // 6: j5.source.v1.CommitInfo
 	(*emptypb.Empty)(nil),                // 7: google.protobuf.Empty
 }
 var file_o5_registry_builder_v1_topic_builder_proto_depIdxs = []int32{
-	5,  // 0: o5.registry.builder.v1.topic.PublishMessage.request:type_name -> o5.messaging.v1.RequestMetadata
-	6,  // 1: o5.registry.builder.v1.topic.PublishMessage.commit:type_name -> j5.source.v1.CommitInfo
-	5,  // 2: o5.registry.builder.v1.topic.BuildAPIMessage.request:type_name -> o5.messaging.v1.RequestMetadata
-	6,  // 3: o5.registry.builder.v1.topic.BuildAPIMessage.commit:type_name -> j5.source.v1.CommitInfo
-	5,  // 4: o5.registry.builder.v1.topic.BuildStatusMessage.request:type_name -> o5.messaging.v1.RequestMetadata
-	0,  // 5: o5.registry.builder.v1.topic.BuildStatusMessage.status:type_name -> o5.registry.builder.v1.topic.BuildStatus
-	4,  // 6: o5.registry.builder.v1.topic.BuildStatusMessage.outcome:type_name -> o5.registry.builder.v1.topic.BuildOutcome
-	1,  // 7: o5.registry.builder.v1.topic.BuilderRequestTopic.Publish:input_type -> o5.registry.builder.v1.topic.PublishMessage
-	2,  // 8: o5.registry.builder.v1.topic.BuilderRequestTopic.BuildAPI:input_type -> o5.registry.builder.v1.topic.BuildAPIMessage
-	3,  // 9: o5.registry.builder.v1.topic.BuilderReplyTopic.BuildStatus:input_type -> o5.registry.builder.v1.topic.BuildStatusMessage
-	7,  // 10: o5.registry.builder.v1.topic.BuilderRequestTopic.Publish:output_type -> google.protobuf.Empty
-	7,  // 11: o5.registry.builder.v1.topic.BuilderRequestTopic.BuildAPI:output_type -> google.protobuf.Empty
-	7,  // 12: o5.registry.builder.v1.topic.BuilderReplyTopic.BuildStatus:output_type -> google.protobuf.Empty
+	5,  // 0: j5.registry.builder.v1.topic.PublishMessage.request:type_name -> o5.messaging.v1.RequestMetadata
+	6,  // 1: j5.registry.builder.v1.topic.PublishMessage.commit:type_name -> j5.source.v1.CommitInfo
+	5,  // 2: j5.registry.builder.v1.topic.BuildAPIMessage.request:type_name -> o5.messaging.v1.RequestMetadata
+	6,  // 3: j5.registry.builder.v1.topic.BuildAPIMessage.commit:type_name -> j5.source.v1.CommitInfo
+	5,  // 4: j5.registry.builder.v1.topic.BuildStatusMessage.request:type_name -> o5.messaging.v1.RequestMetadata
+	0,  // 5: j5.registry.builder.v1.topic.BuildStatusMessage.status:type_name -> j5.registry.builder.v1.topic.BuildStatus
+	4,  // 6: j5.registry.builder.v1.topic.BuildStatusMessage.outcome:type_name -> j5.registry.builder.v1.topic.BuildOutcome
+	1,  // 7: j5.registry.builder.v1.topic.BuilderRequestTopic.Publish:input_type -> j5.registry.builder.v1.topic.PublishMessage
+	2,  // 8: j5.registry.builder.v1.topic.BuilderRequestTopic.BuildAPI:input_type -> j5.registry.builder.v1.topic.BuildAPIMessage
+	3,  // 9: j5.registry.builder.v1.topic.BuilderReplyTopic.BuildStatus:input_type -> j5.registry.builder.v1.topic.BuildStatusMessage
+	7,  // 10: j5.registry.builder.v1.topic.BuilderRequestTopic.Publish:output_type -> google.protobuf.Empty
+	7,  // 11: j5.registry.builder.v1.topic.BuilderRequestTopic.BuildAPI:output_type -> google.protobuf.Empty
+	7,  // 12: j5.registry.builder.v1.topic.BuilderReplyTopic.BuildStatus:output_type -> google.protobuf.Empty
 	10, // [10:13] is the sub-list for method output_type
 	7,  // [7:10] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name

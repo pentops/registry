@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.32.0
 // 	protoc        (unknown)
-// source: o5/registry/registry/v1/package.proto
+// source: j5/registry/registry/v1/package.proto
 
 package registry_pb
 
@@ -250,12 +250,12 @@ func file_o5_registry_registry_v1_package_proto_rawDescGZIP() []byte {
 
 var file_o5_registry_registry_v1_package_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_o5_registry_registry_v1_package_proto_goTypes = []interface{}{
-	(*J5Package)(nil),             // 0: o5.registry.registry.v1.J5Package
-	(*GoModule)(nil),              // 1: o5.registry.registry.v1.GoModule
+	(*J5Package)(nil),             // 0: j5.registry.registry.v1.J5Package
+	(*GoModule)(nil),              // 1: j5.registry.registry.v1.GoModule
 	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
 }
 var file_o5_registry_registry_v1_package_proto_depIdxs = []int32{
-	2, // 0: o5.registry.registry.v1.GoModule.created_at:type_name -> google.protobuf.Timestamp
+	2, // 0: j5.registry.registry.v1.GoModule.created_at:type_name -> google.protobuf.Timestamp
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

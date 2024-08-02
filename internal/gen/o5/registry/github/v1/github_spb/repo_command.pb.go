@@ -2,13 +2,13 @@
 // versions:
 // 	protoc-gen-go v1.32.0
 // 	protoc        (unknown)
-// source: o5/registry/github/v1/service/repo_command.proto
+// source: j5/registry/github/v1/service/repo_command.proto
 
 package github_spb
 
 import (
 	_ "github.com/pentops/j5/gen/j5/ext/v1/ext_j5pb"
-	github_pb "github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_pb"
+	github_pb "github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -196,16 +196,16 @@ func file_o5_registry_github_v1_service_repo_command_proto_rawDescGZIP() []byte 
 
 var file_o5_registry_github_v1_service_repo_command_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_o5_registry_github_v1_service_repo_command_proto_goTypes = []interface{}{
-	(*ConfigureRepoRequest)(nil),              // 0: o5.registry.github.v1.service.ConfigureRepoRequest
-	(*ConfigureRepoResponse)(nil),             // 1: o5.registry.github.v1.service.ConfigureRepoResponse
-	(*github_pb.RepoEventType_Configure)(nil), // 2: o5.registry.github.v1.RepoEventType.Configure
-	(*github_pb.RepoState)(nil),               // 3: o5.registry.github.v1.RepoState
+	(*ConfigureRepoRequest)(nil),              // 0: j5.registry.github.v1.service.ConfigureRepoRequest
+	(*ConfigureRepoResponse)(nil),             // 1: j5.registry.github.v1.service.ConfigureRepoResponse
+	(*github_pb.RepoEventType_Configure)(nil), // 2: j5.registry.github.v1.RepoEventType.Configure
+	(*github_pb.RepoState)(nil),               // 3: j5.registry.github.v1.RepoState
 }
 var file_o5_registry_github_v1_service_repo_command_proto_depIdxs = []int32{
-	2, // 0: o5.registry.github.v1.service.ConfigureRepoRequest.config:type_name -> o5.registry.github.v1.RepoEventType.Configure
-	3, // 1: o5.registry.github.v1.service.ConfigureRepoResponse.repo:type_name -> o5.registry.github.v1.RepoState
-	0, // 2: o5.registry.github.v1.service.RepoCommandService.ConfigureRepo:input_type -> o5.registry.github.v1.service.ConfigureRepoRequest
-	1, // 3: o5.registry.github.v1.service.RepoCommandService.ConfigureRepo:output_type -> o5.registry.github.v1.service.ConfigureRepoResponse
+	2, // 0: j5.registry.github.v1.service.ConfigureRepoRequest.config:type_name -> j5.registry.github.v1.RepoEventType.Configure
+	3, // 1: j5.registry.github.v1.service.ConfigureRepoResponse.repo:type_name -> j5.registry.github.v1.RepoState
+	0, // 2: j5.registry.github.v1.service.RepoCommandService.ConfigureRepo:input_type -> j5.registry.github.v1.service.ConfigureRepoRequest
+	1, // 3: j5.registry.github.v1.service.RepoCommandService.ConfigureRepo:output_type -> j5.registry.github.v1.service.ConfigureRepoResponse
 	3, // [3:4] is the sub-list for method output_type
 	2, // [2:3] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name

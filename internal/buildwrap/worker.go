@@ -13,7 +13,7 @@ import (
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-messaging/gen/o5/messaging/v1/messaging_pb"
 	"github.com/pentops/o5-messaging/o5msg"
-	"github.com/pentops/registry/internal/gen/o5/registry/builder/v1/builder_tpb"
+	"github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/internal/github"
 	"google.golang.org/protobuf/types/known/emptypb"
 )

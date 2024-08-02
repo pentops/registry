@@ -12,7 +12,7 @@ import (
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/registry/internal/gen/o5/registry/registry/v1/registry_pb"
+	"github.com/pentops/registry/internal/gen/j5/registry/registry/v1/registry_pb"
 	"github.com/pentops/sqrlx.go/sqrlx"
 	"google.golang.org/protobuf/encoding/protojson"
 )
