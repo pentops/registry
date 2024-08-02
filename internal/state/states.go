@@ -3,7 +3,7 @@ package state
 import (
 	"fmt"
 
-	"github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_pb"
+	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
 )
 
 type StateMachines struct {

@@ -18,7 +18,7 @@ import (
 	"github.com/pentops/envconf.go/envconf"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_pb"
+	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
 	"golang.org/x/oauth2"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"

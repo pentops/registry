@@ -7,8 +7,8 @@ import (
 	"fmt"
 
 	sq "github.com/elgris/sqrl"
-	"github.com/pentops/registry/gen/o5/registry/github/v1/github_tpb"
-	"github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_pb"
+	"github.com/pentops/registry/gen/j5/registry/github/v1/github_tpb"
+	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/sqrlx.go/sqrlx"
 	"google.golang.org/protobuf/encoding/protojson"
 )

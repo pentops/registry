@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package j5.registry.github.v1.service;
+
+import "google/api/annotations.proto";
+import "j5/ext/v1/annotations.proto";
+import "j5/registry/github/v1/repo.proto";
+
+option go_package = "github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_spb";
+
+service RepoCommandService {
+  option (j5.ext.v1.service).state_command.entity = "repo";
+
+  rpc ConfigureRepo(ConfigureRepoRequest) returns (ConfigureRepoResponse) {
+    option (google.api.http) = {
+      post: "/registry/github/v1/c/repo/{owner}/{name}/configure"
+      body: "*"
+    };
+  }
+}
+
+message ConfigureRepoRequest {
+  string owner = 1;
+  string name = 2;
+
+  j5.registry.github.v1.RepoEventType.Configure config = 3;
+}
+
+message ConfigureRepoResponse {
+  j5.registry.github.v1.RepoState repo = 1;
+}

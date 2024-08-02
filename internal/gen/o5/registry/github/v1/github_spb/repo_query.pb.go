@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.32.0
 // 	protoc        (unknown)
-// source: o5/registry/github/v1/service/repo_query.proto
+// source: j5/registry/github/v1/service/repo_query.proto
 
 package github_spb
 
@@ -10,7 +10,7 @@ import (
 	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	_ "github.com/pentops/j5/gen/j5/ext/v1/ext_j5pb"
 	list_j5pb "github.com/pentops/j5/gen/j5/list/v1/list_j5pb"
-	github_pb "github.com/pentops/registry/internal/gen/o5/registry/github/v1/github_pb"
+	github_pb "github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -481,34 +481,34 @@ func file_o5_registry_github_v1_service_repo_query_proto_rawDescGZIP() []byte {
 
 var file_o5_registry_github_v1_service_repo_query_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_o5_registry_github_v1_service_repo_query_proto_goTypes = []interface{}{
-	(*GetRepoRequest)(nil),         // 0: o5.registry.github.v1.service.GetRepoRequest
-	(*GetRepoResponse)(nil),        // 1: o5.registry.github.v1.service.GetRepoResponse
-	(*ListReposRequest)(nil),       // 2: o5.registry.github.v1.service.ListReposRequest
-	(*ListReposResponse)(nil),      // 3: o5.registry.github.v1.service.ListReposResponse
-	(*ListRepoEventsRequest)(nil),  // 4: o5.registry.github.v1.service.ListRepoEventsRequest
-	(*ListRepoEventsResponse)(nil), // 5: o5.registry.github.v1.service.ListRepoEventsResponse
-	(*github_pb.RepoState)(nil),    // 6: o5.registry.github.v1.RepoState
+	(*GetRepoRequest)(nil),         // 0: j5.registry.github.v1.service.GetRepoRequest
+	(*GetRepoResponse)(nil),        // 1: j5.registry.github.v1.service.GetRepoResponse
+	(*ListReposRequest)(nil),       // 2: j5.registry.github.v1.service.ListReposRequest
+	(*ListReposResponse)(nil),      // 3: j5.registry.github.v1.service.ListReposResponse
+	(*ListRepoEventsRequest)(nil),  // 4: j5.registry.github.v1.service.ListRepoEventsRequest
+	(*ListRepoEventsResponse)(nil), // 5: j5.registry.github.v1.service.ListRepoEventsResponse
+	(*github_pb.RepoState)(nil),    // 6: j5.registry.github.v1.RepoState
 	(*list_j5pb.PageRequest)(nil),  // 7: j5.list.v1.PageRequest
 	(*list_j5pb.QueryRequest)(nil), // 8: j5.list.v1.QueryRequest
 	(*list_j5pb.PageResponse)(nil), // 9: j5.list.v1.PageResponse
-	(*github_pb.RepoEvent)(nil),    // 10: o5.registry.github.v1.RepoEvent
+	(*github_pb.RepoEvent)(nil),    // 10: j5.registry.github.v1.RepoEvent
 }
 var file_o5_registry_github_v1_service_repo_query_proto_depIdxs = []int32{
-	6,  // 0: o5.registry.github.v1.service.GetRepoResponse.repo:type_name -> o5.registry.github.v1.RepoState
-	7,  // 1: o5.registry.github.v1.service.ListReposRequest.page:type_name -> j5.list.v1.PageRequest
-	8,  // 2: o5.registry.github.v1.service.ListReposRequest.query:type_name -> j5.list.v1.QueryRequest
-	6,  // 3: o5.registry.github.v1.service.ListReposResponse.repos:type_name -> o5.registry.github.v1.RepoState
-	9,  // 4: o5.registry.github.v1.service.ListReposResponse.page:type_name -> j5.list.v1.PageResponse
-	7,  // 5: o5.registry.github.v1.service.ListRepoEventsRequest.page:type_name -> j5.list.v1.PageRequest
-	8,  // 6: o5.registry.github.v1.service.ListRepoEventsRequest.query:type_name -> j5.list.v1.QueryRequest
-	10, // 7: o5.registry.github.v1.service.ListRepoEventsResponse.events:type_name -> o5.registry.github.v1.RepoEvent
-	9,  // 8: o5.registry.github.v1.service.ListRepoEventsResponse.page:type_name -> j5.list.v1.PageResponse
-	0,  // 9: o5.registry.github.v1.service.RepoQueryService.GetRepo:input_type -> o5.registry.github.v1.service.GetRepoRequest
-	2,  // 10: o5.registry.github.v1.service.RepoQueryService.ListRepos:input_type -> o5.registry.github.v1.service.ListReposRequest
-	4,  // 11: o5.registry.github.v1.service.RepoQueryService.ListRepoEvents:input_type -> o5.registry.github.v1.service.ListRepoEventsRequest
-	1,  // 12: o5.registry.github.v1.service.RepoQueryService.GetRepo:output_type -> o5.registry.github.v1.service.GetRepoResponse
-	3,  // 13: o5.registry.github.v1.service.RepoQueryService.ListRepos:output_type -> o5.registry.github.v1.service.ListReposResponse
-	5,  // 14: o5.registry.github.v1.service.RepoQueryService.ListRepoEvents:output_type -> o5.registry.github.v1.service.ListRepoEventsResponse
+	6,  // 0: j5.registry.github.v1.service.GetRepoResponse.repo:type_name -> j5.registry.github.v1.RepoState
+	7,  // 1: j5.registry.github.v1.service.ListReposRequest.page:type_name -> j5.list.v1.PageRequest
+	8,  // 2: j5.registry.github.v1.service.ListReposRequest.query:type_name -> j5.list.v1.QueryRequest
+	6,  // 3: j5.registry.github.v1.service.ListReposResponse.repos:type_name -> j5.registry.github.v1.RepoState
+	9,  // 4: j5.registry.github.v1.service.ListReposResponse.page:type_name -> j5.list.v1.PageResponse
+	7,  // 5: j5.registry.github.v1.service.ListRepoEventsRequest.page:type_name -> j5.list.v1.PageRequest
+	8,  // 6: j5.registry.github.v1.service.ListRepoEventsRequest.query:type_name -> j5.list.v1.QueryRequest
+	10, // 7: j5.registry.github.v1.service.ListRepoEventsResponse.events:type_name -> j5.registry.github.v1.RepoEvent
+	9,  // 8: j5.registry.github.v1.service.ListRepoEventsResponse.page:type_name -> j5.list.v1.PageResponse
+	0,  // 9: j5.registry.github.v1.service.RepoQueryService.GetRepo:input_type -> j5.registry.github.v1.service.GetRepoRequest
+	2,  // 10: j5.registry.github.v1.service.RepoQueryService.ListRepos:input_type -> j5.registry.github.v1.service.ListReposRequest
+	4,  // 11: j5.registry.github.v1.service.RepoQueryService.ListRepoEvents:input_type -> j5.registry.github.v1.service.ListRepoEventsRequest
+	1,  // 12: j5.registry.github.v1.service.RepoQueryService.GetRepo:output_type -> j5.registry.github.v1.service.GetRepoResponse
+	3,  // 13: j5.registry.github.v1.service.RepoQueryService.ListRepos:output_type -> j5.registry.github.v1.service.ListReposResponse
+	5,  // 14: j5.registry.github.v1.service.RepoQueryService.ListRepoEvents:output_type -> j5.registry.github.v1.service.ListRepoEventsResponse
 	12, // [12:15] is the sub-list for method output_type
 	9,  // [9:12] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.32.0
 // 	protoc        (unknown)
-// source: o5/registry/github/v1/checks.proto
+// source: j5/registry/github/v1/checks.proto
 
 package github_pb
 
@@ -130,7 +130,7 @@ func file_o5_registry_github_v1_checks_proto_rawDescGZIP() []byte {
 
 var file_o5_registry_github_v1_checks_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_o5_registry_github_v1_checks_proto_goTypes = []interface{}{
-	(*CheckRun)(nil), // 0: o5.registry.github.v1.CheckRun
+	(*CheckRun)(nil), // 0: j5.registry.github.v1.CheckRun
 }
 var file_o5_registry_github_v1_checks_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

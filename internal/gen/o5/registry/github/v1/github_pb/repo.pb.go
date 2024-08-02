@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.32.0
 // 	protoc        (unknown)
-// source: o5/registry/github/v1/repo.proto
+// source: j5/registry/github/v1/repo.proto
 
 package github_pb
 
@@ -132,7 +132,7 @@ type RepoState struct {
 
 	Metadata *psm_pb.StateMetadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	Keys     *RepoKeys             `protobuf:"bytes,2,opt,name=keys,proto3" json:"keys,omitempty"`
-	Status   RepoStatus            `protobuf:"varint,3,opt,name=status,proto3,enum=o5.registry.github.v1.RepoStatus" json:"status,omitempty"`
+	Status   RepoStatus            `protobuf:"varint,3,opt,name=status,proto3,enum=j5.registry.github.v1.RepoStatus" json:"status,omitempty"`
 	Data     *RepoStateData        `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`
 }
 
@@ -935,39 +935,39 @@ func file_o5_registry_github_v1_repo_proto_rawDescGZIP() []byte {
 var file_o5_registry_github_v1_repo_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_o5_registry_github_v1_repo_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_o5_registry_github_v1_repo_proto_goTypes = []interface{}{
-	(RepoStatus)(0),                       // 0: o5.registry.github.v1.RepoStatus
-	(*RepoKeys)(nil),                      // 1: o5.registry.github.v1.RepoKeys
-	(*RepoState)(nil),                     // 2: o5.registry.github.v1.RepoState
-	(*RepoStateData)(nil),                 // 3: o5.registry.github.v1.RepoStateData
-	(*RepoEvent)(nil),                     // 4: o5.registry.github.v1.RepoEvent
-	(*RepoEventType)(nil),                 // 5: o5.registry.github.v1.RepoEventType
-	(*Branch)(nil),                        // 6: o5.registry.github.v1.Branch
-	(*DeployTargetType)(nil),              // 7: o5.registry.github.v1.DeployTargetType
-	(*RepoEventType_Configure)(nil),       // 8: o5.registry.github.v1.RepoEventType.Configure
-	(*RepoEventType_ConfigureBranch)(nil), // 9: o5.registry.github.v1.RepoEventType.ConfigureBranch
-	(*RepoEventType_RemoveBranch)(nil),    // 10: o5.registry.github.v1.RepoEventType.RemoveBranch
-	(*DeployTargetType_J5Build)(nil),      // 11: o5.registry.github.v1.DeployTargetType.J5Build
-	(*DeployTargetType_O5Build)(nil),      // 12: o5.registry.github.v1.DeployTargetType.O5Build
+	(RepoStatus)(0),                       // 0: j5.registry.github.v1.RepoStatus
+	(*RepoKeys)(nil),                      // 1: j5.registry.github.v1.RepoKeys
+	(*RepoState)(nil),                     // 2: j5.registry.github.v1.RepoState
+	(*RepoStateData)(nil),                 // 3: j5.registry.github.v1.RepoStateData
+	(*RepoEvent)(nil),                     // 4: j5.registry.github.v1.RepoEvent
+	(*RepoEventType)(nil),                 // 5: j5.registry.github.v1.RepoEventType
+	(*Branch)(nil),                        // 6: j5.registry.github.v1.Branch
+	(*DeployTargetType)(nil),              // 7: j5.registry.github.v1.DeployTargetType
+	(*RepoEventType_Configure)(nil),       // 8: j5.registry.github.v1.RepoEventType.Configure
+	(*RepoEventType_ConfigureBranch)(nil), // 9: j5.registry.github.v1.RepoEventType.ConfigureBranch
+	(*RepoEventType_RemoveBranch)(nil),    // 10: j5.registry.github.v1.RepoEventType.RemoveBranch
+	(*DeployTargetType_J5Build)(nil),      // 11: j5.registry.github.v1.DeployTargetType.J5Build
+	(*DeployTargetType_O5Build)(nil),      // 12: j5.registry.github.v1.DeployTargetType.O5Build
 	(*psm_pb.StateMetadata)(nil),          // 13: psm.state.v1.StateMetadata
 	(*psm_pb.EventMetadata)(nil),          // 14: psm.state.v1.EventMetadata
 }
 var file_o5_registry_github_v1_repo_proto_depIdxs = []int32{
-	13, // 0: o5.registry.github.v1.RepoState.metadata:type_name -> psm.state.v1.StateMetadata
-	1,  // 1: o5.registry.github.v1.RepoState.keys:type_name -> o5.registry.github.v1.RepoKeys
-	0,  // 2: o5.registry.github.v1.RepoState.status:type_name -> o5.registry.github.v1.RepoStatus
-	3,  // 3: o5.registry.github.v1.RepoState.data:type_name -> o5.registry.github.v1.RepoStateData
-	6,  // 4: o5.registry.github.v1.RepoStateData.branches:type_name -> o5.registry.github.v1.Branch
-	14, // 5: o5.registry.github.v1.RepoEvent.metadata:type_name -> psm.state.v1.EventMetadata
-	1,  // 6: o5.registry.github.v1.RepoEvent.keys:type_name -> o5.registry.github.v1.RepoKeys
-	5,  // 7: o5.registry.github.v1.RepoEvent.event:type_name -> o5.registry.github.v1.RepoEventType
-	8,  // 8: o5.registry.github.v1.RepoEventType.configure:type_name -> o5.registry.github.v1.RepoEventType.Configure
-	9,  // 9: o5.registry.github.v1.RepoEventType.configure_branch:type_name -> o5.registry.github.v1.RepoEventType.ConfigureBranch
-	10, // 10: o5.registry.github.v1.RepoEventType.remove_branch:type_name -> o5.registry.github.v1.RepoEventType.RemoveBranch
-	7,  // 11: o5.registry.github.v1.Branch.deploy_targets:type_name -> o5.registry.github.v1.DeployTargetType
-	11, // 12: o5.registry.github.v1.DeployTargetType.j5_build:type_name -> o5.registry.github.v1.DeployTargetType.J5Build
-	12, // 13: o5.registry.github.v1.DeployTargetType.o5_build:type_name -> o5.registry.github.v1.DeployTargetType.O5Build
-	6,  // 14: o5.registry.github.v1.RepoEventType.Configure.branches:type_name -> o5.registry.github.v1.Branch
-	6,  // 15: o5.registry.github.v1.RepoEventType.ConfigureBranch.branch:type_name -> o5.registry.github.v1.Branch
+	13, // 0: j5.registry.github.v1.RepoState.metadata:type_name -> psm.state.v1.StateMetadata
+	1,  // 1: j5.registry.github.v1.RepoState.keys:type_name -> j5.registry.github.v1.RepoKeys
+	0,  // 2: j5.registry.github.v1.RepoState.status:type_name -> j5.registry.github.v1.RepoStatus
+	3,  // 3: j5.registry.github.v1.RepoState.data:type_name -> j5.registry.github.v1.RepoStateData
+	6,  // 4: j5.registry.github.v1.RepoStateData.branches:type_name -> j5.registry.github.v1.Branch
+	14, // 5: j5.registry.github.v1.RepoEvent.metadata:type_name -> psm.state.v1.EventMetadata
+	1,  // 6: j5.registry.github.v1.RepoEvent.keys:type_name -> j5.registry.github.v1.RepoKeys
+	5,  // 7: j5.registry.github.v1.RepoEvent.event:type_name -> j5.registry.github.v1.RepoEventType
+	8,  // 8: j5.registry.github.v1.RepoEventType.configure:type_name -> j5.registry.github.v1.RepoEventType.Configure
+	9,  // 9: j5.registry.github.v1.RepoEventType.configure_branch:type_name -> j5.registry.github.v1.RepoEventType.ConfigureBranch
+	10, // 10: j5.registry.github.v1.RepoEventType.remove_branch:type_name -> j5.registry.github.v1.RepoEventType.RemoveBranch
+	7,  // 11: j5.registry.github.v1.Branch.deploy_targets:type_name -> j5.registry.github.v1.DeployTargetType
+	11, // 12: j5.registry.github.v1.DeployTargetType.j5_build:type_name -> j5.registry.github.v1.DeployTargetType.J5Build
+	12, // 13: j5.registry.github.v1.DeployTargetType.o5_build:type_name -> j5.registry.github.v1.DeployTargetType.O5Build
+	6,  // 14: j5.registry.github.v1.RepoEventType.Configure.branches:type_name -> j5.registry.github.v1.Branch
+	6,  // 15: j5.registry.github.v1.RepoEventType.ConfigureBranch.branch:type_name -> j5.registry.github.v1.Branch
 	16, // [16:16] is the sub-list for method output_type
 	16, // [16:16] is the sub-list for method input_type
 	16, // [16:16] is the sub-list for extension type_name

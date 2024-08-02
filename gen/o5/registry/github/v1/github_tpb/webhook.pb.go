@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.32.0
 // 	protoc        (unknown)
-// source: o5/registry/github/v1/topic/webhook.proto
+// source: j5/registry/github/v1/topic/webhook.proto
 
 package github_tpb
 
@@ -157,12 +157,12 @@ func file_o5_registry_github_v1_topic_webhook_proto_rawDescGZIP() []byte {
 
 var file_o5_registry_github_v1_topic_webhook_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_o5_registry_github_v1_topic_webhook_proto_goTypes = []interface{}{
-	(*PushMessage)(nil),   // 0: o5.registry.github.v1.topic.PushMessage
+	(*PushMessage)(nil),   // 0: j5.registry.github.v1.topic.PushMessage
 	(*emptypb.Empty)(nil), // 1: google.protobuf.Empty
 }
 var file_o5_registry_github_v1_topic_webhook_proto_depIdxs = []int32{
-	0, // 0: o5.registry.github.v1.topic.WebhookTopic.Push:input_type -> o5.registry.github.v1.topic.PushMessage
-	1, // 1: o5.registry.github.v1.topic.WebhookTopic.Push:output_type -> google.protobuf.Empty
+	0, // 0: j5.registry.github.v1.topic.WebhookTopic.Push:input_type -> j5.registry.github.v1.topic.PushMessage
+	1, // 1: j5.registry.github.v1.topic.WebhookTopic.Push:output_type -> google.protobuf.Empty
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
