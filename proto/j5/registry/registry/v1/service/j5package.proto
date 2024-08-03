@@ -10,7 +10,7 @@ import "j5/ext/v1/annotations.proto";
 option go_package = "github.com/pentops/registry/internal/gen/j5/registry/registry/v1/registry_spb";
 
 service DownloadService {
-  option (j5.ext.v1.service).default_auth.none = {};
+  option (j5.ext.v1.service).default_auth.custom = {};
 
   rpc DownloadImage(DownloadImageRequest) returns (google.api.HttpBody) {
     option (google.api.http) = {get: "/registry/v1/{owner}/{name}/{version}/image.bin"};

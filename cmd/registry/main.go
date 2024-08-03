@@ -17,6 +17,7 @@ import (
 	"github.com/pentops/registry/internal/state"
 	"github.com/pentops/runner"
 	"github.com/pentops/runner/commander"
+	"github.com/pentops/sqrlx.go/sqrlx"
 	"github.com/pressly/goose"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -32,6 +33,7 @@ func main() {
 	cmdGroup := commander.NewCommandSet()
 
 	cmdGroup.Add("serve", commander.NewCommand(runCombinedServer))
+	cmdGroup.Add("readonly", commander.NewCommand(runReadonlyServer))
 	cmdGroup.Add("migrate", commander.NewCommand(runMigrate))
 
 	cmdGroup.RunMain("registry", Version)
@@ -47,34 +49,108 @@ func runMigrate(ctx context.Context, cfg struct {
 		return err
 	}
 
-	return goose.Up(db, "/migrations")
+	return goose.Up(db, cfg.MigrationsDir)
 }
 
-func runCombinedServer(ctx context.Context, cfg struct {
-	HTTPPort int    `env:"HTTP_PORT" default:"8081"`
-	GRPCPort int    `env:"GRPC_PORT" default:"8080"`
-	Storage  string `env:"REGISTRY_STORAGE"`
+func runReadonlyServer(ctx context.Context, cfg struct {
+	HTTPPort int `env:"HTTP_PORT" default:"8081"`
+	GRPCPort int `env:"GRPC_PORT" default:"8080"`
 	service.DBConfig
+	PackageStoreConfig
 }) error {
-
-	awsConfig, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
-	}
-
 	db, err := cfg.DBConfig.OpenDatabase(ctx)
 	if err != nil {
 		return err
+	}
+
+	pkgStore, err := cfg.PackageStoreConfig.OpenPackageStore(ctx, db)
+	if err != nil {
+		return err
+	}
+
+	registryDownloadService := service.NewRegistryService(pkgStore)
+
+	runGroup := runner.NewGroup(runner.WithName("main"), runner.WithCancelOnSignals())
+
+	runGroup.Add("httpServer", func(ctx context.Context) error {
+		handler := gomodproxy.Handler(pkgStore)
+
+		httpServer := &http.Server{
+			Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
+			Handler: handler,
+		}
+		log.WithField(ctx, "port", cfg.HTTPPort).Info("Begin Registry Server")
+
+		go func() {
+			<-ctx.Done()
+			httpServer.Shutdown(ctx) // nolint:errcheck
+		}()
+
+		return httpServer.ListenAndServe()
+	})
+
+	runGroup.Add("grpcServer", func(ctx context.Context) error {
+		grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
+			service.GRPCMiddleware()...,
+		))
+
+		registryDownloadService.RegisterGRPC(grpcServer)
+
+		reflection.Register(grpcServer)
+
+		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
+		if err != nil {
+			return err
+		}
+		log.WithField(ctx, "port", cfg.GRPCPort).Info("Begin Worker Server")
+		go func() {
+			<-ctx.Done()
+			grpcServer.GracefulStop() // nolint:errcheck
+		}()
+
+		return grpcServer.Serve(lis)
+	})
+
+	return runGroup.Run(ctx)
+}
+
+type PackageStoreConfig struct {
+	Storage string `env:"REGISTRY_STORAGE"`
+}
+
+func (cfg PackageStoreConfig) OpenPackageStore(ctx context.Context, db sqrlx.Connection) (*packagestore.PackageStore, error) {
+	awsConfig, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
 
 	s3Client := s3.NewFromConfig(awsConfig)
 
 	s3fs, err := anyfs.NewS3FS(s3Client, cfg.Storage)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	pkgStore, err := packagestore.NewPackageStore(db, s3fs)
+	if err != nil {
+		return nil, err
+	}
+
+	return pkgStore, nil
+}
+
+func runCombinedServer(ctx context.Context, cfg struct {
+	HTTPPort int `env:"HTTP_PORT" default:"8081"`
+	GRPCPort int `env:"GRPC_PORT" default:"8080"`
+	PackageStoreConfig
+	service.DBConfig
+}) error {
+	db, err := cfg.DBConfig.OpenDatabase(ctx)
+	if err != nil {
+		return err
+	}
+
+	pkgStore, err := cfg.PackageStoreConfig.OpenPackageStore(ctx, db)
 	if err != nil {
 		return err
 	}
