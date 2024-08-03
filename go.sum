@@ -1554,12 +1554,12 @@ github.com/pentops/flowtest v0.0.0-20240623020118-02bf89f30b87 h1:O7ZZJfgIRPOke+
 github.com/pentops/flowtest v0.0.0-20240623020118-02bf89f30b87/go.mod h1:5vX1QXxvMqOZb/KiJd4V2STThM6Q9OnHZIxAbv1Pprw=
 github.com/pentops/go-grpc-helpers v0.0.0-20230815045451-2524ee695ebb h1:wuswjiI9CzLUGmLXCjwyXDNCFim4iz1IU0GmTmEerMQ=
 github.com/pentops/go-grpc-helpers v0.0.0-20230815045451-2524ee695ebb/go.mod h1:F3N1VgUmEky7it5iOBkyBbyuXu9Mqb9mfhFGR8FhZVQ=
-github.com/pentops/j5 v0.0.0-20240803194240-4b4b7d4dac22 h1:D6Vfa+HLBuLi31rz8acYzL8IAqZkPOUYNBGwuon3NbI=
-github.com/pentops/j5 v0.0.0-20240803194240-4b4b7d4dac22/go.mod h1:5gam/pNybAmaAx3qCiqEuxb1FuFgeibPdQkWy1dsbRM=
+github.com/pentops/j5 v0.0.0-20240803205111-a4601186745a h1:9QrAW/uZ4h33V9xu6RwfVCBOOyvH7TWOl51vYqg10Ic=
+github.com/pentops/j5 v0.0.0-20240803205111-a4601186745a/go.mod h1:5gam/pNybAmaAx3qCiqEuxb1FuFgeibPdQkWy1dsbRM=
 github.com/pentops/log.go v0.0.0-20240618224413-ed85018bafd9 h1:dDFQNUjn3j32t9YMBjfThw888JQCpmj+ucKiURTg71E=
 github.com/pentops/log.go v0.0.0-20240618224413-ed85018bafd9/go.mod h1:UXhrs+VZ6cWZ7b/v8AtuvBZc5nwS5WFHP94JoFrZQA8=
-github.com/pentops/o5-auth v0.0.0-20240803192251-54696896a08f h1:jIUUznbukcxZIDlusoOWxZbIiW6VaSLYbMe1VgqfOcE=
-github.com/pentops/o5-auth v0.0.0-20240803192251-54696896a08f/go.mod h1:X8eRBleAoz9wSI7ANU1c+NfGqJCw6rvX4G/kf2TYMFo=
+github.com/pentops/o5-auth v0.0.0-20240803212219-5270427fbd20 h1:ddcrr3+ZkU5ZQA5xeBGKlH+4Ld846fk31N1SFpt7oII=
+github.com/pentops/o5-auth v0.0.0-20240803212219-5270427fbd20/go.mod h1:X8eRBleAoz9wSI7ANU1c+NfGqJCw6rvX4G/kf2TYMFo=
 github.com/pentops/o5-deploy-aws v0.0.0-20240803010317-5f30c03436c2 h1:93vfO3vN3bz01cs47NCNXJ263YOqqZ8m3Tl46+ZmIrA=
 github.com/pentops/o5-deploy-aws v0.0.0-20240803010317-5f30c03436c2/go.mod h1:nKUtb86Np0K/Z9F65bmnMp6gWzFxFZGgGdI88LpGqTI=
 github.com/pentops/o5-messaging v0.0.0-20240802182716-a8d0dc2a0eb0 h1:5qRFQnPYhjEoQfnk5i7zMUY82wzU+KoknvQBMP/+/pM=

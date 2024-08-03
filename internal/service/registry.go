@@ -9,6 +9,8 @@ import (
 	"github.com/pentops/registry/internal/gen/j5/registry/registry/v1/registry_spb"
 	"google.golang.org/genproto/googleapis/api/httpbody"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -39,7 +41,7 @@ func (s *RegistryService) DownloadImage(ctx context.Context, req *registry_spb.D
 	}
 
 	if img == nil {
-		return nil, fmt.Errorf("image not found")
+		return nil, status.Errorf(codes.NotFound, "image not found")
 	}
 
 	data, err := proto.Marshal(img)

@@ -6,6 +6,6 @@ inputs:
     - name: registry/pentops/j5
       version: a4601186745a08dca9673720ecc6457b729ea1c4
     - name: registry/pentops/messaging
-      version: a8d0dc2a0eb0f1a3155d9481837867ad60dae070
+      version: 087a1eb9bcede380d4b630a6d369ffdfcf02af63
     - name: registry/pentops/protostate
       version: 0e6c3fa1732055057d0f0385d113cf1ea8ab7ddd
