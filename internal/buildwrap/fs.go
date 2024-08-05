@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/registry/internal/github"
 )
@@ -20,6 +21,23 @@ type tmpSource struct {
 
 func (ts *tmpSource) close() error {
 	return os.RemoveAll(ts.dir)
+}
+
+func (bw *BuildWorker) BundleImageFromCommit(ctx context.Context, commit *source_j5pb.CommitInfo, bundleName string) (*source_j5pb.SourceImage, *config_j5pb.BundleConfigFile, error) {
+
+	repoRoot, err := bw.tmpClone(ctx, commit)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	defer repoRoot.close()
+
+	img, cfg, err := bw.builder.SourceImage(ctx, repoRoot.fs(), bundleName)
+	if err != nil {
+		return nil, nil, fmt.Errorf("new fs input: %w", err)
+	}
+
+	return img, cfg, nil
 }
 
 func (bw *BuildWorker) tmpClone(ctx context.Context, commit *source_j5pb.CommitInfo) (*tmpSource, error) {

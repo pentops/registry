@@ -7,7 +7,7 @@ import (
 	"io"
 	"io/fs"
 
-	"github.com/pentops/j5/builder"
+	"github.com/pentops/j5/buildlib"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
@@ -22,6 +22,7 @@ import (
 type Storage interface {
 	UploadGoModule(ctx context.Context, commitInfo *source_j5pb.CommitInfo, fs fs.FS) error
 	UploadJ5Image(ctx context.Context, commitInfo *source_j5pb.CommitInfo, img *source_j5pb.SourceImage, reg *config_j5pb.RegistryConfig) error
+	GetJ5Image(ctx context.Context, orgName, imageName, version string) (*source_j5pb.SourceImage, error)
 }
 
 type Publisher interface {
@@ -39,7 +40,9 @@ type BuildWorker struct {
 }
 
 type J5Builder interface {
-	Publish(ctx context.Context, pc builder.PluginContext, input builder.Input, cfg *config_j5pb.PublishConfig) error
+	RunPublishBuild(ctx context.Context, pc buildlib.PluginContext, input *source_j5pb.SourceImage, build *config_j5pb.PublishConfig) error
+	RunGenerateBuild(ctx context.Context, pc buildlib.PluginContext, input *source_j5pb.SourceImage, build *config_j5pb.GenerateConfig) error
+	SourceImage(ctx context.Context, fs fs.FS, bundleName string) (*source_j5pb.SourceImage, *config_j5pb.BundleConfigFile, error)
 }
 
 type IGithub interface {
@@ -79,16 +82,8 @@ func (bw *BuildWorker) Publish(ctx context.Context, req *builder_tpb.PublishMess
 		}
 	}
 
-	clone, err := bw.tmpClone(ctx, req.Commit)
-	if err != nil {
-		return nil, err
-	}
-
-	defer clone.close()
-
 	logBuffer := &bytes.Buffer{}
-	err = bw.runPublish(ctx, clone.fs(), req, logBuffer)
-
+	err := bw.runPublish(ctx, req, logBuffer)
 	if err != nil {
 		if req.Request == nil {
 			return nil, fmt.Errorf("build: %w", err)
@@ -125,7 +120,12 @@ func (bw *BuildWorker) Publish(ctx context.Context, req *builder_tpb.PublishMess
 	return &emptypb.Empty{}, nil
 }
 
-func (bw *BuildWorker) runPublish(ctx context.Context, sourceDir fs.FS, req *builder_tpb.PublishMessage, logBuffer io.Writer) error {
+func (bw *BuildWorker) runPublish(ctx context.Context, req *builder_tpb.PublishMessage, logBuffer io.Writer) error {
+
+	img, cfg, err := bw.BundleImageFromCommit(ctx, req.Commit, req.Bundle)
+	if err != nil {
+		return fmt.Errorf("new fs input: %w", err)
+	}
 
 	dest, err := newTmpDest()
 	if err != nil {
@@ -133,20 +133,10 @@ func (bw *BuildWorker) runPublish(ctx context.Context, sourceDir fs.FS, req *bui
 	}
 	defer dest.Close()
 
-	pc := builder.PluginContext{
+	pc := buildlib.PluginContext{
 		Variables: map[string]string{}, // TODO: Commit / Source Info
 		ErrOut:    logBuffer,
 		Dest:      dest,
-	}
-
-	input, err := builder.NewFSInput(ctx, sourceDir, req.Bundle)
-	if err != nil {
-		return fmt.Errorf("new fs input: %w", err)
-	}
-
-	cfg, err := input.J5Config()
-	if err != nil {
-		return fmt.Errorf("j5 config: %w", err)
 	}
 
 	var publishConfig *config_j5pb.PublishConfig
@@ -161,7 +151,7 @@ func (bw *BuildWorker) runPublish(ctx context.Context, sourceDir fs.FS, req *bui
 	}
 
 	// Build
-	if err := bw.builder.Publish(ctx, pc, input, publishConfig); err != nil {
+	if err := bw.builder.RunPublishBuild(ctx, pc, img, publishConfig); err != nil {
 		return err
 	}
 
@@ -191,17 +181,9 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMe
 		}
 	}
 
-	sourceClone, err := bw.tmpClone(ctx, req.Commit)
-	if err != nil {
-		return nil, err
-	}
-
-	defer sourceClone.close()
-
 	log.WithField(ctx, "commit", req.Commit).Info("Build API")
 
-	err = bw.buildAPI(ctx, sourceClone.fs(), req)
-
+	err := bw.buildAPI(ctx, req.Commit, req)
 	if err != nil {
 		if req.Request == nil {
 			return nil, err
@@ -228,21 +210,11 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMe
 
 }
 
-func (bw *BuildWorker) buildAPI(ctx context.Context, sourceDir fs.FS, req *builder_tpb.BuildAPIMessage) error {
+func (bw *BuildWorker) buildAPI(ctx context.Context, commit *source_j5pb.CommitInfo, req *builder_tpb.BuildAPIMessage) error {
 
-	input, err := builder.NewFSInput(ctx, sourceDir, req.Bundle)
+	img, bundleConfig, err := bw.BundleImageFromCommit(ctx, commit, req.Bundle)
 	if err != nil {
 		return fmt.Errorf("new fs input: %w", err)
-	}
-
-	bundleConfig, err := input.J5Config()
-	if err != nil {
-		return fmt.Errorf("j5 config: %w", err)
-	}
-
-	img, err := input.SourceImage(ctx)
-	if err != nil {
-		return fmt.Errorf("source image: %w", err)
 	}
 
 	return bw.store.UploadJ5Image(ctx, req.Commit, img, bundleConfig.Registry)

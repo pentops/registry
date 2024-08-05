@@ -6,7 +6,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/pentops/j5/builder"
+	"github.com/pentops/j5/buildlib"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/registry/internal/anyfs"
 	"github.com/pentops/registry/internal/buildwrap"
@@ -155,11 +155,6 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		return err
 	}
 
-	dockerWrapper, err := builder.NewRunner(builder.DefaultRegistryAuths)
-	if err != nil {
-		return err
-	}
-
 	githubClient, err := github.NewEnvClient(ctx)
 	if err != nil {
 		return err
@@ -170,7 +165,11 @@ func runCombinedServer(ctx context.Context, cfg struct {
 		return err
 	}
 
-	j5Builder := builder.NewBuilder(dockerWrapper)
+	regWrap := buildwrap.NewRegistryClient(pkgStore)
+	j5Builder, err := buildlib.NewBuilder(regWrap)
+	if err != nil {
+		return err
+	}
 
 	buildWorker := buildwrap.NewBuildWorker(j5Builder, githubClient, pkgStore, dbPublisher)
 
