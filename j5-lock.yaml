@@ -7,5 +7,3 @@ inputs:
       version: e7886631f00437cc333221bea29f0a30fe1109ce
     - name: registry/pentops/messaging
       version: c77f99413b9ea8f9ff13768d77c8477790615160
-    - name: registry/pentops/protostate
-      version: f9d94701a591ff378c75106a893f7f235f27ffdd

@@ -18,7 +18,7 @@ require (
 	github.com/pentops/j5 v0.0.0-20240808185210-e7886631f004
 	github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24
 	github.com/pentops/o5-auth v0.0.0-20240808190100-7480916943de
-	github.com/pentops/o5-deploy-aws v0.0.0-20240808203855-e17a2779ff13
+	github.com/pentops/o5-deploy-aws v0.0.0-20240808211044-de21c0517595
 	github.com/pentops/o5-messaging v0.0.0-20240806162328-c77f99413b9e
 	github.com/pentops/pgtest.go v0.0.0-20240806042712-cca5bdfe6542
 	github.com/pentops/protostate v0.0.0-20240808190417-c00e90487893
