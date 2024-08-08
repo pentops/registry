@@ -29,6 +29,3 @@ dependencies:
       owner: pentops
       name: messaging
 
-  - registry:
-      owner: pentops
-      name: protostate
