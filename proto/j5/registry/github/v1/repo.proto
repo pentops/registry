@@ -3,8 +3,8 @@ syntax = "proto3";
 package j5.registry.github.v1;
 
 import "buf/validate/validate.proto";
-import "j5/list/v1/annotations.proto";
 import "j5/ext/v1/annotations.proto";
+import "j5/list/v1/annotations.proto";
 import "psm/state/v1/metadata.proto";
 
 option go_package = "github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb";
@@ -29,8 +29,8 @@ message RepoState {
   RepoKeys keys = 2 [(buf.validate.field).required = true];
 
   RepoStatus status = 3 [(j5.list.v1.field).enum.filtering = {
-    filterable: true,
-    default_filters: ["REPO_STATUS_ACTIVE"],
+    filterable: true
+    default_filters: ["REPO_STATUS_ACTIVE"]
   }];
 
   RepoStateData data = 4;
@@ -69,7 +69,7 @@ message RepoEventType {
     // True: adds any config to existing config, False: Replaces all configs.
     bool merge = 2;
 
-    repeated Branch branches = 3 [(buf.validate.field).required = true];
+    repeated Branch branches = 3;
   }
 
   message ConfigureBranch {
