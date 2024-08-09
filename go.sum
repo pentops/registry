@@ -1,7 +1,3 @@
-buf.build/gen/go/bufbuild/buf/grpc/go v1.5.1-20240801225352-56ed5eaafdd5.1 h1:kpsifEwOvElihPf6j2sriqzdTYLa19V+OWcIqLb8Ecg=
-buf.build/gen/go/bufbuild/buf/grpc/go v1.5.1-20240801225352-56ed5eaafdd5.1/go.mod h1:MvR2fzutlXDdPJRSFuqlG/mlTG2ZEv+tZXBTu+vFHGM=
-buf.build/gen/go/bufbuild/buf/protocolbuffers/go v1.34.2-20240801225352-56ed5eaafdd5.2 h1:ZcwAfI2BApbeM0atjcghA+gjBfdokgW4/IjmPRqTBxc=
-buf.build/gen/go/bufbuild/buf/protocolbuffers/go v1.34.2-20240801225352-56ed5eaafdd5.2/go.mod h1:ebzkeqWlkoZ1Tk0htPMA7EtLbII2nNBuDaSsEYvDdHE=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240717164558-a6c49f84cc0f.2 h1:SZRVx928rbYZ6hEKUIN+vtGDkl7uotABRWGY4OAg5gM=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240717164558-a6c49f84cc0f.2/go.mod h1:ylS4c28ACSI59oJrOdW4pHS4n0Hw4TgSPHn8rpHl4Yw=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
@@ -210,14 +206,14 @@ github.com/pentops/flowtest v0.0.0-20240806162256-23b05c4df309 h1:CLcaCi3pH3qqEU
 github.com/pentops/flowtest v0.0.0-20240806162256-23b05c4df309/go.mod h1:klQLA1IXCIN8mQoQ9uq6TSxHyamObeIlJ51YT165KeE=
 github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108 h1:WcmsuifOImx7oq8skTV8cJVtPAys73/gfUvA9Eyvavk=
 github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108/go.mod h1:q/qt+ba/3aJWhF3ub+4IExXbnTBa+4RxuBKSfMGVvco=
-github.com/pentops/j5 v0.0.0-20240809205235-0d9578f35b67 h1:kkrTwRY9F66Lh/PT4zMzUGjA7uUwHLvvotLQho6mJUw=
-github.com/pentops/j5 v0.0.0-20240809205235-0d9578f35b67/go.mod h1:qB/lz7LcjkfGlGNN1MzrU9/eUhT/nrD07pDpCPwjBiQ=
+github.com/pentops/j5 v0.0.0-20240809234621-25db276e69e1 h1:3NWS6CpwzZwjmLHFKaumbXkMSXCMw1QzKeQnYqnp8nc=
+github.com/pentops/j5 v0.0.0-20240809234621-25db276e69e1/go.mod h1:qB/lz7LcjkfGlGNN1MzrU9/eUhT/nrD07pDpCPwjBiQ=
 github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24 h1:PzCwWkSWY7GO8fS7RQ9F0ZOE6PuaY27mh6ApaXLBMJI=
 github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24/go.mod h1:Rx5b9QWbqb3gOMBILxQYMberRKvarMa8R5PxF/ejJeU=
 github.com/pentops/o5-auth v0.0.0-20240809223318-7c8609beb10c h1:dgG0BG1uKQErURYIqU1r9IDs2UQ3fiBTW71a1FD2MaQ=
 github.com/pentops/o5-auth v0.0.0-20240809223318-7c8609beb10c/go.mod h1:u/g8xooel/mwI4LBR2+KaBNAdKk4qrbuS6cyHc+/FMI=
-github.com/pentops/o5-deploy-aws v0.0.0-20240809230711-387d22333b28 h1:d16I+Y+3RcFFtqvvJZ+6O6RuSMzm3uQhro9amzRO4uc=
-github.com/pentops/o5-deploy-aws v0.0.0-20240809230711-387d22333b28/go.mod h1:GAc1qH9O3ethEtyrS0ekXW//OkYQu5ppwzXIrPVJ+GM=
+github.com/pentops/o5-deploy-aws v0.0.0-20240809232416-20c4c265a02f h1:+QjoNAFoJGoW0NUlViZrJ5Iil3VdyOYGLutpiCUpMZI=
+github.com/pentops/o5-deploy-aws v0.0.0-20240809232416-20c4c265a02f/go.mod h1:GAc1qH9O3ethEtyrS0ekXW//OkYQu5ppwzXIrPVJ+GM=
 github.com/pentops/o5-messaging v0.0.0-20240809223038-43c84e3c90c8 h1:qhGmyEuZbjkZ87/7171lmDd7zKm2wtPvhEVTmW6GB3o=
 github.com/pentops/o5-messaging v0.0.0-20240809223038-43c84e3c90c8/go.mod h1:lriOcsmQ1J7F0DddyFqCIS2304eTAyYbvddTa/aq8OM=
 github.com/pentops/pgtest.go v0.0.0-20240806042712-cca5bdfe6542 h1:fYu4o1pc99WCCbMSk3WLdLplHbUpqtceTnhKmqfAeEE=
