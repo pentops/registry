@@ -7,14 +7,15 @@
 package builder_tpb
 
 import (
+	reflect "reflect"
+	sync "sync"
+
 	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	messaging_j5pb "github.com/pentops/j5/gen/j5/messaging/v1/messaging_j5pb"
 	source_j5pb "github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
-	messaging_pb "github.com/pentops/o5-messaging/gen/o5/messaging/v1/messaging_pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -81,10 +82,10 @@ type PublishMessage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Request *messaging_pb.RequestMetadata `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
-	Commit  *source_j5pb.CommitInfo       `protobuf:"bytes,2,opt,name=commit,proto3" json:"commit,omitempty"`
-	Bundle  string                        `protobuf:"bytes,3,opt,name=bundle,proto3" json:"bundle,omitempty"`
-	Name    string                        `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	Request *messaging_j5pb.RequestMetadata `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
+	Commit  *source_j5pb.CommitInfo         `protobuf:"bytes,2,opt,name=commit,proto3" json:"commit,omitempty"`
+	Bundle  string                          `protobuf:"bytes,3,opt,name=bundle,proto3" json:"bundle,omitempty"`
+	Name    string                          `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
 }
 
 func (x *PublishMessage) Reset() {
@@ -119,7 +120,7 @@ func (*PublishMessage) Descriptor() ([]byte, []int) {
 	return file_j5_registry_builder_v1_topic_builder_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PublishMessage) GetRequest() *messaging_pb.RequestMetadata {
+func (x *PublishMessage) GetRequest() *messaging_j5pb.RequestMetadata {
 	if x != nil {
 		return x.Request
 	}
@@ -152,9 +153,9 @@ type BuildAPIMessage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Request *messaging_pb.RequestMetadata `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
-	Commit  *source_j5pb.CommitInfo       `protobuf:"bytes,2,opt,name=commit,proto3" json:"commit,omitempty"`
-	Bundle  string                        `protobuf:"bytes,3,opt,name=bundle,proto3" json:"bundle,omitempty"`
+	Request *messaging_j5pb.RequestMetadata `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
+	Commit  *source_j5pb.CommitInfo         `protobuf:"bytes,2,opt,name=commit,proto3" json:"commit,omitempty"`
+	Bundle  string                          `protobuf:"bytes,3,opt,name=bundle,proto3" json:"bundle,omitempty"`
 }
 
 func (x *BuildAPIMessage) Reset() {
@@ -189,7 +190,7 @@ func (*BuildAPIMessage) Descriptor() ([]byte, []int) {
 	return file_j5_registry_builder_v1_topic_builder_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *BuildAPIMessage) GetRequest() *messaging_pb.RequestMetadata {
+func (x *BuildAPIMessage) GetRequest() *messaging_j5pb.RequestMetadata {
 	if x != nil {
 		return x.Request
 	}
@@ -215,9 +216,9 @@ type BuildStatusMessage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Request *messaging_pb.RequestMetadata `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
-	Status  BuildStatus                   `protobuf:"varint,2,opt,name=status,proto3,enum=j5.registry.builder.v1.topic.BuildStatus" json:"status,omitempty"`
-	Outcome *BuildOutcome                 `protobuf:"bytes,3,opt,name=outcome,proto3" json:"outcome,omitempty"`
+	Request *messaging_j5pb.RequestMetadata `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
+	Status  BuildStatus                     `protobuf:"varint,2,opt,name=status,proto3,enum=j5.registry.builder.v1.topic.BuildStatus" json:"status,omitempty"`
+	Outcome *BuildOutcome                   `protobuf:"bytes,3,opt,name=outcome,proto3" json:"outcome,omitempty"`
 }
 
 func (x *BuildStatusMessage) Reset() {
@@ -252,7 +253,7 @@ func (*BuildStatusMessage) Descriptor() ([]byte, []int) {
 	return file_j5_registry_builder_v1_topic_builder_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *BuildStatusMessage) GetRequest() *messaging_pb.RequestMetadata {
+func (x *BuildStatusMessage) GetRequest() *messaging_j5pb.RequestMetadata {
 	if x != nil {
 		return x.Request
 	}
@@ -349,13 +350,13 @@ var file_j5_registry_builder_v1_topic_builder_proto_rawDesc = []byte{
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x2e, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x18, 0x6a, 0x35, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2f,
 	0x76, 0x31, 0x2f, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x21,
-	0x6f, 0x35, 0x2f, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x69, 0x6e, 0x67, 0x2f, 0x76, 0x31, 0x2f,
+	0x6a, 0x35, 0x2f, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x69, 0x6e, 0x67, 0x2f, 0x76, 0x31, 0x2f,
 	0x61, 0x6e, 0x6e, 0x6f, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x1a, 0x1c, 0x6f, 0x35, 0x2f, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x69, 0x6e, 0x67, 0x2f,
+	0x6f, 0x1a, 0x1c, 0x6a, 0x35, 0x2f, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x69, 0x6e, 0x67, 0x2f,
 	0x76, 0x31, 0x2f, 0x72, 0x65, 0x71, 0x72, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
 	0xba, 0x01, 0x0a, 0x0e, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x73, 0x68, 0x4d, 0x65, 0x73, 0x73, 0x61,
 	0x67, 0x65, 0x12, 0x3a, 0x0a, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x6f, 0x35, 0x2e, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x69,
+	0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x6a, 0x35, 0x2e, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x69,
 	0x6e, 0x67, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x74,
 	0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x38,
 	0x0a, 0x06, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18,
@@ -367,7 +368,7 @@ var file_j5_registry_builder_v1_topic_builder_proto_rawDesc = []byte{
 	0xba, 0x48, 0x03, 0xc8, 0x01, 0x01, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x9f, 0x01, 0x0a,
 	0x0f, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x41, 0x50, 0x49, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
 	0x12, 0x3a, 0x0a, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x20, 0x2e, 0x6f, 0x35, 0x2e, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x69, 0x6e, 0x67,
+	0x0b, 0x32, 0x20, 0x2e, 0x6a, 0x35, 0x2e, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x69, 0x6e, 0x67,
 	0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64,
 	0x61, 0x74, 0x61, 0x52, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x38, 0x0a, 0x06,
 	0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x6a,
@@ -377,7 +378,7 @@ var file_j5_registry_builder_v1_topic_builder_proto_rawDesc = []byte{
 	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x62, 0x75, 0x6e, 0x64, 0x6c, 0x65, 0x22, 0xf1,
 	0x01, 0x0a, 0x12, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x4d, 0x65,
 	0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x42, 0x0a, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x6f, 0x35, 0x2e, 0x6d, 0x65, 0x73, 0x73,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x6a, 0x35, 0x2e, 0x6d, 0x65, 0x73, 0x73,
 	0x61, 0x67, 0x69, 0x6e, 0x67, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
 	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x42, 0x06, 0xba, 0x48, 0x03, 0xc8, 0x01, 0x01,
 	0x52, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x51, 0x0a, 0x06, 0x73, 0x74, 0x61,
@@ -449,21 +450,21 @@ func file_j5_registry_builder_v1_topic_builder_proto_rawDescGZIP() []byte {
 var file_j5_registry_builder_v1_topic_builder_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_j5_registry_builder_v1_topic_builder_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_j5_registry_builder_v1_topic_builder_proto_goTypes = []interface{}{
-	(BuildStatus)(0),                     // 0: j5.registry.builder.v1.topic.BuildStatus
-	(*PublishMessage)(nil),               // 1: j5.registry.builder.v1.topic.PublishMessage
-	(*BuildAPIMessage)(nil),              // 2: j5.registry.builder.v1.topic.BuildAPIMessage
-	(*BuildStatusMessage)(nil),           // 3: j5.registry.builder.v1.topic.BuildStatusMessage
-	(*BuildOutcome)(nil),                 // 4: j5.registry.builder.v1.topic.BuildOutcome
-	(*messaging_pb.RequestMetadata)(nil), // 5: o5.messaging.v1.RequestMetadata
-	(*source_j5pb.CommitInfo)(nil),       // 6: j5.source.v1.CommitInfo
-	(*emptypb.Empty)(nil),                // 7: google.protobuf.Empty
+	(BuildStatus)(0),                       // 0: j5.registry.builder.v1.topic.BuildStatus
+	(*PublishMessage)(nil),                 // 1: j5.registry.builder.v1.topic.PublishMessage
+	(*BuildAPIMessage)(nil),                // 2: j5.registry.builder.v1.topic.BuildAPIMessage
+	(*BuildStatusMessage)(nil),             // 3: j5.registry.builder.v1.topic.BuildStatusMessage
+	(*BuildOutcome)(nil),                   // 4: j5.registry.builder.v1.topic.BuildOutcome
+	(*messaging_j5pb.RequestMetadata)(nil), // 5: j5.messaging.v1.RequestMetadata
+	(*source_j5pb.CommitInfo)(nil),         // 6: j5.source.v1.CommitInfo
+	(*emptypb.Empty)(nil),                  // 7: google.protobuf.Empty
 }
 var file_j5_registry_builder_v1_topic_builder_proto_depIdxs = []int32{
-	5,  // 0: j5.registry.builder.v1.topic.PublishMessage.request:type_name -> o5.messaging.v1.RequestMetadata
+	5,  // 0: j5.registry.builder.v1.topic.PublishMessage.request:type_name -> j5.messaging.v1.RequestMetadata
 	6,  // 1: j5.registry.builder.v1.topic.PublishMessage.commit:type_name -> j5.source.v1.CommitInfo
-	5,  // 2: j5.registry.builder.v1.topic.BuildAPIMessage.request:type_name -> o5.messaging.v1.RequestMetadata
+	5,  // 2: j5.registry.builder.v1.topic.BuildAPIMessage.request:type_name -> j5.messaging.v1.RequestMetadata
 	6,  // 3: j5.registry.builder.v1.topic.BuildAPIMessage.commit:type_name -> j5.source.v1.CommitInfo
-	5,  // 4: j5.registry.builder.v1.topic.BuildStatusMessage.request:type_name -> o5.messaging.v1.RequestMetadata
+	5,  // 4: j5.registry.builder.v1.topic.BuildStatusMessage.request:type_name -> j5.messaging.v1.RequestMetadata
 	0,  // 5: j5.registry.builder.v1.topic.BuildStatusMessage.status:type_name -> j5.registry.builder.v1.topic.BuildStatus
 	4,  // 6: j5.registry.builder.v1.topic.BuildStatusMessage.outcome:type_name -> j5.registry.builder.v1.topic.BuildOutcome
 	1,  // 7: j5.registry.builder.v1.topic.BuilderRequestTopic.Publish:input_type -> j5.registry.builder.v1.topic.PublishMessage

@@ -5,7 +5,7 @@ package j5.registry.github.v1;
 import "buf/validate/validate.proto";
 import "j5/ext/v1/annotations.proto";
 import "j5/list/v1/annotations.proto";
-import "psm/state/v1/metadata.proto";
+import "j5/state/v1/metadata.proto";
 
 option go_package = "github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb";
 
@@ -24,7 +24,7 @@ message RepoKeys {
 }
 
 message RepoState {
-  psm.state.v1.StateMetadata metadata = 1 [(buf.validate.field).required = true];
+  j5.state.v1.StateMetadata metadata = 1 [(buf.validate.field).required = true];
 
   RepoKeys keys = 2 [(buf.validate.field).required = true];
 
@@ -47,7 +47,7 @@ enum RepoStatus {
 }
 
 message RepoEvent {
-  psm.state.v1.EventMetadata metadata = 1 [(buf.validate.field).required = true];
+  j5.state.v1.EventMetadata metadata = 1 [(buf.validate.field).required = true];
   RepoKeys keys = 2 [(buf.validate.field).required = true];
   RepoEventType event = 3 [(buf.validate.field).required = true];
 }

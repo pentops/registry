@@ -9,9 +9,9 @@ import (
 
 	"github.com/pentops/j5/buildlib"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
+	"github.com/pentops/j5/gen/j5/messaging/v1/messaging_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/o5-messaging/gen/o5/messaging/v1/messaging_pb"
 	"github.com/pentops/o5-messaging/o5msg"
 	"github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/internal/github"
@@ -63,7 +63,7 @@ func (bw *BuildWorker) RegisterGRPC(s *grpc.Server) {
 	builder_tpb.RegisterBuilderRequestTopicServer(s, bw)
 }
 
-func (bw *BuildWorker) replyStatus(ctx context.Context, reply *messaging_pb.RequestMetadata, status builder_tpb.BuildStatus, outcome *builder_tpb.BuildOutcome) error {
+func (bw *BuildWorker) replyStatus(ctx context.Context, reply *messaging_j5pb.RequestMetadata, status builder_tpb.BuildStatus, outcome *builder_tpb.BuildOutcome) error {
 	if reply == nil {
 		return nil
 	}

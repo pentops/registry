@@ -9,11 +9,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
+	"github.com/pentops/j5/gen/j5/messaging/v1/messaging_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-deploy-aws/gen/o5/application/v1/application_pb"
 	"github.com/pentops/o5-deploy-aws/gen/o5/aws/deployer/v1/awsdeployer_tpb"
-	"github.com/pentops/o5-messaging/gen/o5/messaging/v1/messaging_pb"
 	"github.com/pentops/o5-messaging/o5msg"
 	"github.com/pentops/registry/gen/j5/registry/github/v1/github_tpb"
 	"github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb"
@@ -103,7 +103,7 @@ func (ww *WebhookWorker) BuildStatus(ctx context.Context, message *builder_tpb.B
 	return &emptypb.Empty{}, nil
 }
 
-func (ww *WebhookWorker) githubCheck(ctx context.Context, ref github.RepoRef, checkRunName string) (*messaging_pb.RequestMetadata, error) {
+func (ww *WebhookWorker) githubCheck(ctx context.Context, ref github.RepoRef, checkRunName string) (*messaging_j5pb.RequestMetadata, error) {
 
 	checkRun, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
 	if err != nil {
@@ -115,7 +115,7 @@ func (ww *WebhookWorker) githubCheck(ctx context.Context, ref github.RepoRef, ch
 		return nil, fmt.Errorf("marshal check run: %w", err)
 	}
 
-	return &messaging_pb.RequestMetadata{
+	return &messaging_j5pb.RequestMetadata{
 		ReplyTo: "", // not filtered
 		Context: contextData,
 	}, nil
