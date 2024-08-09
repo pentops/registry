@@ -15,10 +15,10 @@ require (
 	github.com/pentops/envconf.go v0.0.0-20240806040806-dcab509e8c71
 	github.com/pentops/flowtest v0.0.0-20240806162256-23b05c4df309
 	github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108
-	github.com/pentops/j5 v0.0.0-20240809205235-0d9578f35b67
+	github.com/pentops/j5 v0.0.0-20240809234621-25db276e69e1
 	github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24
 	github.com/pentops/o5-auth v0.0.0-20240809223318-7c8609beb10c
-	github.com/pentops/o5-deploy-aws v0.0.0-20240809230711-387d22333b28
+	github.com/pentops/o5-deploy-aws v0.0.0-20240809232416-20c4c265a02f
 	github.com/pentops/o5-messaging v0.0.0-20240809223038-43c84e3c90c8
 	github.com/pentops/pgtest.go v0.0.0-20240806042712-cca5bdfe6542
 	github.com/pentops/protostate v0.0.0-20240809223804-bf171617e83a
@@ -33,8 +33,6 @@ require (
 )
 
 require (
-	buf.build/gen/go/bufbuild/buf/grpc/go v1.5.1-20240801225352-56ed5eaafdd5.1 // indirect
-	buf.build/gen/go/bufbuild/buf/protocolbuffers/go v1.34.2-20240801225352-56ed5eaafdd5.2 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
@@ -120,6 +118,5 @@ require (
 	golang.org/x/text v0.17.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240805194559-2c9e96a0b5d4 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
