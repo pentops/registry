@@ -4,12 +4,12 @@ package j5.registry.github.v1.topic;
 
 import "google/protobuf/descriptor.proto";
 import "google/protobuf/empty.proto";
-import "o5/messaging/v1/annotations.proto";
+import "j5/messaging/v1/annotations.proto";
 
 option go_package = "github.com/pentops/registry/gen/j5/registry/github/v1/github_tpb";
 
 service WebhookTopic {
-  option (o5.messaging.v1.config).broadcast.name = "github-webhook";
+  option (j5.messaging.v1.config).broadcast.name = "github-webhook";
 
   rpc Push(PushMessage) returns (google.protobuf.Empty) {}
 }
