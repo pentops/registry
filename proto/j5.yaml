@@ -13,14 +13,6 @@ registry:
   name: registry
 
 dependencies:
-  - bufRegistry:
-      owner: bufbuild
-      name: protovalidate
-
-  - bufRegistry:
-      owner: googleapis
-      name: googleapis
-
   - registry:
       owner: pentops
       name: j5
