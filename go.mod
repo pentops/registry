@@ -15,13 +15,13 @@ require (
 	github.com/pentops/envconf.go v0.0.0-20240806040806-dcab509e8c71
 	github.com/pentops/flowtest v0.0.0-20240806162256-23b05c4df309
 	github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108
-	github.com/pentops/j5 v0.0.0-20240810000344-f0015f518004
+	github.com/pentops/j5 v0.0.0-20240810013210-12540c68f639
 	github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24
-	github.com/pentops/o5-deploy-aws v0.0.0-20240809232416-20c4c265a02f
-	github.com/pentops/o5-messaging v0.0.0-20240809223038-43c84e3c90c8
+	github.com/pentops/o5-deploy-aws v0.0.0-20240810015944-f79b95165905
+	github.com/pentops/o5-messaging v0.0.0-20240810013929-db56de35f3ed
 	github.com/pentops/pgtest.go v0.0.0-20240806042712-cca5bdfe6542
-	github.com/pentops/protostate v0.0.0-20240809223804-bf171617e83a
-	github.com/pentops/realms v0.0.0-20240810000211-5d16663a613c
+	github.com/pentops/protostate v0.0.0-20240810014359-b8c03420cbfb
+	github.com/pentops/realms v0.0.0-20240810015927-8fbef273d83b
 	github.com/pentops/runner v0.0.0-20240806162317-0eb1ced9ab3d
 	github.com/pentops/sqrlx.go v0.0.0-20240806064322-33adc0ac5bd4
 	github.com/pressly/goose v2.7.0+incompatible
