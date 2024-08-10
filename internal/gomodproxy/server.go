@@ -189,6 +189,11 @@ func Handler(mods ModProvider) http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/healthz" {
+			w.Write([]byte("OK\n")) // nolint: errcheck
+			w.WriteHeader(http.StatusOK)
+			return
+		}
 		ctx := r.Context()
 		ctx = log.WithFields(ctx, map[string]interface{}{
 			"method": r.Method,
