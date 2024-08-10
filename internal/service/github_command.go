@@ -7,7 +7,7 @@ import (
 
 	sq "github.com/elgris/sqrl"
 	"github.com/google/uuid"
-	"github.com/pentops/o5-auth/o5auth"
+	"github.com/pentops/realms/j5auth"
 	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_spb"
 	"github.com/pentops/registry/internal/github"
@@ -57,7 +57,7 @@ func (ss *GithubCommandService) RegisterGRPC(srv *grpc.Server) {
 
 func (ss *GithubCommandService) ConfigureRepo(ctx context.Context, req *github_spb.ConfigureRepoRequest) (*github_spb.ConfigureRepoResponse, error) {
 
-	action, err := o5auth.GetAuthenticatedAction(ctx)
+	action, err := j5auth.GetAuthenticatedAction(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (ss *GithubCommandService) ConfigureRepo(ctx context.Context, req *github_s
 }
 func (ss *GithubCommandService) Trigger(ctx context.Context, req *github_spb.TriggerRequest) (*github_spb.TriggerResponse, error) {
 
-	_, err := o5auth.GetAuthenticatedAction(ctx)
+	_, err := j5auth.GetAuthenticatedAction(ctx)
 	if err != nil {
 		return nil, err
 	}

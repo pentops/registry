@@ -10,9 +10,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/pentops/flowtest"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
-	"github.com/pentops/o5-auth/o5auth"
 	"github.com/pentops/o5-deploy-aws/gen/o5/aws/deployer/v1/awsdeployer_tpb"
 	"github.com/pentops/o5-messaging/outbox/outboxtest"
+	"github.com/pentops/realms/j5auth"
 	"github.com/pentops/registry/gen/j5/registry/github/v1/github_tpb"
 	"github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
@@ -32,7 +32,7 @@ func withTestActor(ctx context.Context) context.Context {
 		panic(err)
 	}
 
-	md := metadata.MD{o5auth.VerifiedJWTHeader: []string{
+	md := metadata.MD{j5auth.VerifiedJWTHeader: []string{
 		string(jwtJSON),
 	}}
 

@@ -206,12 +206,10 @@ github.com/pentops/flowtest v0.0.0-20240806162256-23b05c4df309 h1:CLcaCi3pH3qqEU
 github.com/pentops/flowtest v0.0.0-20240806162256-23b05c4df309/go.mod h1:klQLA1IXCIN8mQoQ9uq6TSxHyamObeIlJ51YT165KeE=
 github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108 h1:WcmsuifOImx7oq8skTV8cJVtPAys73/gfUvA9Eyvavk=
 github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108/go.mod h1:q/qt+ba/3aJWhF3ub+4IExXbnTBa+4RxuBKSfMGVvco=
-github.com/pentops/j5 v0.0.0-20240809234621-25db276e69e1 h1:3NWS6CpwzZwjmLHFKaumbXkMSXCMw1QzKeQnYqnp8nc=
-github.com/pentops/j5 v0.0.0-20240809234621-25db276e69e1/go.mod h1:qB/lz7LcjkfGlGNN1MzrU9/eUhT/nrD07pDpCPwjBiQ=
+github.com/pentops/j5 v0.0.0-20240810000344-f0015f518004 h1:NxfSgG+JemlErxQB5gn4Rh2zFstG12go97lUU7XpCPg=
+github.com/pentops/j5 v0.0.0-20240810000344-f0015f518004/go.mod h1:qB/lz7LcjkfGlGNN1MzrU9/eUhT/nrD07pDpCPwjBiQ=
 github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24 h1:PzCwWkSWY7GO8fS7RQ9F0ZOE6PuaY27mh6ApaXLBMJI=
 github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24/go.mod h1:Rx5b9QWbqb3gOMBILxQYMberRKvarMa8R5PxF/ejJeU=
-github.com/pentops/o5-auth v0.0.0-20240809223318-7c8609beb10c h1:dgG0BG1uKQErURYIqU1r9IDs2UQ3fiBTW71a1FD2MaQ=
-github.com/pentops/o5-auth v0.0.0-20240809223318-7c8609beb10c/go.mod h1:u/g8xooel/mwI4LBR2+KaBNAdKk4qrbuS6cyHc+/FMI=
 github.com/pentops/o5-deploy-aws v0.0.0-20240809232416-20c4c265a02f h1:+QjoNAFoJGoW0NUlViZrJ5Iil3VdyOYGLutpiCUpMZI=
 github.com/pentops/o5-deploy-aws v0.0.0-20240809232416-20c4c265a02f/go.mod h1:GAc1qH9O3ethEtyrS0ekXW//OkYQu5ppwzXIrPVJ+GM=
 github.com/pentops/o5-messaging v0.0.0-20240809223038-43c84e3c90c8 h1:qhGmyEuZbjkZ87/7171lmDd7zKm2wtPvhEVTmW6GB3o=
@@ -220,6 +218,8 @@ github.com/pentops/pgtest.go v0.0.0-20240806042712-cca5bdfe6542 h1:fYu4o1pc99WCC
 github.com/pentops/pgtest.go v0.0.0-20240806042712-cca5bdfe6542/go.mod h1:BgX0+UvohWaq7Vr3McsBWt8FpzerKaNRsmG2uH7L1FE=
 github.com/pentops/protostate v0.0.0-20240809223804-bf171617e83a h1:99ggcvypMpPNGBGP2qhFv7TNmNEOKI+iK8tisuWcSAc=
 github.com/pentops/protostate v0.0.0-20240809223804-bf171617e83a/go.mod h1:phIpifcWajac8q2IG4MhXnToGAjERN0dhPDiZYDEh08=
+github.com/pentops/realms v0.0.0-20240810000211-5d16663a613c h1:tcRLzj4408JV+Na6KDOkOECkjulJat4yKtkY+MAFN+0=
+github.com/pentops/realms v0.0.0-20240810000211-5d16663a613c/go.mod h1:GnPEW9fMpNKN1r9Dl75AGsh6dSSWHz82XEppgReL41Q=
 github.com/pentops/runner v0.0.0-20240806162317-0eb1ced9ab3d h1:ZKnjzU/tXEIH3lmcEhOcpRzUjE8l6/KQ3QhFLjD8Yk4=
 github.com/pentops/runner v0.0.0-20240806162317-0eb1ced9ab3d/go.mod h1:7k2zmXjb6UkYqgyhaHIZcUtEEQLJgyBlo2WmVr9Qv7E=
 github.com/pentops/sqrlx.go v0.0.0-20240806064322-33adc0ac5bd4 h1:zBn6k4ZRoQngAU5rrlwDKCULUJW/xg2OP0uGGHlP3F8=
