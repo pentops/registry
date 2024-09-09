@@ -7,10 +7,10 @@ import (
 	"io"
 	"io/fs"
 
-	"github.com/pentops/j5/buildlib"
 	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/messaging/v1/messaging_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
+	"github.com/pentops/j5build/buildlib"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-messaging/o5msg"
 	"github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb"

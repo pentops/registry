@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pentops/j5/buildlib"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
+	"github.com/pentops/j5build/buildlib"
 	"github.com/pentops/registry/internal/gen/j5/registry/registry/v1/registry_spb"
 	"google.golang.org/genproto/googleapis/api/httpbody"
 	"google.golang.org/grpc"
