@@ -6,7 +6,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/pentops/j5/buildlib"
+	"github.com/pentops/j5build/buildlib"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/registry/internal/anyfs"
 	"github.com/pentops/registry/internal/buildwrap"
