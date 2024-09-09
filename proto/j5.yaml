@@ -13,9 +13,6 @@ registry:
   name: registry
 
 dependencies:
-  - registry:
-      owner: pentops
-      name: j5
 
   - registry:
       owner: pentops
