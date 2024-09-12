@@ -23,6 +23,7 @@ Where format is one of:
 
 - `swagger.json`
 - `jdef.json`
+- `api.json`
 - `image.bin`
 
 
