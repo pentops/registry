@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	sq "github.com/elgris/sqrl"
 	"github.com/pentops/protostate/psm"
 	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_spb"
 	"github.com/pentops/registry/internal/state"
@@ -12,18 +11,13 @@ import (
 )
 
 type GithubQueryService struct {
-	db *sqrlx.Wrapper
+	db sqrlx.Transactor
 
 	querySet *github_spb.RepoPSMQuerySet
 	*github_spb.UnimplementedRepoQueryServiceServer
 }
 
-func NewGithubQueryService(conn sqrlx.Connection, states *state.StateMachines) (*GithubQueryService, error) {
-	db, err := sqrlx.New(conn, sq.Dollar)
-	if err != nil {
-		return nil, err
-
-	}
+func NewGithubQueryService(db sqrlx.Transactor, states *state.StateMachines) (*GithubQueryService, error) {
 
 	querySpec := github_spb.DefaultRepoPSMQuerySpec(states.Repo.StateTableSpec())
 	querySet, err := github_spb.NewRepoPSMQuerySet(querySpec, psm.StateQueryOptions{})

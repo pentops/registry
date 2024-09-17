@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	sq "github.com/elgris/sqrl"
 	"github.com/google/uuid"
 	"github.com/pentops/realms/j5auth"
 	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
@@ -19,7 +18,7 @@ import (
 )
 
 type GithubCommandService struct {
-	db *sqrlx.Wrapper
+	db sqrlx.Transactor
 
 	stateMachines *state.StateMachines
 	*github_spb.UnimplementedRepoCommandServiceServer
@@ -32,13 +31,9 @@ type targetBuilder interface {
 	buildTarget(ctx context.Context, ref github.RepoRef, target *github_pb.DeployTargetType) error
 }
 
-func NewGithubCommandService(conn sqrlx.Connection, sm *state.StateMachines, builder targetBuilder) (*GithubCommandService, error) {
-	db, err := sqrlx.New(conn, sq.Dollar)
-	if err != nil {
-		return nil, err
-	}
+func NewGithubCommandService(db sqrlx.Transactor, sm *state.StateMachines, builder targetBuilder) (*GithubCommandService, error) {
 
-	refs, err := NewRefStore(conn)
+	refs, err := NewRefStore(db)
 	if err != nil {
 		return nil, err
 	}
