@@ -95,8 +95,8 @@ func (collect BuilderRequestTopicCollector[C]) Publish(sendContext C, msg *Publi
 	collect.collector.Collect(sendContext, msg)
 }
 
-func (publish BuilderRequestTopicPublisher) Publish(ctx context.Context, msg *PublishMessage) {
-	publish.publisher.Publish(ctx, msg)
+func (publish BuilderRequestTopicPublisher) Publish(ctx context.Context, msg *PublishMessage) error {
+	return publish.publisher.Publish(ctx, msg)
 }
 
 // Method: BuildAPI
@@ -119,8 +119,8 @@ func (collect BuilderRequestTopicCollector[C]) BuildAPI(sendContext C, msg *Buil
 	collect.collector.Collect(sendContext, msg)
 }
 
-func (publish BuilderRequestTopicPublisher) BuildAPI(ctx context.Context, msg *BuildAPIMessage) {
-	publish.publisher.Publish(ctx, msg)
+func (publish BuilderRequestTopicPublisher) BuildAPI(ctx context.Context, msg *BuildAPIMessage) error {
+	return publish.publisher.Publish(ctx, msg)
 }
 
 // Service: BuilderReplyTopic
@@ -202,6 +202,6 @@ func (collect BuilderReplyTopicCollector[C]) BuildStatus(sendContext C, msg *Bui
 	collect.collector.Collect(sendContext, msg)
 }
 
-func (publish BuilderReplyTopicPublisher) BuildStatus(ctx context.Context, msg *BuildStatusMessage) {
-	publish.publisher.Publish(ctx, msg)
+func (publish BuilderReplyTopicPublisher) BuildStatus(ctx context.Context, msg *BuildStatusMessage) error {
+	return publish.publisher.Publish(ctx, msg)
 }

@@ -82,6 +82,6 @@ func (collect WebhookTopicCollector[C]) Push(sendContext C, msg *PushMessage) {
 	collect.collector.Collect(sendContext, msg)
 }
 
-func (publish WebhookTopicPublisher) Push(ctx context.Context, msg *PushMessage) {
-	publish.publisher.Publish(ctx, msg)
+func (publish WebhookTopicPublisher) Push(ctx context.Context, msg *PushMessage) error {
+	return publish.publisher.Publish(ctx, msg)
 }

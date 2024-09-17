@@ -58,10 +58,12 @@ func runReadonlyServer(ctx context.Context, cfg struct {
 	service.DBConfig
 	PackageStoreConfig
 }) error {
-	db, err := cfg.DBConfig.OpenDatabase(ctx)
+	dbConn, err := cfg.DBConfig.OpenDatabase(ctx)
 	if err != nil {
 		return err
 	}
+
+	db := sqrlx.NewPostgres(dbConn)
 
 	pkgStore, err := cfg.PackageStoreConfig.OpenPackageStore(ctx, db)
 	if err != nil {
@@ -118,7 +120,7 @@ type PackageStoreConfig struct {
 	Storage string `env:"REGISTRY_STORAGE"`
 }
 
-func (cfg PackageStoreConfig) OpenPackageStore(ctx context.Context, db sqrlx.Connection) (*packagestore.PackageStore, error) {
+func (cfg PackageStoreConfig) OpenPackageStore(ctx context.Context, db sqrlx.Transactor) (*packagestore.PackageStore, error) {
 	awsConfig, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration: %w", err)
@@ -145,10 +147,12 @@ func runCombinedServer(ctx context.Context, cfg struct {
 	PackageStoreConfig
 	service.DBConfig
 }) error {
-	db, err := cfg.DBConfig.OpenDatabase(ctx)
+	dbConn, err := cfg.DBConfig.OpenDatabase(ctx)
 	if err != nil {
 		return err
 	}
+
+	db := sqrlx.NewPostgres(dbConn)
 
 	pkgStore, err := cfg.PackageStoreConfig.OpenPackageStore(ctx, db)
 	if err != nil {

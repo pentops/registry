@@ -27,16 +27,11 @@ type FS interface {
 }
 
 type PackageStore struct {
-	db *sqrlx.Wrapper
+	db sqrlx.Transactor
 	fs FS
 }
 
-func NewPackageStore(conn sqrlx.Connection, fs FS) (*PackageStore, error) {
-	db, err := sqrlx.New(conn, sqrlx.Dollar)
-	if err != nil {
-		return nil, err
-	}
-
+func NewPackageStore(db sqrlx.Transactor, fs FS) (*PackageStore, error) {
 	return &PackageStore{
 		db: db,
 		fs: fs,

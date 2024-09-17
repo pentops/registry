@@ -13,14 +13,10 @@ import (
 )
 
 type RefStore struct {
-	db *sqrlx.Wrapper
+	db sqrlx.Transactor
 }
 
-func NewRefStore(conn sqrlx.Connection) (*RefStore, error) {
-	db, err := sqrlx.New(conn, sq.Dollar)
-	if err != nil {
-		return nil, err
-	}
+func NewRefStore(db sqrlx.Transactor) (*RefStore, error) {
 
 	return &RefStore{
 		db: db,

@@ -21,6 +21,7 @@ import (
 	"github.com/pentops/registry/internal/packagestore"
 	"github.com/pentops/registry/internal/service"
 	"github.com/pentops/registry/internal/state"
+	"github.com/pentops/sqrlx.go/sqrlx"
 )
 
 type Universe struct {
@@ -66,13 +67,14 @@ func setupUniverse(ctx context.Context, t flowtest.Asserter, uu *Universe) {
 	t.Helper()
 
 	conn := pgtest.GetTestDB(t, pgtest.WithDir("../../ext/db"))
+	db := sqrlx.NewPostgres(conn)
 
 	uu.Outbox = outboxtest.NewOutboxAsserter(t, conn)
 	uu.Github = mocks.NewGithubMock()
 
 	grpcPair := flowtest.NewGRPCPair(t, service.GRPCMiddleware()...)
 
-	outboxPub, err := outbox.NewDirectPublisher(conn, outbox.DefaultSender)
+	outboxPub, err := outbox.NewDirectPublisher(db, outbox.DefaultSender)
 	if err != nil {
 		t.Fatalf("failed to create outbox publisher: %v", err)
 	}
@@ -82,7 +84,7 @@ func setupUniverse(ctx context.Context, t flowtest.Asserter, uu *Universe) {
 		t.Fatalf("failed to create state machines: %v", err)
 	}
 
-	refs, err := service.NewRefStore(conn)
+	refs, err := service.NewRefStore(db)
 	if err != nil {
 		t.Fatalf("failed to create ref store: %v", err)
 	}
@@ -92,7 +94,7 @@ func setupUniverse(ctx context.Context, t flowtest.Asserter, uu *Universe) {
 		t.Fatalf("failed to create temp fs: %v", err)
 	}
 
-	pkgStore, err := packagestore.NewPackageStore(conn, tmpfs)
+	pkgStore, err := packagestore.NewPackageStore(db, tmpfs)
 	if err != nil {
 		t.Fatalf("failed to create package store: %v", err)
 	}
@@ -107,13 +109,13 @@ func setupUniverse(ctx context.Context, t flowtest.Asserter, uu *Universe) {
 	}
 	webhookWorker.RegisterGRPC(grpcPair.Server)
 
-	commandService, err := service.NewGithubCommandService(conn, states, webhookWorker)
+	commandService, err := service.NewGithubCommandService(db, states, webhookWorker)
 	if err != nil {
 		t.Fatalf("failed to create github command service: %v", err)
 	}
 	commandService.RegisterGRPC(grpcPair.Server)
 
-	queryService, err := service.NewGithubQueryService(conn, states)
+	queryService, err := service.NewGithubQueryService(db, states)
 	if err != nil {
 		t.Fatalf("failed to create github query service: %v", err)
 	}
