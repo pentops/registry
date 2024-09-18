@@ -13,10 +13,10 @@ require (
 	github.com/google/go-github/v58 v58.0.0
 	github.com/google/uuid v1.6.0
 	github.com/pentops/envconf.go v0.0.0-20240806040806-dcab509e8c71
-	github.com/pentops/flowtest v0.0.0-20240909065422-e4f7f68d5fb0
+	github.com/pentops/flowtest v0.0.0-20240917192406-c387da443c68
 	github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108
-	github.com/pentops/j5 v0.0.0-20240917172132-97b22149c362
-	github.com/pentops/j5build v0.0.0-20240916210731-ef289f0a14f5
+	github.com/pentops/j5 v0.0.0-20240918205947-5d6a48315046
+	github.com/pentops/j5build v0.0.0-20240918211102-04f270fe8172
 	github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24
 	github.com/pentops/o5-deploy-aws v0.0.0-20240810015944-f79b95165905
 	github.com/pentops/o5-messaging v0.0.0-20240917175438-554bc6c7bc73
