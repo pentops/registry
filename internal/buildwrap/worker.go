@@ -41,7 +41,7 @@ type BuildWorker struct {
 
 type J5Builder interface {
 	RunPublishBuild(ctx context.Context, pc buildlib.PluginContext, input *source_j5pb.SourceImage, build *config_j5pb.PublishConfig) error
-	RunGenerateBuild(ctx context.Context, pc buildlib.PluginContext, input *source_j5pb.SourceImage, build *config_j5pb.GenerateConfig) error
+	//RunGenerateBuild(ctx context.Context, pc buildlib.PluginContext, input *source_j5pb.SourceImage, build *config_j5pb.GenerateConfig) error
 	SourceImage(ctx context.Context, fs fs.FS, bundleName string) (*source_j5pb.SourceImage, *config_j5pb.BundleConfigFile, error)
 }
 

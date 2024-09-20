@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             (unknown)
-// source: j5/registry/registry/v1/service/j5package.proto
+// source: j5/registry/registry/v1/service/download.proto
 
 package registry_spb
 
@@ -22,7 +22,6 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	DownloadService_DownloadImage_FullMethodName     = "/j5.registry.registry.v1.service.DownloadService/DownloadImage"
 	DownloadService_DownloadSwagger_FullMethodName   = "/j5.registry.registry.v1.service.DownloadService/DownloadSwagger"
-	DownloadService_DownloadJDef_FullMethodName      = "/j5.registry.registry.v1.service.DownloadService/DownloadJDef"
 	DownloadService_DownloadClientAPI_FullMethodName = "/j5.registry.registry.v1.service.DownloadService/DownloadClientAPI"
 )
 
@@ -32,7 +31,6 @@ const (
 type DownloadServiceClient interface {
 	DownloadImage(ctx context.Context, in *DownloadImageRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error)
 	DownloadSwagger(ctx context.Context, in *DownloadSwaggerRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error)
-	DownloadJDef(ctx context.Context, in *DownloadJDefRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error)
 	DownloadClientAPI(ctx context.Context, in *DownloadClientAPIRequest, opts ...grpc.CallOption) (*DownloadClientAPIResponse, error)
 }
 
@@ -62,15 +60,6 @@ func (c *downloadServiceClient) DownloadSwagger(ctx context.Context, in *Downloa
 	return out, nil
 }
 
-func (c *downloadServiceClient) DownloadJDef(ctx context.Context, in *DownloadJDefRequest, opts ...grpc.CallOption) (*httpbody.HttpBody, error) {
-	out := new(httpbody.HttpBody)
-	err := c.cc.Invoke(ctx, DownloadService_DownloadJDef_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *downloadServiceClient) DownloadClientAPI(ctx context.Context, in *DownloadClientAPIRequest, opts ...grpc.CallOption) (*DownloadClientAPIResponse, error) {
 	out := new(DownloadClientAPIResponse)
 	err := c.cc.Invoke(ctx, DownloadService_DownloadClientAPI_FullMethodName, in, out, opts...)
@@ -86,7 +75,6 @@ func (c *downloadServiceClient) DownloadClientAPI(ctx context.Context, in *Downl
 type DownloadServiceServer interface {
 	DownloadImage(context.Context, *DownloadImageRequest) (*httpbody.HttpBody, error)
 	DownloadSwagger(context.Context, *DownloadSwaggerRequest) (*httpbody.HttpBody, error)
-	DownloadJDef(context.Context, *DownloadJDefRequest) (*httpbody.HttpBody, error)
 	DownloadClientAPI(context.Context, *DownloadClientAPIRequest) (*DownloadClientAPIResponse, error)
 	mustEmbedUnimplementedDownloadServiceServer()
 }
@@ -100,9 +88,6 @@ func (UnimplementedDownloadServiceServer) DownloadImage(context.Context, *Downlo
 }
 func (UnimplementedDownloadServiceServer) DownloadSwagger(context.Context, *DownloadSwaggerRequest) (*httpbody.HttpBody, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DownloadSwagger not implemented")
-}
-func (UnimplementedDownloadServiceServer) DownloadJDef(context.Context, *DownloadJDefRequest) (*httpbody.HttpBody, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DownloadJDef not implemented")
 }
 func (UnimplementedDownloadServiceServer) DownloadClientAPI(context.Context, *DownloadClientAPIRequest) (*DownloadClientAPIResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DownloadClientAPI not implemented")
@@ -156,24 +141,6 @@ func _DownloadService_DownloadSwagger_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DownloadService_DownloadJDef_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DownloadJDefRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DownloadServiceServer).DownloadJDef(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: DownloadService_DownloadJDef_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DownloadServiceServer).DownloadJDef(ctx, req.(*DownloadJDefRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _DownloadService_DownloadClientAPI_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DownloadClientAPIRequest)
 	if err := dec(in); err != nil {
@@ -208,14 +175,10 @@ var DownloadService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _DownloadService_DownloadSwagger_Handler,
 		},
 		{
-			MethodName: "DownloadJDef",
-			Handler:    _DownloadService_DownloadJDef_Handler,
-		},
-		{
 			MethodName: "DownloadClientAPI",
 			Handler:    _DownloadService_DownloadClientAPI_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "j5/registry/registry/v1/service/j5package.proto",
+	Metadata: "j5/registry/registry/v1/service/download.proto",
 }

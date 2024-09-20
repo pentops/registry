@@ -18,9 +18,6 @@ service DownloadService {
   rpc DownloadSwagger(DownloadSwaggerRequest) returns (google.api.HttpBody) {
     option (google.api.http) = {get: "/registry/v1/{owner}/{name}/{version}/swagger.json"};
   }
-  rpc DownloadJDef(DownloadJDefRequest) returns (google.api.HttpBody) {
-    option (google.api.http) = {get: "/registry/v1/{owner}/{name}/{version}/jdef.json"};
-  }
   rpc DownloadClientAPI(DownloadClientAPIRequest) returns (DownloadClientAPIResponse) {
     option (google.api.http) = {get: "/registry/v1/{owner}/{name}/{version}/api.json"};
   }
@@ -33,12 +30,6 @@ message DownloadImageRequest {
 }
 
 message DownloadSwaggerRequest {
-  string owner = 1;
-  string name = 2;
-  string version = 3;
-}
-
-message DownloadJDefRequest {
   string owner = 1;
   string name = 2;
   string version = 3;

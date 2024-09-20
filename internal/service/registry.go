@@ -81,32 +81,6 @@ func (s *RegistryService) DownloadSwagger(ctx context.Context, req *registry_spb
 	}, nil
 }
 
-func (s *RegistryService) DownloadJDef(ctx context.Context, req *registry_spb.DownloadJDefRequest) (*httpbody.HttpBody, error) {
-	img, err := s.store.GetJ5Image(ctx, req.Owner, req.Name, req.Version)
-	if err != nil {
-		return nil, err
-	}
-
-	if img == nil {
-		return nil, fmt.Errorf("image not found")
-	}
-
-	descriptorAPI, err := buildlib.DescriptorFromSource(img)
-	if err != nil {
-		return nil, err
-	}
-
-	jDefJSONBytes, err := buildlib.JDefFromDescriptor(descriptorAPI)
-	if err != nil {
-		return nil, err
-	}
-
-	return &httpbody.HttpBody{
-		ContentType: "application/json",
-		Data:        jDefJSONBytes,
-	}, nil
-}
-
 func (s *RegistryService) DownloadClientAPI(ctx context.Context, req *registry_spb.DownloadClientAPIRequest) (*registry_spb.DownloadClientAPIResponse, error) {
 	img, err := s.store.GetJ5Image(ctx, req.Owner, req.Name, req.Version)
 	if err != nil {
