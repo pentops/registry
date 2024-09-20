@@ -50,27 +50,27 @@ func TestJ5Store(t *testing.T) {
 	})
 
 	flow.Step("Download By Branch", func(ctx context.Context, t flowtest.Asserter) {
-		res, err := uu.RegistryDownload.DownloadJDef(ctx, &registry_spb.DownloadJDefRequest{
+		res, err := uu.RegistryDownload.DownloadClientAPI(ctx, &registry_spb.DownloadClientAPIRequest{
 			Owner:   "cfgorg",
 			Name:    "cfgrepo",
 			Version: "main",
 		})
 		t.NoError(err)
 
-		aa := jsontest.NewTestAsserter(t, res.Data)
+		aa := jsontest.NewTestAsserter(t, res.Api)
 
 		aa.AssertEqual("packages.0.name", "test.v1")
 	})
 
 	flow.Step("Download By Commit", func(ctx context.Context, t flowtest.Asserter) {
-		res, err := uu.RegistryDownload.DownloadJDef(ctx, &registry_spb.DownloadJDefRequest{
+		res, err := uu.RegistryDownload.DownloadClientAPI(ctx, &registry_spb.DownloadClientAPIRequest{
 			Owner:   "cfgorg",
 			Name:    "cfgrepo",
 			Version: commitHash,
 		})
 		t.NoError(err)
 
-		aa := jsontest.NewTestAsserter(t, res.Data)
+		aa := jsontest.NewTestAsserter(t, res.Api)
 
 		aa.AssertEqual("packages.0.name", "test.v1")
 	})
