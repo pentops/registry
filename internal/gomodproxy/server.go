@@ -171,12 +171,12 @@ func Handler(mods ModProvider) http.Handler {
 
 	sendJSON := func(w http.ResponseWriter, code int, data interface{}) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(code)
 		dataJSON, err := json.Marshal(data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		w.WriteHeader(code)
 		w.Write(dataJSON) // nolint: errcheck
 	}
 
@@ -190,8 +190,8 @@ func Handler(mods ModProvider) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/healthz" {
-			w.Write([]byte("OK\n")) // nolint: errcheck
 			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK\n")) // nolint: errcheck
 			return
 		}
 		ctx := r.Context()
