@@ -23,6 +23,10 @@ func NewWebhookTopicTxSender[C any](sender o5msg.TxSender[C]) *WebhookTopicTxSen
 				Name:    "Push",
 				Message: (*PushMessage).ProtoReflect(nil).Descriptor(),
 			},
+			{
+				Name:    "CheckRun",
+				Message: (*CheckRunMessage).ProtoReflect(nil).Descriptor(),
+			},
 		},
 	})
 	return &WebhookTopicTxSender[C]{sender: sender}
@@ -40,6 +44,10 @@ func NewWebhookTopicCollector[C any](collector o5msg.Collector[C]) *WebhookTopic
 				Name:    "Push",
 				Message: (*PushMessage).ProtoReflect(nil).Descriptor(),
 			},
+			{
+				Name:    "CheckRun",
+				Message: (*CheckRunMessage).ProtoReflect(nil).Descriptor(),
+			},
 		},
 	})
 	return &WebhookTopicCollector[C]{collector: collector}
@@ -56,6 +64,10 @@ func NewWebhookTopicPublisher(publisher o5msg.Publisher) *WebhookTopicPublisher 
 			{
 				Name:    "Push",
 				Message: (*PushMessage).ProtoReflect(nil).Descriptor(),
+			},
+			{
+				Name:    "CheckRun",
+				Message: (*CheckRunMessage).ProtoReflect(nil).Descriptor(),
 			},
 		},
 	})
@@ -83,5 +95,29 @@ func (collect WebhookTopicCollector[C]) Push(sendContext C, msg *PushMessage) {
 }
 
 func (publish WebhookTopicPublisher) Push(ctx context.Context, msg *PushMessage) error {
+	return publish.publisher.Publish(ctx, msg)
+}
+
+// Method: CheckRun
+
+func (msg *CheckRunMessage) O5MessageHeader() o5msg.Header {
+	header := o5msg.Header{
+		GrpcService:      "j5.registry.github.v1.topic.WebhookTopic",
+		GrpcMethod:       "CheckRun",
+		Headers:          map[string]string{},
+		DestinationTopic: "github-webhook",
+	}
+	return header
+}
+
+func (send WebhookTopicTxSender[C]) CheckRun(ctx context.Context, sendContext C, msg *CheckRunMessage) error {
+	return send.sender.Send(ctx, sendContext, msg)
+}
+
+func (collect WebhookTopicCollector[C]) CheckRun(sendContext C, msg *CheckRunMessage) {
+	collect.collector.Collect(sendContext, msg)
+}
+
+func (publish WebhookTopicPublisher) CheckRun(ctx context.Context, msg *CheckRunMessage) error {
 	return publish.publisher.Publish(ctx, msg)
 }

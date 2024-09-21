@@ -5,6 +5,7 @@ package j5.registry.github.v1.topic;
 import "google/protobuf/descriptor.proto";
 import "google/protobuf/empty.proto";
 import "j5/messaging/v1/annotations.proto";
+import "j5/registry/github/v1/checks.proto";
 
 option go_package = "github.com/pentops/registry/gen/j5/registry/github/v1/github_tpb";
 
@@ -12,6 +13,7 @@ service WebhookTopic {
   option (j5.messaging.v1.config).broadcast.name = "github-webhook";
 
   rpc Push(PushMessage) returns (google.protobuf.Empty) {}
+  rpc CheckRun(CheckRunMessage) returns (google.protobuf.Empty) {}
 }
 
 message PushMessage {
@@ -29,4 +31,31 @@ message PushMessage {
 
   // The SHA of the most recent commit on ref after the push.
   string after = 5;
+
+  string delivery_id = 6 [(j5.messaging.v1.field).message_id = true];
+}
+
+message CheckRunMessage {
+  string delivery_id = 1 [(j5.messaging.v1.field).message_id = true];
+
+  string action = 2;
+
+  // The repository owner name. Example pentops
+  string owner = 3;
+
+  // The repository name. Example o5-pb
+  string repo = 4;
+
+  int64 check_run_id = 5;
+
+  string check_run_name = 6;
+
+  // The full git ref that was pushed. Example: refs/heads/main or refs/tags/v3.14.1.
+  string ref = 7;
+
+  // The SHA of the most recent commit on ref before the push.
+  string before = 8;
+
+  // The SHA of the most recent commit on ref after the push.
+  string after = 9;
 }

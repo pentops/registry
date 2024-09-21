@@ -200,6 +200,11 @@ func (cl Client) UpdateCheckRun(ctx context.Context, checkRun *github_pb.CheckRu
 		}
 	}
 
+	log.WithFields(ctx, map[string]interface{}{
+		"checkRun":     checkRun,
+		"checkRunOpts": opts,
+	}).Debug("updating check run")
+
 	_, _, err := cl.checks.UpdateCheckRun(ctx, checkRun.Owner, checkRun.Repo, checkRun.CheckId, opts)
 	return err
 }
@@ -227,7 +232,7 @@ func (cl Client) PullConfig(ctx context.Context, ref RepoRef, into proto.Message
 		}
 
 		if err := protoyaml.Unmarshal(data, into); err != nil {
-			return fmt.Errorf("unmarshaling yaml: %s", err)
+			return fmt.Errorf("unmarshalling yaml: %s", err)
 		}
 
 		return nil
