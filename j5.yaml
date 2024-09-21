@@ -17,6 +17,7 @@ generate:
       - base: go-grpc
       - base: go-psm
       - base: go-o5-messaging
+
 managedPaths:
   - gen
   - internal/gen
