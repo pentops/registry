@@ -326,7 +326,13 @@ type j5Buildset struct {
 
 var configPaths = []string{
 	"j5.yaml",
+	"j5.repo.yaml",
 	"ext/j5/j5.yaml",
+}
+
+var bundleConfigPaths = []string{
+	"j5.yaml",
+	"j5.bundle.yaml",
 }
 
 func (ww *WebhookWorker) j5Build(ctx context.Context, ref github.RepoRef) (*j5Buildset, error) {
@@ -361,7 +367,11 @@ func (ww *WebhookWorker) j5Build(ctx context.Context, ref github.RepoRef) (*j5Bu
 	bundles := make([]namedBundle, 0, len(cfg.Bundles)+1)
 	for _, bundle := range cfg.Bundles {
 		bundleConfig := &config_j5pb.BundleConfigFile{}
-		if err := ww.github.PullConfig(ctx, ref, bundleConfig, []string{path.Join(bundle.Dir, "j5.yaml")}); err != nil {
+		paths := make([]string, 0, len(bundleConfigPaths))
+		for _, configPath := range bundleConfigPaths {
+			paths = append(paths, path.Join(bundle.Dir, configPath))
+		}
+		if err := ww.github.PullConfig(ctx, ref, bundleConfig, paths); err != nil {
 			return nil, &CheckRunError{
 				Title:   "j5 bundle config error",
 				Summary: fmt.Sprintf("Pulling %s/j5.yaml: %s", bundle.Dir, err.Error()),
