@@ -7,10 +7,10 @@ import (
 	"io"
 	"io/fs"
 
-	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/messaging/v1/messaging_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/j5build/buildlib"
+	"github.com/pentops/j5build/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-messaging/o5msg"
 	"github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb"
@@ -41,7 +41,7 @@ type BuildWorker struct {
 
 type J5Builder interface {
 	RunPublishBuild(ctx context.Context, pc buildlib.PluginContext, input *source_j5pb.SourceImage, build *config_j5pb.PublishConfig) error
-	//RunGenerateBuild(ctx context.Context, pc buildlib.PluginContext, input *source_j5pb.SourceImage, build *config_j5pb.GenerateConfig) error
+	MutateImageWithMods(img *source_j5pb.SourceImage, mods []*config_j5pb.ImageMod) error
 	SourceImage(ctx context.Context, fs fs.FS, bundleName string) (*source_j5pb.SourceImage, *config_j5pb.BundleConfigFile, error)
 }
 

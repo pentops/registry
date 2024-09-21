@@ -6,8 +6,8 @@ import (
 
 	"github.com/pentops/flowtest"
 	"github.com/pentops/flowtest/jsontest"
-	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
+	"github.com/pentops/j5build/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/registry/internal/gen/j5/registry/registry/v1/registry_spb"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -30,7 +30,7 @@ func TestJ5Store(t *testing.T) {
 			Name:    proto.String("test/v1/test.proto"),
 			Package: proto.String("test.v1"),
 		}},
-		Packages: []*config_j5pb.PackageConfig{{
+		Packages: []*source_j5pb.PackageInfo{{
 			Name:  "test.v1",
 			Label: "Test Package",
 		}},

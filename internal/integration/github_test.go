@@ -9,7 +9,7 @@ import (
 	"github.com/bufbuild/protoyaml-go"
 	"github.com/google/uuid"
 	"github.com/pentops/flowtest"
-	"github.com/pentops/j5/gen/j5/config/v1/config_j5pb"
+	"github.com/pentops/j5build/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/o5-deploy-aws/gen/o5/aws/deployer/v1/awsdeployer_tpb"
 	"github.com/pentops/o5-messaging/outbox/outboxtest"
 	"github.com/pentops/realms/j5auth"
