@@ -1,6 +1,9 @@
 ---
 name: "registry"
 
+deploymentConfig:
+  quickMode: true
+
 blobstores:
   - name: images
 
