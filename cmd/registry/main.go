@@ -39,10 +39,6 @@ func main() {
 	cmdGroup.RunMain("registry", Version)
 }
 
-func ptr[T any](v T) *T {
-	return &v
-}
-
 func runMigrate(ctx context.Context, cfg struct {
 	MigrationsDir string `env:"MIGRATIONS_DIR" default:"./ext/db"`
 	service.DBConfig
