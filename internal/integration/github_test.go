@@ -13,9 +13,9 @@ import (
 	"github.com/pentops/o5-deploy-aws/gen/o5/aws/deployer/v1/awsdeployer_tpb"
 	"github.com/pentops/o5-messaging/outbox/outboxtest"
 	"github.com/pentops/realms/j5auth"
+	"github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/gen/j5/registry/github/v1/github_tpb"
 	"github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb"
-	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_spb"
 	"github.com/pentops/registry/internal/integration/mocks"
 	"google.golang.org/grpc/metadata"
@@ -86,10 +86,13 @@ func TestO5Trigger(t *testing.T) {
 		})
 
 		_, err := uu.WebhookTopic.Push(ctx, &github_tpb.PushMessage{
-			Owner: "owner",
-			Repo:  "repo",
-			Ref:   "refs/heads/ref1",
-			After: "after",
+			Commit: &github_pb.Commit{
+				Owner: "owner",
+				Repo:  "repo",
+				Sha:   "after",
+			},
+			DeliveryId: uuid.NewString(),
+			Ref:        "refs/heads/ref1",
 		})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -176,10 +179,13 @@ func TestJ5Trigger(t *testing.T) {
 		})
 
 		_, err := uu.WebhookTopic.Push(ctx, &github_tpb.PushMessage{
-			Owner: "owner",
-			Repo:  "repo",
-			Ref:   "refs/heads/ref1",
-			After: "after",
+			Commit: &github_pb.Commit{
+				Owner: "owner",
+				Repo:  "repo",
+				Sha:   "after",
+			},
+			Ref:        "refs/heads/ref1",
+			DeliveryId: uuid.NewString(),
 		})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -217,8 +223,8 @@ func TestJ5Trigger(t *testing.T) {
 		}
 		got := gotStatus[0]
 
-		t.Equal("owner", got.CheckRun.Owner)
-		t.Equal("repo", got.CheckRun.Repo)
+		t.Equal("owner", got.CheckRun.CheckSuite.Commit.Owner)
+		t.Equal("repo", got.CheckRun.CheckSuite.Commit.Repo)
 
 	})
 

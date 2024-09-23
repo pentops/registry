@@ -2,7 +2,7 @@ package state
 
 import (
 	"github.com/pentops/protostate/psm"
-	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
+	"github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
 )
 
 func NewRepoPSM() (*github_pb.RepoPSM, error) {

@@ -4,12 +4,22 @@ package j5.registry.github.v1;
 
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb";
+option go_package = "github.com/pentops/registry/gen/j5/registry/github/v1/github_pb";
 
 message CheckRun {
-  string owner = 1;
-  string repo = 2;
-
+  CheckSuite check_suite = 1;
   string check_name = 3;
   int64 check_id = 4;
+}
+
+message CheckSuite {
+  int64 check_suite_id = 1;
+  string branch = 2;
+  Commit commit = 3;
+}
+
+message Commit {
+  string owner = 1;
+  string repo = 2;
+  string sha = 3;
 }

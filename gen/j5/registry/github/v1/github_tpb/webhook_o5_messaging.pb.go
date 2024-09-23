@@ -24,6 +24,10 @@ func NewWebhookTopicTxSender[C any](sender o5msg.TxSender[C]) *WebhookTopicTxSen
 				Message: (*PushMessage).ProtoReflect(nil).Descriptor(),
 			},
 			{
+				Name:    "CheckSuite",
+				Message: (*CheckSuiteMessage).ProtoReflect(nil).Descriptor(),
+			},
+			{
 				Name:    "CheckRun",
 				Message: (*CheckRunMessage).ProtoReflect(nil).Descriptor(),
 			},
@@ -45,6 +49,10 @@ func NewWebhookTopicCollector[C any](collector o5msg.Collector[C]) *WebhookTopic
 				Message: (*PushMessage).ProtoReflect(nil).Descriptor(),
 			},
 			{
+				Name:    "CheckSuite",
+				Message: (*CheckSuiteMessage).ProtoReflect(nil).Descriptor(),
+			},
+			{
 				Name:    "CheckRun",
 				Message: (*CheckRunMessage).ProtoReflect(nil).Descriptor(),
 			},
@@ -64,6 +72,10 @@ func NewWebhookTopicPublisher(publisher o5msg.Publisher) *WebhookTopicPublisher 
 			{
 				Name:    "Push",
 				Message: (*PushMessage).ProtoReflect(nil).Descriptor(),
+			},
+			{
+				Name:    "CheckSuite",
+				Message: (*CheckSuiteMessage).ProtoReflect(nil).Descriptor(),
 			},
 			{
 				Name:    "CheckRun",
@@ -95,6 +107,30 @@ func (collect WebhookTopicCollector[C]) Push(sendContext C, msg *PushMessage) {
 }
 
 func (publish WebhookTopicPublisher) Push(ctx context.Context, msg *PushMessage) error {
+	return publish.publisher.Publish(ctx, msg)
+}
+
+// Method: CheckSuite
+
+func (msg *CheckSuiteMessage) O5MessageHeader() o5msg.Header {
+	header := o5msg.Header{
+		GrpcService:      "j5.registry.github.v1.topic.WebhookTopic",
+		GrpcMethod:       "CheckSuite",
+		Headers:          map[string]string{},
+		DestinationTopic: "github-webhook",
+	}
+	return header
+}
+
+func (send WebhookTopicTxSender[C]) CheckSuite(ctx context.Context, sendContext C, msg *CheckSuiteMessage) error {
+	return send.sender.Send(ctx, sendContext, msg)
+}
+
+func (collect WebhookTopicCollector[C]) CheckSuite(sendContext C, msg *CheckSuiteMessage) {
+	collect.collector.Collect(sendContext, msg)
+}
+
+func (publish WebhookTopicPublisher) CheckSuite(ctx context.Context, msg *CheckSuiteMessage) error {
 	return publish.publisher.Publish(ctx, msg)
 }
 

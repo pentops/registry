@@ -10,7 +10,6 @@ import (
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/registry/internal/anyfs"
 	"github.com/pentops/registry/internal/buildwrap"
-	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/internal/github"
 	"github.com/pentops/registry/internal/gomodproxy"
 	"github.com/pentops/registry/internal/packagestore"
@@ -37,37 +36,7 @@ func main() {
 	cmdGroup.Add("readonly", commander.NewCommand(runReadonlyServer))
 	cmdGroup.Add("migrate", commander.NewCommand(runMigrate))
 
-	cmdGroup.Add("gh", commander.NewCommand(runGH))
-
 	cmdGroup.RunMain("registry", Version)
-}
-
-func runGH(ctx context.Context, cfg struct {
-	Org       string `flag:"org" env:"GITHUB_ORG"`
-	Repo      string `flag:"repo" env:"GITHUB_REPO"`
-	CheckId   int64  `flag:"check-id"`
-	CheckName string `flag:"check-name"`
-}) error {
-
-	githubClient, err := github.NewEnvClient(ctx)
-	if err != nil {
-		return err
-	}
-
-	return githubClient.UpdateCheckRun(ctx, &github_pb.CheckRun{
-		Owner:     cfg.Org,
-		Repo:      cfg.Repo,
-		CheckName: cfg.CheckName,
-		CheckId:   cfg.CheckId,
-	}, github.CheckRunUpdate{
-		Status:     github.CheckRunStatusCompleted,
-		Conclusion: ptr(github.CheckRunConclusionFailure),
-		Output: &github.CheckRunOutput{
-			Title:   "proto build error",
-			Summary: "plugin go-grpc: running docker: non-zero exit code: 1",
-			Text:    ptr("plugin go-grpc: running docker: non-zero exit code: 1\n\n```protoc-gen-go-grpc: unable to determine Go import path for \"ixm/auth/v1/apikey.proto\"\n\nPlease specify either:\n\t• a \"go_package\" option in the .proto source file, or\n\t• a \"M\" argument on the command line.\n\nSee https://protobuf.dev/reference/go/go-generated#package for more information.\n\nprotoc-gen-go-psm: unable to determine Go import path for \"ixm/auth/v1/apikey.proto\"\n\nPlease specify either:\n\t• a \"go_package\" option in the .proto source file, or\n\t• a \"M\" argument on the command line.\n\nSee https://protobuf.dev/reference/go/go-generated#package for more information.\n\nprotoc-gen-go-sugar: unable to determine Go import path for \"ixm/auth/v1/apikey.proto\"\n\nPlease specify either:\n\t• a \"go_package\" option in the .proto source file, or\n\t• a \"M\" argument on the command line.\n\nSee https://protobuf.dev/reference/go/go-generated#package for more information.\n\n```"),
-		},
-	})
 }
 
 func ptr[T any](v T) *T {

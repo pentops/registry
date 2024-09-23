@@ -15,9 +15,9 @@ import (
 	"github.com/pentops/o5-deploy-aws/gen/o5/application/v1/application_pb"
 	"github.com/pentops/o5-deploy-aws/gen/o5/aws/deployer/v1/awsdeployer_tpb"
 	"github.com/pentops/o5-messaging/o5msg"
+	"github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/gen/j5/registry/github/v1/github_tpb"
 	"github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb"
-	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/internal/git"
 	"github.com/pentops/registry/internal/github"
 	"google.golang.org/grpc"
@@ -27,9 +27,9 @@ import (
 )
 
 type IClient interface {
-	PullConfig(ctx context.Context, ref github.RepoRef, into proto.Message, tryPaths []string) error
-	GetCommit(ctx context.Context, ref github.RepoRef) (*source_j5pb.CommitInfo, error)
-	CreateCheckRun(ctx context.Context, ref github.RepoRef, name string, status *github.CheckRunUpdate) (*github_pb.CheckRun, error)
+	PullConfig(ctx context.Context, ref *github_pb.Commit, into proto.Message, tryPaths []string) error
+	GetCommit(ctx context.Context, ref *github_pb.Commit) (*source_j5pb.CommitInfo, error)
+	CreateCheckRun(ctx context.Context, ref *github_pb.Commit, name string, status *github.CheckRunUpdate) (*github_pb.CheckRun, error)
 	UpdateCheckRun(ctx context.Context, checkRun *github_pb.CheckRun, status github.CheckRunUpdate) error
 }
 
@@ -108,7 +108,7 @@ func (ww *WebhookWorker) BuildStatus(ctx context.Context, message *builder_tpb.B
 	return &emptypb.Empty{}, nil
 }
 
-func (ww *WebhookWorker) githubCheck(ctx context.Context, ref github.RepoRef, checkRunName string) (*github_pb.CheckRun, error) {
+func (ww *WebhookWorker) githubCheck(ctx context.Context, ref *github_pb.Commit, checkRunName string) (*github_pb.CheckRun, error) {
 
 	checkRun, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
 	if err != nil {
@@ -122,40 +122,25 @@ func (ww *WebhookWorker) githubCheck(ctx context.Context, ref github.RepoRef, ch
 func (ww *WebhookWorker) CheckRun(ctx context.Context, event *github_tpb.CheckRunMessage) (*emptypb.Empty, error) {
 	ctx = log.WithFields(ctx, map[string]interface{}{
 		"githubDeliveryID": event.DeliveryId,
-		"owner":            event.Owner,
-		"repo":             event.Repo,
-		"ref":              event.Ref,
-		"commit":           event.After,
-		"checkRunId":       event.CheckRunId,
-		"checkRunName":     event.CheckRunName,
+		"action":           event.Action,
+		"owner":            event.CheckRun.CheckSuite.Commit.Owner,
+		"repo":             event.CheckRun.CheckSuite.Commit.Repo,
+		"commitSha":        event.CheckRun.CheckSuite.Commit.Sha,
+		"branch":           event.CheckRun.CheckSuite.Branch,
+		"checkRunId":       event.CheckRun.CheckId,
+		"checkRunName":     event.CheckRun.CheckName,
+		"checkSuiteId":     event.CheckRun.CheckSuite.CheckSuiteId,
 	})
 	log.Debug(ctx, "CheckRun")
 
-	if !strings.HasPrefix(event.Ref, "refs/heads/") {
-		log.Info(ctx, "Not a branch push, nothing to do")
-	}
-
-	ref := github.RepoRef{
-		Owner: event.Owner,
-		Repo:  event.Repo,
-		Ref:   event.After,
-	}
-
-	branchName := strings.TrimPrefix(event.Ref, "refs/heads/")
-	buildTargets, _, err := ww.buildCargetsForEvent(ctx, ref, branchName)
+	buildTargets, _, err := ww.buildCargetsForEvent(ctx, event.CheckRun.CheckSuite.Commit, event.CheckRun.CheckSuite.Branch)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, msg := range buildTargets {
-		if msg.name == event.CheckRunName {
-			checkRun := &github_pb.CheckRun{
-				Owner:     event.Owner,
-				Repo:      event.Repo,
-				CheckId:   event.CheckRunId,
-				CheckName: event.CheckRunName,
-			}
-			contextData, err := protojson.Marshal(checkRun)
+		if msg.name == event.CheckRun.CheckName {
+			contextData, err := protojson.Marshal(event.CheckRun)
 			if err != nil {
 				return nil, fmt.Errorf("marshal check run: %w", err)
 			}
@@ -175,10 +160,10 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 
 	ctx = log.WithFields(ctx, map[string]interface{}{
 		"githubDeliveryID": event.DeliveryId,
-		"owner":            event.Owner,
-		"repo":             event.Repo,
+		"owner":            event.Commit.Owner,
+		"repo":             event.Commit.Repo,
+		"commitSha":        event.Commit.Sha,
 		"ref":              event.Ref,
-		"commit":           event.After,
 	})
 	log.Debug(ctx, "Push")
 
@@ -186,14 +171,27 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 		log.Info(ctx, "Not a branch push, nothing to do")
 	}
 
-	ref := github.RepoRef{
-		Owner: event.Owner,
-		Repo:  event.Repo,
-		Ref:   event.After,
-	}
-
 	branchName := strings.TrimPrefix(event.Ref, "refs/heads/")
-	buildTargets, repo, err := ww.buildCargetsForEvent(ctx, ref, branchName)
+	return ww.kickOffChecks(ctx, event.Commit, branchName)
+}
+
+func (ww *WebhookWorker) CheckSuite(ctx context.Context, event *github_tpb.CheckSuiteMessage) (*emptypb.Empty, error) {
+
+	ctx = log.WithFields(ctx, map[string]interface{}{
+		"githubDeliveryID": event.DeliveryId,
+		"owner":            event.CheckSuite.Commit.Owner,
+		"repo":             event.CheckSuite.Commit.Repo,
+		"branch":           event.CheckSuite.Branch,
+		"commit":           event.CheckSuite.Commit.Sha,
+		"suiteId":          event.CheckSuite.CheckSuiteId,
+	})
+	log.Debug(ctx, "Push")
+
+	return ww.kickOffChecks(ctx, event.CheckSuite.Commit, event.CheckSuite.Branch)
+}
+
+func (ww *WebhookWorker) kickOffChecks(ctx context.Context, commit *github_pb.Commit, branchName string) (*emptypb.Empty, error) {
+	buildTargets, repo, err := ww.buildCargetsForEvent(ctx, commit, branchName)
 	if err != nil {
 		if !repo.Data.ChecksEnabled {
 			return nil, err
@@ -202,7 +200,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 		if !errors.As(err, checkRunError) {
 			return nil, err
 		}
-		_, err = ww.github.CreateCheckRun(ctx, ref, checkRunError.RunName, &github.CheckRunUpdate{
+		_, err = ww.github.CreateCheckRun(ctx, commit, checkRunError.RunName, &github.CheckRunUpdate{
 			Status:     github.CheckRunStatusCompleted,
 			Conclusion: some(github.CheckRunConclusionFailure),
 			Output: &github.CheckRunOutput{
@@ -218,7 +216,7 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 
 	for _, msg := range buildTargets {
 		if repo.Data.ChecksEnabled {
-			checkRun, err := ww.githubCheck(ctx, ref, msg.name)
+			checkRun, err := ww.githubCheck(ctx, commit, msg.name)
 			if err != nil {
 				return nil, fmt.Errorf("o5 deploy check run: %w", err)
 			}
@@ -238,8 +236,8 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 	return &emptypb.Empty{}, nil
 }
 
-func (ww *WebhookWorker) buildCargetsForEvent(ctx context.Context, ref github.RepoRef, branchName string) ([]*buildTask, *github_pb.RepoState, error) {
-	repo, err := ww.refs.GetRepo(ctx, ref.Owner, ref.Repo)
+func (ww *WebhookWorker) buildCargetsForEvent(ctx context.Context, commit *github_pb.Commit, branchName string) ([]*buildTask, *github_pb.RepoState, error) {
+	repo, err := ww.refs.GetRepo(ctx, commit.Owner, commit.Repo)
 	if err != nil {
 		return nil, nil, fmt.Errorf("get repo: %w", err)
 	}
@@ -260,7 +258,7 @@ func (ww *WebhookWorker) buildCargetsForEvent(ctx context.Context, ref github.Re
 		return nil, nil, nil
 	}
 
-	t2, err := ww.buildTargets(ctx, ref, targets)
+	t2, err := ww.buildTargets(ctx, commit, targets)
 	if err != nil {
 		return nil, nil, fmt.Errorf("build targets: %w", err)
 	}
@@ -273,9 +271,9 @@ type buildTask struct {
 	request *messaging_j5pb.RequestMetadata
 }
 
-func (ww *WebhookWorker) buildTarget(ctx context.Context, ref github.RepoRef, target *github_pb.DeployTargetType) error {
+func (ww *WebhookWorker) buildTarget(ctx context.Context, commit *github_pb.Commit, target *github_pb.DeployTargetType) error {
 
-	buildMessages, err := ww.buildTargets(ctx, ref, []*github_pb.DeployTargetType{target})
+	buildMessages, err := ww.buildTargets(ctx, commit, []*github_pb.DeployTargetType{target})
 	if err != nil {
 		return err
 	}
@@ -290,7 +288,7 @@ func (ww *WebhookWorker) buildTarget(ctx context.Context, ref github.RepoRef, ta
 	return nil
 }
 
-func (ww *WebhookWorker) buildTargets(ctx context.Context, ref github.RepoRef, targets []*github_pb.DeployTargetType) ([]*buildTask, error) {
+func (ww *WebhookWorker) buildTargets(ctx context.Context, commit *github_pb.Commit, targets []*github_pb.DeployTargetType) ([]*buildTask, error) {
 
 	o5Envs := []string{}
 	j5Build := false
@@ -310,7 +308,7 @@ func (ww *WebhookWorker) buildTargets(ctx context.Context, ref github.RepoRef, t
 	}
 
 	if j5Build {
-		builds, err := ww.j5Build(ctx, ref)
+		builds, err := ww.j5Build(ctx, commit)
 		if err != nil {
 			return nil, err
 
@@ -336,7 +334,7 @@ func (ww *WebhookWorker) buildTargets(ctx context.Context, ref github.RepoRef, t
 	}
 
 	if len(o5Envs) > 0 {
-		builds, err := ww.o5Build(ctx, ref, o5Envs)
+		builds, err := ww.o5Build(ctx, commit, o5Envs)
 		if err != nil {
 			return nil, fmt.Errorf("o5 build: %w", err)
 		}
@@ -362,9 +360,9 @@ var o5ConfigPaths = []string{
 	"o5.yml",
 }
 
-func (ww *WebhookWorker) o5Build(ctx context.Context, ref github.RepoRef, targetEnvs []string) ([]*awsdeployer_tpb.RequestDeploymentMessage, *CheckRunError) {
+func (ww *WebhookWorker) o5Build(ctx context.Context, commit *github_pb.Commit, targetEnvs []string) ([]*awsdeployer_tpb.RequestDeploymentMessage, *CheckRunError) {
 	cfg := &application_pb.Application{}
-	err := ww.github.PullConfig(ctx, ref, cfg, o5ConfigPaths)
+	err := ww.github.PullConfig(ctx, commit, cfg, o5ConfigPaths)
 	if err != nil {
 		return nil, &CheckRunError{
 			RunName: "o5-config",
@@ -379,7 +377,7 @@ func (ww *WebhookWorker) o5Build(ctx context.Context, ref github.RepoRef, target
 		triggers = append(triggers, &awsdeployer_tpb.RequestDeploymentMessage{
 			DeploymentId:  uuid.NewString(),
 			Application:   cfg,
-			Version:       ref.Ref,
+			Version:       commit.Sha,
 			EnvironmentId: envID,
 		})
 	}
@@ -413,17 +411,17 @@ var bundleConfigPaths = []string{
 	"j5.bundle.yaml",
 }
 
-func (ww *WebhookWorker) j5Build(ctx context.Context, ref github.RepoRef) (*j5Buildset, error) {
+func (ww *WebhookWorker) j5Build(ctx context.Context, commit *github_pb.Commit) (*j5Buildset, error) {
 
-	commitInfo, err := ww.github.GetCommit(ctx, ref)
+	commitInfo, err := ww.github.GetCommit(ctx, commit)
 	if err != nil {
 		return nil, fmt.Errorf("get commit: %w", err)
 	}
 
-	ref.Ref = commitInfo.Hash
+	commit.Sha = commitInfo.Hash
 
 	cfg := &config_j5pb.RepoConfigFile{}
-	err = ww.github.PullConfig(ctx, ref, cfg, configPaths)
+	err = ww.github.PullConfig(ctx, commit, cfg, configPaths)
 	if err != nil {
 		log.WithError(ctx, err).Error("Config Error")
 		return nil, &CheckRunError{
@@ -450,7 +448,7 @@ func (ww *WebhookWorker) j5Build(ctx context.Context, ref github.RepoRef) (*j5Bu
 		for _, configPath := range bundleConfigPaths {
 			paths = append(paths, path.Join(bundle.Dir, configPath))
 		}
-		if err := ww.github.PullConfig(ctx, ref, bundleConfig, paths); err != nil {
+		if err := ww.github.PullConfig(ctx, commit, bundleConfig, paths); err != nil {
 			return nil, &CheckRunError{
 				RunName: "j5-config",
 				Title:   "j5 bundle config error",

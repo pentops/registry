@@ -13,8 +13,8 @@ import (
 	"github.com/pentops/j5build/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-messaging/o5msg"
+	"github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb"
-	"github.com/pentops/registry/internal/github"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -46,8 +46,8 @@ type J5Builder interface {
 }
 
 type IGithub interface {
-	GetContent(ctx context.Context, ref github.RepoRef, intoDir string) error
-	GetCommit(ctx context.Context, ref github.RepoRef) (*source_j5pb.CommitInfo, error)
+	GetContent(ctx context.Context, ref *github_pb.Commit, intoDir string) error
+	GetCommit(ctx context.Context, ref *github_pb.Commit) (*source_j5pb.CommitInfo, error)
 }
 
 func NewBuildWorker(builder J5Builder, github IGithub, store Storage, publisher o5msg.Publisher) *BuildWorker {

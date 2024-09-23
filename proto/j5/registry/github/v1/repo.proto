@@ -7,7 +7,7 @@ import "j5/ext/v1/annotations.proto";
 import "j5/list/v1/annotations.proto";
 import "j5/state/v1/metadata.proto";
 
-option go_package = "github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb";
+option go_package = "github.com/pentops/registry/gen/j5/registry/github/v1/github_pb";
 
 message RepoKeys {
   option (j5.ext.v1.psm).entity_name = "repo";

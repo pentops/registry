@@ -8,7 +8,7 @@ package github_spb
 
 import (
 	_ "github.com/pentops/j5/gen/j5/ext/v1/ext_j5pb"
-	github_pb "github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
+	github_pb "github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"

@@ -13,49 +13,24 @@ service WebhookTopic {
   option (j5.messaging.v1.config).broadcast.name = "github-webhook";
 
   rpc Push(PushMessage) returns (google.protobuf.Empty) {}
+  rpc CheckSuite(CheckSuiteMessage) returns (google.protobuf.Empty) {}
   rpc CheckRun(CheckRunMessage) returns (google.protobuf.Empty) {}
 }
 
 message PushMessage {
-  // The repository owner name. Example pentops
-  string owner = 1;
-
-  // The repository name. Example o5-pb
-  string repo = 2;
-
-  // The full git ref that was pushed. Example: refs/heads/main or refs/tags/v3.14.1.
+  string delivery_id = 1 [(j5.messaging.v1.field).message_id = true];
+  j5.registry.github.v1.Commit commit = 2;
   string ref = 3;
+}
 
-  // The SHA of the most recent commit on ref before the push.
-  string before = 4;
-
-  // The SHA of the most recent commit on ref after the push.
-  string after = 5;
-
-  string delivery_id = 6 [(j5.messaging.v1.field).message_id = true];
+message CheckSuiteMessage {
+  string delivery_id = 1 [(j5.messaging.v1.field).message_id = true];
+  j5.registry.github.v1.CheckSuite check_suite = 2;
+  string action = 3;
 }
 
 message CheckRunMessage {
   string delivery_id = 1 [(j5.messaging.v1.field).message_id = true];
-
-  string action = 2;
-
-  // The repository owner name. Example pentops
-  string owner = 3;
-
-  // The repository name. Example o5-pb
-  string repo = 4;
-
-  int64 check_run_id = 5;
-
-  string check_run_name = 6;
-
-  // The full git ref that was pushed. Example: refs/heads/main or refs/tags/v3.14.1.
-  string ref = 7;
-
-  // The SHA of the most recent commit on ref before the push.
-  string before = 8;
-
-  // The SHA of the most recent commit on ref after the push.
-  string after = 9;
+  j5.registry.github.v1.CheckRun check_run = 2;
+  string action = 3;
 }

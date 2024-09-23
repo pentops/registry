@@ -208,12 +208,12 @@ github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108 h1:Wcmsuif
 github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108/go.mod h1:q/qt+ba/3aJWhF3ub+4IExXbnTBa+4RxuBKSfMGVvco=
 github.com/pentops/j5 v0.0.0-20240921011705-36842ecf32e9 h1:fzcEeS6DIHOZXAdgcMlUUeIsozRTEqrU7PPcMLLZYlc=
 github.com/pentops/j5 v0.0.0-20240921011705-36842ecf32e9/go.mod h1:vrc+pX4lwysUtTN9dJ1bZCkM+Vs6p88hmRyeUaBo/8M=
-github.com/pentops/j5build v0.0.0-20240921180909-acb0f30e6817 h1:sAtR0RDgrsOjhdHtlvbTfqs6TT/Sfuf2vwfG6ASMFwg=
-github.com/pentops/j5build v0.0.0-20240921180909-acb0f30e6817/go.mod h1:iHG8+T7n3PKe6+U3clguvfASadImdlWER42ryeYla04=
+github.com/pentops/j5build v0.0.0-20240923155412-1e2518f93513 h1:5ucSJxm1Q1zhUjQZtv/YJ+0gh1Moef1g25NodCHS9nA=
+github.com/pentops/j5build v0.0.0-20240923155412-1e2518f93513/go.mod h1:tvxXU5sRKaEU1Xz2hfqrYlLGGn/PHMwAObREGrRapaI=
 github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24 h1:PzCwWkSWY7GO8fS7RQ9F0ZOE6PuaY27mh6ApaXLBMJI=
 github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24/go.mod h1:Rx5b9QWbqb3gOMBILxQYMberRKvarMa8R5PxF/ejJeU=
-github.com/pentops/o5-deploy-aws v0.0.0-20240921002446-2566411e15ae h1:RwYZL8HO08YjRDmUbEpISsFYnrrYjErLdlWF6jSEq7E=
-github.com/pentops/o5-deploy-aws v0.0.0-20240921002446-2566411e15ae/go.mod h1:Gdzicrd1q2PuBAa5y12zu5/eE7H2vmVxlQPo6ykxTmI=
+github.com/pentops/o5-deploy-aws v0.0.0-20240921211727-31867875b9a6 h1:lVVT40416YOyJJbrZXv77TriEDYkJsB3HmvX/oeSdPE=
+github.com/pentops/o5-deploy-aws v0.0.0-20240921211727-31867875b9a6/go.mod h1:6vASKZpJjdWrDM12ZkQXHKjto96ticgptdoRPRFea00=
 github.com/pentops/o5-messaging v0.0.0-20240917175438-554bc6c7bc73 h1:WqOFbhgoB7FkJxX+qPQuDrmXFNqIrZa2chcxZxv58no=
 github.com/pentops/o5-messaging v0.0.0-20240917175438-554bc6c7bc73/go.mod h1:AWRFW50+2q4/IFOP8YWuYcsJ6bkqiEQr6czVua7YfmQ=
 github.com/pentops/pgtest.go v0.0.0-20240806042712-cca5bdfe6542 h1:fYu4o1pc99WCCbMSk3WLdLplHbUpqtceTnhKmqfAeEE=

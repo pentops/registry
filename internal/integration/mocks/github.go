@@ -7,7 +7,7 @@ import (
 
 	"github.com/bufbuild/protoyaml-go"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
-	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
+	"github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/internal/github"
 	"google.golang.org/protobuf/proto"
 )
@@ -59,13 +59,13 @@ func (gh *GithubMock) TestPush(owner, name string, commit GithubCommit, refs ...
 	r.Commits[commit.SHA] = commit
 }
 
-func (gh *GithubMock) PullConfig(ctx context.Context, ref github.RepoRef, into proto.Message, tryPaths []string) error {
+func (gh *GithubMock) PullConfig(ctx context.Context, ref *github_pb.Commit, into proto.Message, tryPaths []string) error {
 	repo, ok := gh.Repos[ref.Owner+"/"+ref.Repo]
 	if !ok {
 		return fmt.Errorf("repo not found")
 	}
 
-	commit, ok := repo.Commits[ref.Ref]
+	commit, ok := repo.Commits[ref.Sha]
 	if !ok {
 		return fmt.Errorf("commit not found")
 	}
@@ -77,7 +77,7 @@ func (gh *GithubMock) PullConfig(ctx context.Context, ref github.RepoRef, into p
 		}
 
 		if err := protoyaml.Unmarshal([]byte(data), into); err != nil {
-			return fmt.Errorf("unmarshaling yaml: %s", err)
+			return fmt.Errorf("unmarshalling yaml: %s", err)
 		}
 
 		return nil
@@ -86,24 +86,27 @@ func (gh *GithubMock) PullConfig(ctx context.Context, ref github.RepoRef, into p
 	return fmt.Errorf("no config found")
 }
 
-func (gh *GithubMock) GetCommit(ctx context.Context, ref github.RepoRef) (*source_j5pb.CommitInfo, error) {
+func (gh *GithubMock) GetCommit(ctx context.Context, ref *github_pb.Commit) (*source_j5pb.CommitInfo, error) {
 	repoName := ref.Owner + "/" + ref.Repo
 	repo, ok := gh.Repos[repoName]
 	if !ok {
 		return nil, fmt.Errorf("repo '%s' not found", repoName)
 	}
 
-	commit, ok := repo.Commits[ref.Ref]
+	commit, ok := repo.Commits[ref.Sha]
 	if !ok {
-		return nil, fmt.Errorf("ref '%s' not found", ref.Ref)
+		return nil, fmt.Errorf("ref '%s' not found", ref.Sha)
 	}
 	return commit.info, nil
 }
 
-func (gh *GithubMock) CreateCheckRun(ctx context.Context, ref github.RepoRef, name string, status *github.CheckRunUpdate) (*github_pb.CheckRun, error) {
+func (gh *GithubMock) CreateCheckRun(ctx context.Context, ref *github_pb.Commit, name string, status *github.CheckRunUpdate) (*github_pb.CheckRun, error) {
 	return &github_pb.CheckRun{
-		Owner:     ref.Owner,
-		Repo:      ref.Repo,
+		CheckSuite: &github_pb.CheckSuite{
+			Commit:       ref,
+			CheckSuiteId: rand.Int63(),
+			Branch:       "main",
+		},
 		CheckName: name,
 		CheckId:   rand.Int63(),
 	}, nil

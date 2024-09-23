@@ -18,7 +18,7 @@ import (
 	"github.com/pentops/envconf.go/envconf"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
+	"github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
 	"golang.org/x/oauth2"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -111,16 +111,10 @@ func NewClient(tc *http.Client) (*Client, error) {
 	return cl, nil
 }
 
-type RepoRef struct {
-	Owner string
-	Repo  string
-	Ref   string
-}
-
 // CreateCheckRun creates a check run at Github for the given commit. If
 // CheckRunUpdate is nil, a check run with status "queued" is created, otherwise
 // details are copied as supplied.
-func (cl Client) CreateCheckRun(ctx context.Context, ref RepoRef, name string, status *CheckRunUpdate) (*github_pb.CheckRun, error) {
+func (cl Client) CreateCheckRun(ctx context.Context, ref *github_pb.Commit, name string, status *CheckRunUpdate) (*github_pb.CheckRun, error) {
 	if status == nil {
 		status = &CheckRunUpdate{
 			Status: CheckRunStatusQueued,
@@ -129,7 +123,7 @@ func (cl Client) CreateCheckRun(ctx context.Context, ref RepoRef, name string, s
 	opts := github.CreateCheckRunOptions{
 		Name:    name,
 		Status:  github.String(string(status.Status)),
-		HeadSHA: ref.Ref,
+		HeadSHA: ref.Sha,
 	}
 	if status.Conclusion != nil {
 		opts.Conclusion = github.String(string(*status.Conclusion))
@@ -147,11 +141,15 @@ func (cl Client) CreateCheckRun(ctx context.Context, ref RepoRef, name string, s
 		return nil, err
 	}
 
+	suite := run.GetCheckSuite()
 	context := &github_pb.CheckRun{
 		CheckId:   run.GetID(),
 		CheckName: name,
-		Owner:     ref.Owner,
-		Repo:      ref.Repo,
+		CheckSuite: &github_pb.CheckSuite{
+			CheckSuiteId: suite.GetID(),
+			Branch:       suite.GetHeadBranch(),
+			Commit:       ref,
+		},
 	}
 	return context, nil
 }
@@ -205,14 +203,14 @@ func (cl Client) UpdateCheckRun(ctx context.Context, checkRun *github_pb.CheckRu
 		"checkRunOpts": opts,
 	}).Debug("updating check run")
 
-	_, _, err := cl.checks.UpdateCheckRun(ctx, checkRun.Owner, checkRun.Repo, checkRun.CheckId, opts)
+	_, _, err := cl.checks.UpdateCheckRun(ctx, checkRun.CheckSuite.Commit.Owner, checkRun.CheckSuite.Commit.Repo, checkRun.CheckId, opts)
 	return err
 }
 
-func (cl Client) PullConfig(ctx context.Context, ref RepoRef, into proto.Message, tryPaths []string) error {
+func (cl Client) PullConfig(ctx context.Context, ref *github_pb.Commit, into proto.Message, tryPaths []string) error {
 
 	opts := &github.RepositoryContentGetOptions{
-		Ref: ref.Ref,
+		Ref: ref.Sha,
 	}
 	for _, path := range tryPaths {
 
@@ -241,9 +239,9 @@ func (cl Client) PullConfig(ctx context.Context, ref RepoRef, into proto.Message
 	return fmt.Errorf("no config found")
 }
 
-func (cl Client) GetCommit(ctx context.Context, ref RepoRef) (*source_j5pb.CommitInfo, error) {
+func (cl Client) GetCommit(ctx context.Context, ref *github_pb.Commit) (*source_j5pb.CommitInfo, error) {
 
-	commit, _, err := cl.repositories.GetCommit(ctx, ref.Owner, ref.Repo, ref.Ref, &github.ListOptions{})
+	commit, _, err := cl.repositories.GetCommit(ctx, ref.Owner, ref.Repo, ref.Sha, &github.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -269,9 +267,9 @@ func (cl Client) GetCommit(ctx context.Context, ref RepoRef) (*source_j5pb.Commi
 	return info, nil
 }
 
-func (cl Client) GetContent(ctx context.Context, ref RepoRef, destDir string) error {
+func (cl Client) GetContent(ctx context.Context, ref *github_pb.Commit, destDir string) error {
 	opts := &github.RepositoryContentGetOptions{
-		Ref: ref.Ref,
+		Ref: ref.Sha,
 	}
 
 	linkURL, _, err := cl.repositories.GetArchiveLink(ctx, ref.Owner, ref.Repo, github.Zipball, opts, 5)

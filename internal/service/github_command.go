@@ -7,9 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pentops/realms/j5auth"
-	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_pb"
+	"github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_spb"
-	"github.com/pentops/registry/internal/github"
 	"github.com/pentops/registry/internal/state"
 	"github.com/pentops/sqrlx.go/sqrlx"
 	"google.golang.org/grpc"
@@ -28,7 +27,7 @@ type GithubCommandService struct {
 }
 
 type targetBuilder interface {
-	buildTarget(ctx context.Context, ref github.RepoRef, target *github_pb.DeployTargetType) error
+	buildTarget(ctx context.Context, ref *github_pb.Commit, target *github_pb.DeployTargetType) error
 }
 
 func NewGithubCommandService(db sqrlx.Transactor, sm *state.StateMachines, builder targetBuilder) (*GithubCommandService, error) {
@@ -93,10 +92,10 @@ func (ss *GithubCommandService) Trigger(ctx context.Context, req *github_spb.Tri
 		return nil, status.Error(codes.NotFound, "repo not found")
 	}
 
-	ref := github.RepoRef{
+	ref := &github_pb.Commit{
 		Owner: repo.Keys.Owner,
 		Repo:  repo.Keys.Name,
-		Ref:   req.Commit,
+		Sha:   req.Commit,
 	}
 
 	err = ss.builder.buildTarget(ctx, ref, req.Target)

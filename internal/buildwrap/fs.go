@@ -10,7 +10,7 @@ import (
 
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/j5build/gen/j5/config/v1/config_j5pb"
-	"github.com/pentops/registry/internal/github"
+	"github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
 )
 
 type tmpSource struct {
@@ -47,10 +47,10 @@ func (bw *BuildWorker) tmpClone(ctx context.Context, commit *source_j5pb.CommitI
 	}
 
 	// Clone
-	ref := github.RepoRef{
+	ref := &github_pb.Commit{
 		Owner: commit.Owner,
 		Repo:  commit.Repo,
-		Ref:   commit.Hash,
+		Sha:   commit.Hash,
 	}
 	if err := bw.github.GetContent(ctx, ref, workDir); err != nil {
 		os.RemoveAll(workDir)
