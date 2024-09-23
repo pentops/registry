@@ -149,6 +149,9 @@ func (bw *BuildWorker) runPublish(ctx context.Context, req *builder_tpb.PublishM
 	if publishConfig == nil {
 		return fmt.Errorf("publish config %q not found", req.Name)
 	}
+	if err := bw.builder.MutateImageWithMods(img, publishConfig.Mods); err != nil {
+		return fmt.Errorf("mutate image: %w", err)
+	}
 
 	// Build
 	if err := bw.builder.RunPublishBuild(ctx, pc, img, publishConfig); err != nil {
