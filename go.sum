@@ -206,8 +206,8 @@ github.com/pentops/flowtest v0.0.0-20240917192406-c387da443c68 h1:6pkcxmeCRSsSZ1
 github.com/pentops/flowtest v0.0.0-20240917192406-c387da443c68/go.mod h1:klQLA1IXCIN8mQoQ9uq6TSxHyamObeIlJ51YT165KeE=
 github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108 h1:WcmsuifOImx7oq8skTV8cJVtPAys73/gfUvA9Eyvavk=
 github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108/go.mod h1:q/qt+ba/3aJWhF3ub+4IExXbnTBa+4RxuBKSfMGVvco=
-github.com/pentops/j5 v0.0.0-20240921011705-36842ecf32e9 h1:fzcEeS6DIHOZXAdgcMlUUeIsozRTEqrU7PPcMLLZYlc=
-github.com/pentops/j5 v0.0.0-20240921011705-36842ecf32e9/go.mod h1:vrc+pX4lwysUtTN9dJ1bZCkM+Vs6p88hmRyeUaBo/8M=
+github.com/pentops/j5 v0.0.0-20240923235006-4e9cc847f113 h1:GE4USjULk+oL5xEG+AZxCS/jLR4JIfsblJtsHMkgyjE=
+github.com/pentops/j5 v0.0.0-20240923235006-4e9cc847f113/go.mod h1:+DXEHJ1pFc/ddS+YDZEGVmntTStKp+jHqEbd26S5/jk=
 github.com/pentops/j5build v0.0.0-20240923155412-1e2518f93513 h1:5ucSJxm1Q1zhUjQZtv/YJ+0gh1Moef1g25NodCHS9nA=
 github.com/pentops/j5build v0.0.0-20240923155412-1e2518f93513/go.mod h1:tvxXU5sRKaEU1Xz2hfqrYlLGGn/PHMwAObREGrRapaI=
 github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24 h1:PzCwWkSWY7GO8fS7RQ9F0ZOE6PuaY27mh6ApaXLBMJI=
@@ -218,8 +218,8 @@ github.com/pentops/o5-messaging v0.0.0-20240917175438-554bc6c7bc73 h1:WqOFbhgoB7
 github.com/pentops/o5-messaging v0.0.0-20240917175438-554bc6c7bc73/go.mod h1:AWRFW50+2q4/IFOP8YWuYcsJ6bkqiEQr6czVua7YfmQ=
 github.com/pentops/pgtest.go v0.0.0-20240806042712-cca5bdfe6542 h1:fYu4o1pc99WCCbMSk3WLdLplHbUpqtceTnhKmqfAeEE=
 github.com/pentops/pgtest.go v0.0.0-20240806042712-cca5bdfe6542/go.mod h1:BgX0+UvohWaq7Vr3McsBWt8FpzerKaNRsmG2uH7L1FE=
-github.com/pentops/protostate v0.0.0-20240920234943-cc2f79e624c2 h1:DfdsgBQstAoKNjVdB7Tf2sG/xPXbijX0QvM2xjInANo=
-github.com/pentops/protostate v0.0.0-20240920234943-cc2f79e624c2/go.mod h1:2vvdckopRddthwtbQxnr/yvfH+ExrsY6gQAaskSQ4wE=
+github.com/pentops/protostate v0.0.0-20240923204034-0cd7da8dfca4 h1:tAQHsadmnf6aEBhqhfy87YF+ixTbIJPjCeluQfVqHQ0=
+github.com/pentops/protostate v0.0.0-20240923204034-0cd7da8dfca4/go.mod h1:qpQie3o/0xnDyhqG+H/oBGlwoAu+iwpGtYV6+Jdekvk=
 github.com/pentops/realms v0.0.0-20240812224742-adcdac1a2705 h1:all/s1NUM0iYqNCXacZRqe1Qk3fM/cbo1MVjLtmUjmc=
 github.com/pentops/realms v0.0.0-20240812224742-adcdac1a2705/go.mod h1:pq+Y33hKKE8IWpAOAv2k10aoM7QcPVhxnx1CKUiLJHY=
 github.com/pentops/runner v0.0.0-20240920235254-d99051980854 h1:YARpn9+XrbYs5iQ0vbypVYM0Ncjx+49GmLWlkdVNpts=
