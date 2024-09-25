@@ -4,9 +4,9 @@ package j5.registry.builder.v1.topic;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/empty.proto";
-import "j5/source/v1/image.proto";
 import "j5/messaging/v1/annotations.proto";
 import "j5/messaging/v1/reqres.proto";
+import "j5/source/v1/image.proto";
 
 option go_package = "github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb";
 
@@ -33,6 +33,7 @@ service BuilderReplyTopic {
   option (j5.messaging.v1.config).reply.name = "github-status";
   rpc BuildStatus(BuildStatusMessage) returns (google.protobuf.Empty) {}
 }
+
 message BuildStatusMessage {
   j5.messaging.v1.RequestMetadata request = 1 [(buf.validate.field).required = true];
   BuildStatus status = 2 [
@@ -42,10 +43,10 @@ message BuildStatusMessage {
       defined_only: true
     }
   ];
-  BuildOutcome outcome = 3;
+  BuildOutput output = 3;
 }
 
-message BuildOutcome {
+message BuildOutput {
   string title = 1;
   string summary = 2;
   optional string text = 3;

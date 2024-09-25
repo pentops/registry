@@ -63,14 +63,14 @@ func (bw *BuildWorker) RegisterGRPC(s *grpc.Server) {
 	builder_tpb.RegisterBuilderRequestTopicServer(s, bw)
 }
 
-func (bw *BuildWorker) replyStatus(ctx context.Context, reply *messaging_j5pb.RequestMetadata, status builder_tpb.BuildStatus, outcome *builder_tpb.BuildOutcome) error {
-	if reply == nil {
+func (bw *BuildWorker) replyStatus(ctx context.Context, request *messaging_j5pb.RequestMetadata, status builder_tpb.BuildStatus, output *builder_tpb.BuildOutput) error {
+	if request == nil {
 		return nil
 	}
 	return bw.publisher.Publish(ctx, &builder_tpb.BuildStatusMessage{
-		Request: reply,
+		Request: request,
 		Status:  status,
-		Outcome: outcome,
+		Output:  output,
 	})
 }
 
@@ -91,7 +91,7 @@ func (bw *BuildWorker) Publish(ctx context.Context, req *builder_tpb.PublishMess
 
 		errorMessage := err.Error()
 		fullText := fmt.Sprintf("%s\n\n```%s```", errorMessage, logBuffer.String())
-		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutcome{
+		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutput{
 			Title:   "proto build error",
 			Summary: errorMessage,
 			Text:    some(fullText),
@@ -108,7 +108,7 @@ func (bw *BuildWorker) Publish(ctx context.Context, req *builder_tpb.PublishMess
 	}
 
 	if req.Request != nil {
-		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_SUCCESS, &builder_tpb.BuildOutcome{
+		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_SUCCESS, &builder_tpb.BuildOutput{
 			Title: "proto build success",
 			Text:  some(logStr),
 		}); err != nil {
@@ -192,7 +192,7 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMe
 			return nil, err
 		}
 		errorMessage := err.Error()
-		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutcome{
+		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutput{
 			Title:   "proto build error",
 			Summary: errorMessage,
 		}); err != nil {
@@ -202,7 +202,7 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMe
 	}
 
 	if req.Request != nil {
-		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_SUCCESS, &builder_tpb.BuildOutcome{
+		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_SUCCESS, &builder_tpb.BuildOutput{
 			Title: "API Build Success",
 		}); err != nil {
 			return nil, fmt.Errorf("update checkrun: completed: %w", err)

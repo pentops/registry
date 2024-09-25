@@ -90,14 +90,14 @@ func (ww *WebhookWorker) BuildStatus(ctx context.Context, message *builder_tpb.B
 
 	log.WithFields(ctx, map[string]interface{}{
 		"gh-status":  message.Status,
-		"gh-outcome": message.Outcome,
+		"gh-outcome": message.Output,
 	}).Debug("BuildStatus")
 
-	if message.Outcome != nil {
+	if message.Output != nil {
 		status.Output = &github.CheckRunOutput{
-			Title:   message.Outcome.Title,
-			Summary: message.Outcome.Summary,
-			Text:    message.Outcome.Text,
+			Title:   message.Output.Title,
+			Summary: message.Output.Summary,
+			Text:    message.Output.Text,
 		}
 	}
 
