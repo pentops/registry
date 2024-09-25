@@ -187,6 +187,7 @@ func (ww *WebhookWorker) kickOffChecks(ctx context.Context, commit *github_pb.Co
 
 	if len(buildTargets) < 1 {
 		log.Info(ctx, "No build targets, nothing to do")
+		return &emptypb.Empty{}, nil
 	}
 
 	if repo.Data.ChecksEnabled {
