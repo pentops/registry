@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pentops/protostate/psm"
-	"github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_spb"
+	"github.com/pentops/registry/gen/j5/registry/github/v1/github_spb"
 	"github.com/pentops/registry/internal/state"
 	"github.com/pentops/sqrlx.go/sqrlx"
 	"google.golang.org/grpc"

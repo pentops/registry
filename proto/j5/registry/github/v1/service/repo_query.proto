@@ -9,7 +9,7 @@ import "j5/list/v1/page.proto";
 import "j5/list/v1/query.proto";
 import "j5/registry/github/v1/repo.proto";
 
-option go_package = "github.com/pentops/registry/internal/gen/j5/registry/github/v1/github_spb";
+option go_package = "github.com/pentops/registry/gen/j5/registry/github/v1/github_spb";
 
 service RepoQueryService {
   option (j5.ext.v1.service).state_query.entity = "repo";

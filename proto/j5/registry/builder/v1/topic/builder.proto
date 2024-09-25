@@ -28,7 +28,6 @@ message BuildAPIMessage {
   j5.source.v1.CommitInfo commit = 2 [(buf.validate.field).required = true];
   string bundle = 3;
 }
-
 service BuilderReplyTopic {
   option (j5.messaging.v1.config).reply.name = "github-status";
   rpc BuildStatus(BuildStatusMessage) returns (google.protobuf.Empty) {}
