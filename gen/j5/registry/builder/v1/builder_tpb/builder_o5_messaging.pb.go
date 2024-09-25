@@ -7,11 +7,28 @@ package builder_tpb
 
 import (
 	context "context"
+	messaging_j5pb "github.com/pentops/j5/gen/j5/messaging/v1/messaging_j5pb"
 	messaging_pb "github.com/pentops/o5-messaging/gen/o5/messaging/v1/messaging_pb"
 	o5msg "github.com/pentops/o5-messaging/o5msg"
 )
 
 // Service: BuilderRequestTopic
+// Expose Request Metadata
+func (msg *PublishMessage) SetJ5RequestMetadata(md *messaging_j5pb.RequestMetadata) {
+	msg.Request = md
+}
+func (msg *PublishMessage) GetJ5RequestMetadata() *messaging_j5pb.RequestMetadata {
+	return msg.Request
+}
+
+// Expose Request Metadata
+func (msg *BuildAPIMessage) SetJ5RequestMetadata(md *messaging_j5pb.RequestMetadata) {
+	msg.Request = md
+}
+func (msg *BuildAPIMessage) GetJ5RequestMetadata() *messaging_j5pb.RequestMetadata {
+	return msg.Request
+}
+
 type BuilderRequestTopicTxSender[C any] struct {
 	sender o5msg.TxSender[C]
 }
@@ -124,6 +141,14 @@ func (publish BuilderRequestTopicPublisher) BuildAPI(ctx context.Context, msg *B
 }
 
 // Service: BuilderReplyTopic
+// Expose Request Metadata
+func (msg *BuildStatusMessage) SetJ5RequestMetadata(md *messaging_j5pb.RequestMetadata) {
+	msg.Request = md
+}
+func (msg *BuildStatusMessage) GetJ5RequestMetadata() *messaging_j5pb.RequestMetadata {
+	return msg.Request
+}
+
 type BuilderReplyTopicTxSender[C any] struct {
 	sender o5msg.TxSender[C]
 }

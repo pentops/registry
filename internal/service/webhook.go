@@ -108,56 +108,7 @@ func (ww *WebhookWorker) BuildStatus(ctx context.Context, message *builder_tpb.B
 	return &emptypb.Empty{}, nil
 }
 
-func (ww *WebhookWorker) githubCheck(ctx context.Context, ref *github_pb.Commit, checkRunName string) (*github_pb.CheckRun, error) {
-
-	checkRun, err := ww.github.CreateCheckRun(ctx, ref, checkRunName, nil)
-	if err != nil {
-		return nil, fmt.Errorf("create check run: %w", err)
-	}
-
-	return checkRun, nil
-
-}
-
-func (ww *WebhookWorker) CheckRun(ctx context.Context, event *github_tpb.CheckRunMessage) (*emptypb.Empty, error) {
-	ctx = log.WithFields(ctx, map[string]interface{}{
-		"githubDeliveryID": event.DeliveryId,
-		"action":           event.Action,
-		"owner":            event.CheckRun.CheckSuite.Commit.Owner,
-		"repo":             event.CheckRun.CheckSuite.Commit.Repo,
-		"commitSha":        event.CheckRun.CheckSuite.Commit.Sha,
-		"branch":           event.CheckRun.CheckSuite.Branch,
-		"checkRunId":       event.CheckRun.CheckId,
-		"checkRunName":     event.CheckRun.CheckName,
-		"checkSuiteId":     event.CheckRun.CheckSuite.CheckSuiteId,
-	})
-	log.Debug(ctx, "CheckRun")
-
-	buildTargets, _, err := ww.buildCargetsForEvent(ctx, event.CheckRun.CheckSuite.Commit, event.CheckRun.CheckSuite.Branch)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, msg := range buildTargets {
-		if msg.name == event.CheckRun.CheckName {
-			contextData, err := protojson.Marshal(event.CheckRun)
-			if err != nil {
-				return nil, fmt.Errorf("marshal check run: %w", err)
-			}
-			// reply to not set.
-			msg.request.Context = contextData
-			err = ww.publisher.Publish(ctx, msg.message)
-			if err != nil {
-				return nil, fmt.Errorf("publish: %w", err)
-			}
-		}
-	}
-
-	return &emptypb.Empty{}, nil
-}
-
 func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage) (*emptypb.Empty, error) {
-
 	ctx = log.WithFields(ctx, map[string]interface{}{
 		"githubDeliveryID": event.DeliveryId,
 		"owner":            event.Commit.Owner,
@@ -175,8 +126,23 @@ func (ww *WebhookWorker) Push(ctx context.Context, event *github_tpb.PushMessage
 	return ww.kickOffChecks(ctx, event.Commit, branchName)
 }
 
-func (ww *WebhookWorker) CheckSuite(ctx context.Context, event *github_tpb.CheckSuiteMessage) (*emptypb.Empty, error) {
+func (ww *WebhookWorker) CheckRun(ctx context.Context, event *github_tpb.CheckRunMessage) (*emptypb.Empty, error) {
+	ctx = log.WithFields(ctx, map[string]interface{}{
+		"githubDeliveryID": event.DeliveryId,
+		"action":           event.Action,
+		"owner":            event.CheckRun.CheckSuite.Commit.Owner,
+		"repo":             event.CheckRun.CheckSuite.Commit.Repo,
+		"commitSha":        event.CheckRun.CheckSuite.Commit.Sha,
+		"branch":           event.CheckRun.CheckSuite.Branch,
+		"checkRunId":       event.CheckRun.CheckId,
+		"checkRunName":     event.CheckRun.CheckName,
+		"checkSuiteId":     event.CheckRun.CheckSuite.CheckSuiteId,
+	})
+	log.Debug(ctx, "CheckRun")
+	return ww.kickOffChecks(ctx, event.CheckRun.CheckSuite.Commit, event.CheckRun.CheckSuite.Branch)
+}
 
+func (ww *WebhookWorker) CheckSuite(ctx context.Context, event *github_tpb.CheckSuiteMessage) (*emptypb.Empty, error) {
 	ctx = log.WithFields(ctx, map[string]interface{}{
 		"githubDeliveryID": event.DeliveryId,
 		"owner":            event.CheckSuite.Commit.Owner,
@@ -185,13 +151,12 @@ func (ww *WebhookWorker) CheckSuite(ctx context.Context, event *github_tpb.Check
 		"commit":           event.CheckSuite.Commit.Sha,
 		"suiteId":          event.CheckSuite.CheckSuiteId,
 	})
-	log.Debug(ctx, "Push")
-
+	log.Debug(ctx, "CheckSuite")
 	return ww.kickOffChecks(ctx, event.CheckSuite.Commit, event.CheckSuite.Branch)
 }
 
 func (ww *WebhookWorker) kickOffChecks(ctx context.Context, commit *github_pb.Commit, branchName string) (*emptypb.Empty, error) {
-	buildTargets, repo, err := ww.buildCargetsForEvent(ctx, commit, branchName)
+	buildTargets, repo, err := ww.buildTasksForBranch(ctx, commit, branchName)
 	if err != nil {
 		if !repo.Data.ChecksEnabled {
 			return nil, err
@@ -214,29 +179,48 @@ func (ww *WebhookWorker) kickOffChecks(ctx context.Context, commit *github_pb.Co
 		return &emptypb.Empty{}, nil
 	}
 
-	for _, msg := range buildTargets {
-		if repo.Data.ChecksEnabled {
-			checkRun, err := ww.githubCheck(ctx, commit, msg.name)
-			if err != nil {
-				return nil, fmt.Errorf("o5 deploy check run: %w", err)
-			}
-			contextData, err := protojson.Marshal(checkRun)
-			if err != nil {
-				return nil, fmt.Errorf("marshal check run: %w", err)
-			}
-			// reply to not set.
-			msg.request.Context = contextData
+	if repo.Data.ChecksEnabled {
+		if err := ww.addGithubChecks(ctx, commit, buildTargets); err != nil {
+			return nil, err
 		}
-		err := ww.publisher.Publish(ctx, msg.message)
-		if err != nil {
-			return nil, fmt.Errorf("publish: %w", err)
-		}
+	}
+
+	if err := ww.publishTasks(ctx, buildTargets); err != nil {
+		return nil, err
 	}
 
 	return &emptypb.Empty{}, nil
 }
 
-func (ww *WebhookWorker) buildCargetsForEvent(ctx context.Context, commit *github_pb.Commit, branchName string) ([]*buildTask, *github_pb.RepoState, error) {
+func (ww *WebhookWorker) publishTasks(ctx context.Context, tasks []*buildTask) error {
+	for _, task := range tasks {
+		err := ww.publisher.Publish(ctx, task.message)
+		if err != nil {
+			return fmt.Errorf("publish: %w", err)
+		}
+	}
+	return nil
+}
+
+func (ww *WebhookWorker) addGithubChecks(ctx context.Context, commit *github_pb.Commit, tasks []*buildTask) error {
+	for _, task := range tasks {
+		checkRun, err := ww.github.CreateCheckRun(ctx, commit, task.name, nil)
+		if err != nil {
+			return fmt.Errorf("create check run: %w", err)
+		}
+		contextData, err := protojson.Marshal(checkRun)
+		if err != nil {
+			return fmt.Errorf("marshal check run: %w", err)
+		}
+		task.message.SetJ5RequestMetadata(&messaging_j5pb.RequestMetadata{
+			Context: contextData,
+			// reply to not set.
+		})
+	}
+	return nil
+}
+
+func (ww *WebhookWorker) buildTasksForBranch(ctx context.Context, commit *github_pb.Commit, branchName string) ([]*buildTask, *github_pb.RepoState, error) {
 	repo, err := ww.refs.GetRepo(ctx, commit.Owner, commit.Repo)
 	if err != nil {
 		return nil, nil, fmt.Errorf("get repo: %w", err)
@@ -265,10 +249,14 @@ func (ww *WebhookWorker) buildCargetsForEvent(ctx context.Context, commit *githu
 	return t2, repo, nil
 }
 
+type taskMessage interface {
+	o5msg.Message
+	SetJ5RequestMetadata(*messaging_j5pb.RequestMetadata)
+}
+
 type buildTask struct {
 	name    string
-	message o5msg.Message
-	request *messaging_j5pb.RequestMetadata
+	message taskMessage
 }
 
 func (ww *WebhookWorker) buildTarget(ctx context.Context, commit *github_pb.Commit, target *github_pb.DeployTargetType) error {
@@ -314,21 +302,17 @@ func (ww *WebhookWorker) buildTargets(ctx context.Context, commit *github_pb.Com
 
 		}
 		for _, apiBuild := range builds.APIBuilds {
-			apiBuild.Request = &messaging_j5pb.RequestMetadata{}
 			buildMessages = append(buildMessages, &buildTask{
 				name:    "j5-image",
 				message: apiBuild,
-				request: apiBuild.Request,
 			})
 		}
 
 		for _, protoBuild := range builds.ProtoBuilds {
 			checkRunName := fmt.Sprintf("j5-proto-%s", protoBuild.Name)
-			protoBuild.Request = &messaging_j5pb.RequestMetadata{}
 			buildMessages = append(buildMessages, &buildTask{
 				name:    checkRunName,
 				message: protoBuild,
-				request: protoBuild.Request,
 			})
 		}
 	}
@@ -341,11 +325,9 @@ func (ww *WebhookWorker) buildTargets(ctx context.Context, commit *github_pb.Com
 
 		for _, build := range builds {
 			checkName := fmt.Sprintf("o5-deploy-%s", build.EnvironmentId)
-			build.Request = &messaging_j5pb.RequestMetadata{}
 			buildMessages = append(buildMessages, &buildTask{
 				name:    checkName,
 				message: build,
-				request: build.Request,
 			})
 		}
 	}

@@ -15,11 +15,11 @@ require (
 	github.com/pentops/envconf.go v0.0.0-20240806040806-dcab509e8c71
 	github.com/pentops/flowtest v0.0.0-20240917192406-c387da443c68
 	github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108
-	github.com/pentops/j5 v0.0.0-20240923235006-4e9cc847f113
-	github.com/pentops/j5build v0.0.0-20240923155412-1e2518f93513
+	github.com/pentops/j5 v0.0.0-20240924235548-0c060245fca2
+	github.com/pentops/j5build v0.0.0-20240924211225-e1d0018f1f9d
 	github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24
-	github.com/pentops/o5-deploy-aws v0.0.0-20240921211727-31867875b9a6
-	github.com/pentops/o5-messaging v0.0.0-20240917175438-554bc6c7bc73
+	github.com/pentops/o5-deploy-aws v0.0.0-20240925213247-3fb1b90038eb
+	github.com/pentops/o5-messaging v0.0.0-20240925203152-81b197123419
 	github.com/pentops/pgtest.go v0.0.0-20240806042712-cca5bdfe6542
 	github.com/pentops/protostate v0.0.0-20240923204034-0cd7da8dfca4
 	github.com/pentops/realms v0.0.0-20240812224742-adcdac1a2705
