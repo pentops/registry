@@ -139,6 +139,10 @@ func (ww *WebhookWorker) CheckRun(ctx context.Context, event *github_tpb.CheckRu
 		"checkSuiteId":     event.CheckRun.CheckSuite.CheckSuiteId,
 	})
 	log.Debug(ctx, "CheckRun")
+
+	if event.Action != "requested" {
+		return &emptypb.Empty{}, nil
+	}
 	return ww.kickOffChecks(ctx, event.CheckRun.CheckSuite.Commit, event.CheckRun.CheckSuite.Branch)
 }
 
@@ -152,6 +156,9 @@ func (ww *WebhookWorker) CheckSuite(ctx context.Context, event *github_tpb.Check
 		"suiteId":          event.CheckSuite.CheckSuiteId,
 	})
 	log.Debug(ctx, "CheckSuite")
+	if event.Action != "requested" {
+		return &emptypb.Empty{}, nil
+	}
 	return ww.kickOffChecks(ctx, event.CheckSuite.Commit, event.CheckSuite.Branch)
 }
 
