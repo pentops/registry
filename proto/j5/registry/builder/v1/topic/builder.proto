@@ -8,7 +8,7 @@ import "j5/messaging/v1/annotations.proto";
 import "j5/messaging/v1/reqres.proto";
 import "j5/source/v1/image.proto";
 
-option go_package = "github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb";
+option go_package = "github.com/pentops/registry/gen/j5/registry/builder/v1/builder_tpb";
 
 service BuilderRequestTopic {
   option (j5.messaging.v1.config).request.name = "registry-build";
