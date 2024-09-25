@@ -140,10 +140,7 @@ func (ww *WebhookWorker) CheckRun(ctx context.Context, event *github_tpb.CheckRu
 	})
 	log.Debug(ctx, "CheckRun")
 
-	if event.Action != "requested" {
-		return &emptypb.Empty{}, nil
-	}
-	return ww.kickOffChecks(ctx, event.CheckRun.CheckSuite.Commit, event.CheckRun.CheckSuite.Branch)
+	return &emptypb.Empty{}, nil
 }
 
 func (ww *WebhookWorker) CheckSuite(ctx context.Context, event *github_tpb.CheckSuiteMessage) (*emptypb.Empty, error) {
@@ -156,10 +153,12 @@ func (ww *WebhookWorker) CheckSuite(ctx context.Context, event *github_tpb.Check
 		"suiteId":          event.CheckSuite.CheckSuiteId,
 	})
 	log.Debug(ctx, "CheckSuite")
-	if event.Action != "requested" {
-		return &emptypb.Empty{}, nil
+
+	switch event.Action {
+	case "requested", "rerequested":
+		return ww.kickOffChecks(ctx, event.CheckSuite.Commit, event.CheckSuite.Branch)
 	}
-	return ww.kickOffChecks(ctx, event.CheckSuite.Commit, event.CheckSuite.Branch)
+	return &emptypb.Empty{}, nil
 }
 
 func (ww *WebhookWorker) kickOffChecks(ctx context.Context, commit *github_pb.Commit, branchName string) (*emptypb.Empty, error) {
