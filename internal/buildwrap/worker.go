@@ -13,8 +13,8 @@ import (
 	"github.com/pentops/j5build/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-messaging/o5msg"
+	"github.com/pentops/registry/gen/j5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
-	"github.com/pentops/registry/internal/gen/j5/registry/builder/v1/builder_tpb"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
