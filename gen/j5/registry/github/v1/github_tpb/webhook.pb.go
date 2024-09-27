@@ -7,14 +7,15 @@
 package github_tpb
 
 import (
+	reflect "reflect"
+	sync "sync"
+
 	_ "github.com/pentops/j5/gen/j5/messaging/v1/messaging_j5pb"
 	github_pb "github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	_ "google.golang.org/protobuf/types/descriptorpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (

@@ -15,14 +15,14 @@ require (
 	github.com/pentops/envconf.go v0.0.0-20240806040806-dcab509e8c71
 	github.com/pentops/flowtest v0.0.0-20240917192406-c387da443c68
 	github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108
-	github.com/pentops/j5 v0.0.0-20240924235548-0c060245fca2
-	github.com/pentops/j5build v0.0.0-20240924211225-e1d0018f1f9d
+	github.com/pentops/j5 v0.0.0-20240927000210-941d8aef3493
+	github.com/pentops/j5build v0.0.0-20240927144135-8ee0c330a6be
 	github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24
-	github.com/pentops/o5-deploy-aws v0.0.0-20240925213247-3fb1b90038eb
+	github.com/pentops/o5-deploy-aws v0.0.0-20240925234435-f1405f84d9b3
 	github.com/pentops/o5-messaging v0.0.0-20240925203152-81b197123419
 	github.com/pentops/pgtest.go v0.0.0-20240806042712-cca5bdfe6542
 	github.com/pentops/protostate v0.0.0-20240923204034-0cd7da8dfca4
-	github.com/pentops/realms v0.0.0-20240812224742-adcdac1a2705
+	github.com/pentops/realms v0.0.0-20240925233004-d7d1859e7eb2
 	github.com/pentops/runner v0.0.0-20240920235254-d99051980854
 	github.com/pentops/sqrlx.go v0.0.0-20240806064322-33adc0ac5bd4
 	github.com/pressly/goose v2.7.0+incompatible
@@ -83,7 +83,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/jhump/protoreflect v1.16.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
@@ -92,6 +91,7 @@ require (
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
+	github.com/pentops/bcl.go v0.0.0-20240927010038-26a1eae0b23c // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
