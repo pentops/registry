@@ -15,8 +15,8 @@ require (
 	github.com/pentops/envconf.go v0.0.0-20240806040806-dcab509e8c71
 	github.com/pentops/flowtest v0.0.0-20240917192406-c387da443c68
 	github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108
-	github.com/pentops/j5 v0.0.0-20240927000210-941d8aef3493
-	github.com/pentops/j5build v0.0.0-20240927144135-8ee0c330a6be
+	github.com/pentops/j5 v0.0.0-20240927192330-bb068fd19f15
+	github.com/pentops/j5build v0.0.0-20240927193159-f7d2eaa981c4
 	github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24
 	github.com/pentops/o5-deploy-aws v0.0.0-20240925234435-f1405f84d9b3
 	github.com/pentops/o5-messaging v0.0.0-20240925203152-81b197123419
@@ -91,7 +91,7 @@ require (
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
-	github.com/pentops/bcl.go v0.0.0-20240927010038-26a1eae0b23c // indirect
+	github.com/pentops/bcl.go v0.0.0-20240927192253-c80347dffc84 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
