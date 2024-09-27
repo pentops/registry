@@ -210,8 +210,8 @@ github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108 h1:Wcmsuif
 github.com/pentops/go-grpc-helpers v0.0.0-20240806161744-1a499a2d8108/go.mod h1:q/qt+ba/3aJWhF3ub+4IExXbnTBa+4RxuBKSfMGVvco=
 github.com/pentops/j5 v0.0.0-20240927192330-bb068fd19f15 h1:uOuy+0sjg2AynBmqIlps0PhLz4NcVqHpATi1NcAFvn0=
 github.com/pentops/j5 v0.0.0-20240927192330-bb068fd19f15/go.mod h1:+DXEHJ1pFc/ddS+YDZEGVmntTStKp+jHqEbd26S5/jk=
-github.com/pentops/j5build v0.0.0-20240927193159-f7d2eaa981c4 h1:BAXiJoE4SrmFl+1lXg/XgTzWHxXAdMaYqB9Uu9o47xI=
-github.com/pentops/j5build v0.0.0-20240927193159-f7d2eaa981c4/go.mod h1:t59493DdecIKXwpfjC73ScYkk3vGxjUr3mYTtyOU920=
+github.com/pentops/j5build v0.0.0-20240927195939-7929b2386fd9 h1:IwCsZaiYDsvHxwQX1hm0TByhs0Y3iG7J//xGjzEsvj0=
+github.com/pentops/j5build v0.0.0-20240927195939-7929b2386fd9/go.mod h1:t59493DdecIKXwpfjC73ScYkk3vGxjUr3mYTtyOU920=
 github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24 h1:PzCwWkSWY7GO8fS7RQ9F0ZOE6PuaY27mh6ApaXLBMJI=
 github.com/pentops/log.go v0.0.0-20240806161938-2742d05b4c24/go.mod h1:Rx5b9QWbqb3gOMBILxQYMberRKvarMa8R5PxF/ejJeU=
 github.com/pentops/o5-deploy-aws v0.0.0-20240925234435-f1405f84d9b3 h1:k95wPaCyFjpXuIjf5Iu+4nGgwasqbRQyFY4HFvGuAR8=
