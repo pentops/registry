@@ -164,7 +164,7 @@ func (ww *WebhookWorker) CheckSuite(ctx context.Context, event *github_tpb.Check
 func (ww *WebhookWorker) kickOffChecks(ctx context.Context, commit *github_pb.Commit, branchName string) (*emptypb.Empty, error) {
 	buildTargets, repo, err := ww.buildTasksForBranch(ctx, commit, branchName)
 	if err != nil {
-		if !repo.Data.ChecksEnabled {
+		if repo == nil || !repo.Data.ChecksEnabled {
 			return nil, err
 		}
 		checkRunError := &CheckRunError{}
@@ -182,6 +182,10 @@ func (ww *WebhookWorker) kickOffChecks(ctx context.Context, commit *github_pb.Co
 		if err != nil {
 			return nil, fmt.Errorf("create check run: %w", err)
 		}
+		return &emptypb.Empty{}, nil
+	}
+	if repo == nil {
+		log.Info(ctx, "No repo config, nothing to do")
 		return &emptypb.Empty{}, nil
 	}
 
@@ -250,12 +254,12 @@ func (ww *WebhookWorker) buildTasksForBranch(ctx context.Context, commit *github
 
 	if len(targets) < 1 {
 		log.Info(ctx, "No deploy targets, nothing to do")
-		return nil, nil, nil
+		return nil, repo, nil
 	}
 
 	t2, err := ww.buildTargets(ctx, commit, targets)
 	if err != nil {
-		return nil, nil, fmt.Errorf("build targets: %w", err)
+		return nil, repo, fmt.Errorf("build targets: %w", err)
 	}
 	return t2, repo, nil
 }
