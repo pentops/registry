@@ -7,7 +7,6 @@ package github_tpb
 
 import (
 	context "context"
-
 	o5msg "github.com/pentops/o5-messaging/o5msg"
 )
 

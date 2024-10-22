@@ -3,7 +3,9 @@
 package github_spb
 
 import (
+	context "context"
 	psm "github.com/pentops/protostate/psm"
+	sqrlx "github.com/pentops/sqrlx.go/sqrlx"
 )
 
 // State Query Service for %sRepo
@@ -69,4 +71,46 @@ func DefaultRepoPSMQuerySpec(tableSpec psm.QueryTableSpec) RepoPSMQuerySpec {
 			return filter, nil
 		},
 	}
+}
+
+type RepoQueryServiceImpl struct {
+	db       sqrlx.Transactor
+	querySet *RepoPSMQuerySet
+	UnsafeRepoQueryServiceServer
+}
+
+var _ RepoQueryServiceServer = &RepoQueryServiceImpl{}
+
+func NewRepoQueryServiceImpl(db sqrlx.Transactor, querySet *RepoPSMQuerySet) *RepoQueryServiceImpl {
+	return &RepoQueryServiceImpl{
+		db:       db,
+		querySet: querySet,
+	}
+}
+
+func (s *RepoQueryServiceImpl) GetRepo(ctx context.Context, req *GetRepoRequest) (*GetRepoResponse, error) {
+	resObject := &GetRepoResponse{}
+	err := s.querySet.Get(ctx, s.db, req, resObject)
+	if err != nil {
+		return nil, err
+	}
+	return resObject, nil
+}
+
+func (s *RepoQueryServiceImpl) ListRepos(ctx context.Context, req *ListReposRequest) (*ListReposResponse, error) {
+	resObject := &ListReposResponse{}
+	err := s.querySet.List(ctx, s.db, req, resObject)
+	if err != nil {
+		return nil, err
+	}
+	return resObject, nil
+}
+
+func (s *RepoQueryServiceImpl) ListRepoEvents(ctx context.Context, req *ListRepoEventsRequest) (*ListRepoEventsResponse, error) {
+	resObject := &ListRepoEventsResponse{}
+	err := s.querySet.ListEvents(ctx, s.db, req, resObject)
+	if err != nil {
+		return nil, err
+	}
+	return resObject, nil
 }

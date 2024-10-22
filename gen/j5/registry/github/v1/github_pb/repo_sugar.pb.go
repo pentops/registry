@@ -5,6 +5,7 @@ package github_pb
 import (
 	driver "database/sql/driver"
 	fmt "fmt"
+	proto "google.golang.org/protobuf/proto"
 )
 
 // RepoEventType is a oneof wrapper
@@ -31,6 +32,7 @@ func (x *RepoEventType) TypeKey() (RepoEventTypeKey, bool) {
 
 type IsRepoEventTypeWrappedType interface {
 	TypeKey() RepoEventTypeKey
+	proto.Message
 }
 
 func (x *RepoEventType) Set(val IsRepoEventTypeWrappedType) {
@@ -88,6 +90,7 @@ func (x *DeployTargetType) TypeKey() (DeployTargetTypeKey, bool) {
 
 type IsDeployTargetTypeWrappedType interface {
 	TypeKey() DeployTargetTypeKey
+	proto.Message
 }
 
 func (x *DeployTargetType) Set(val IsDeployTargetTypeWrappedType) {
