@@ -23,9 +23,10 @@ import (
 )
 
 func withTestActor(ctx context.Context) context.Context {
-
 	jwt := map[string]interface{}{
-		"sub": "test/" + uuid.NewString(),
+		"sub":                         "test/" + uuid.NewString(),
+		"claims.pentops.com/tenant":   "test",
+		"claims.pentops.com/tenantid": "test",
 	}
 	jwtJSON, err := json.Marshal(jwt)
 	if err != nil {
@@ -41,7 +42,6 @@ func withTestActor(ctx context.Context) context.Context {
 }
 
 func TestO5Trigger(t *testing.T) {
-
 	flow, uu := NewUniverse(t)
 	defer flow.RunSteps(t)
 
@@ -105,7 +105,6 @@ func TestO5Trigger(t *testing.T) {
 		t.Equal("after", request.Version)
 
 	})
-
 }
 
 func mustMarshal(t flowtest.TB, pb proto.Message) string {
@@ -227,5 +226,4 @@ func TestJ5Trigger(t *testing.T) {
 		t.Equal("repo", got.CheckRun.CheckSuite.Commit.Repo)
 
 	})
-
 }
