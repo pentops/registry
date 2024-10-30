@@ -23,9 +23,10 @@ import (
 )
 
 func withTestActor(ctx context.Context) context.Context {
-
 	jwt := map[string]interface{}{
-		"sub": "test/" + uuid.NewString(),
+		"sub":                         "test/" + uuid.NewString(),
+		"claims.pentops.com/tenant":   "test",
+		"claims.pentops.com/tenantid": "test",
 	}
 	jwtJSON, err := json.Marshal(jwt)
 	if err != nil {
