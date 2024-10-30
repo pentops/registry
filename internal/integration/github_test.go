@@ -42,7 +42,6 @@ func withTestActor(ctx context.Context) context.Context {
 }
 
 func TestO5Trigger(t *testing.T) {
-
 	flow, uu := NewUniverse(t)
 	defer flow.RunSteps(t)
 
@@ -106,7 +105,6 @@ func TestO5Trigger(t *testing.T) {
 		t.Equal("after", request.Version)
 
 	})
-
 }
 
 func mustMarshal(t flowtest.TB, pb proto.Message) string {
@@ -228,5 +226,4 @@ func TestJ5Trigger(t *testing.T) {
 		t.Equal("repo", got.CheckRun.CheckSuite.Commit.Repo)
 
 	})
-
 }
