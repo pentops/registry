@@ -14,11 +14,13 @@ message RepoKeys {
 
   string owner = 1 [
     (buf.validate.field).required = true,
+    (j5.ext.v1.field).key = {},
     (j5.ext.v1.key).primary_key = true
   ];
 
   string name = 2 [
     (buf.validate.field).required = true,
+    (j5.ext.v1.field).key = {},
     (j5.ext.v1.key).primary_key = true
   ];
 }
