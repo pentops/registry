@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/protoyaml-go"
+	"buf.build/go/protoyaml"
 	"github.com/google/uuid"
 	"github.com/pentops/flowtest"
 	"github.com/pentops/j5build/gen/j5/config/v1/config_j5pb"

@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"buf.build/go/protoyaml"
 	"github.com/bradleyfalzon/ghinstallation"
-	"github.com/bufbuild/protoyaml-go"
 	"github.com/pentops/envconf.go/envconf"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/log.go/log"
