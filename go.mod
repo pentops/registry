@@ -4,10 +4,10 @@ go 1.22.4
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.1-20240920164238-5a7b106cbb87.1
+	buf.build/go/protoyaml v0.2.0
 	github.com/aws/aws-sdk-go-v2/config v1.28.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.66.0
 	github.com/bradleyfalzon/ghinstallation v1.1.1
-	github.com/bufbuild/protoyaml-go v0.1.12
 	github.com/elgris/sqrl v0.0.0-20210727210741-7e0198b30236
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/google/go-github/v58 v58.0.0
@@ -16,7 +16,7 @@ require (
 	github.com/pentops/flowtest v0.0.0-20241005200401-85365de288f3
 	github.com/pentops/go-grpc-helpers v0.0.0-20241017215039-49310e58e724
 	github.com/pentops/j5 v0.0.0-20241022210403-7bf86c63d6e6
-	github.com/pentops/j5build v0.0.0-20241024201902-f1bf57b5e871
+	github.com/pentops/j5build v0.0.0-20241104193825-ea623f7927d8
 	github.com/pentops/log.go v0.0.14
 	github.com/pentops/o5-deploy-aws v0.0.0-20241001174325-8631ab615ab3
 	github.com/pentops/o5-messaging v0.0.0-20241022213149-9d093fed7feb

@@ -1,5 +1,7 @@
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.1-20240920164238-5a7b106cbb87.1 h1:9wP6ZZYWnF2Z0TxmII7m3XNykxnP4/w8oXeth6ekcRI=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.1-20240920164238-5a7b106cbb87.1/go.mod h1:Duw/9JoXkXIydyASnLYIiufkzySThoqavOsF+IihqvM=
+buf.build/go/protoyaml v0.2.0 h1:2g3OHjtLDqXBREIOjpZGHmQ+U/4mkN1YiQjxNB68Ip8=
+buf.build/go/protoyaml v0.2.0/go.mod h1:L/9QvTDkTWcDTzAL6HMfN+mYC6CmZRm2KnsUA054iL0=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 dario.cat/mergo v1.0.1 h1:Ra4+bf83h2ztPIQYNP99R6m+Y7KfnARDfID+a+vLl4s=
 dario.cat/mergo v1.0.1/go.mod h1:uNxQE+84aUszobStD9th8a29P2fMDhsBdgRYvZOxGmk=
@@ -64,8 +66,6 @@ github.com/bufbuild/protocompile v0.14.1 h1:iA73zAf/fyljNjQKwYzUHD6AD4R8KMasmwa/
 github.com/bufbuild/protocompile v0.14.1/go.mod h1:ppVdAIhbr2H8asPk6k4pY7t9zB1OU5DoEw9xY/FUi1c=
 github.com/bufbuild/protovalidate-go v0.7.2 h1:UuvKyZHl5p7u3ztEjtRtqtDxOjRKX5VUOgKFq6p6ETk=
 github.com/bufbuild/protovalidate-go v0.7.2/go.mod h1:PHV5pFuWlRzdDW02/cmVyNzdiQ+RNNwo7idGxdzS7o4=
-github.com/bufbuild/protoyaml-go v0.1.12 h1:tIJrwvGxumVpNwLsw/AevT1QnkPDBuAObBSuBAdmAWY=
-github.com/bufbuild/protoyaml-go v0.1.12/go.mod h1:Xmz3wct+08Va+g9gjIuLTAmxW2w6sre5Wrgw7K3gn0I=
 github.com/bwesterb/go-ristretto v1.2.3/go.mod h1:fUIoIZaG73pV5biE2Blr2xEzDoMj7NFEuV9ekS419A0=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
@@ -210,8 +210,8 @@ github.com/pentops/go-grpc-helpers v0.0.0-20241017215039-49310e58e724 h1:fEp/unE
 github.com/pentops/go-grpc-helpers v0.0.0-20241017215039-49310e58e724/go.mod h1:o4uboIed6b5IWvXyJQanB4QOmmO4ukbO4DvPFFvl7Ns=
 github.com/pentops/j5 v0.0.0-20241022210403-7bf86c63d6e6 h1:wXY9/LefTmxYX5qOvlo4c59cykTZKmXaekBYqvLA8RQ=
 github.com/pentops/j5 v0.0.0-20241022210403-7bf86c63d6e6/go.mod h1:NR62+pdiUYNndQwp90IjYZO9NVVPGm1RH167Zejrds4=
-github.com/pentops/j5build v0.0.0-20241024201902-f1bf57b5e871 h1:gV+B6SOK6yTMItB13s/qOzd5CFbcHs1Ocq/A90FDQCc=
-github.com/pentops/j5build v0.0.0-20241024201902-f1bf57b5e871/go.mod h1:9F9CyM936HadIk8QxsJ+C5CCEtpJs2S3CfDS7yaF3mw=
+github.com/pentops/j5build v0.0.0-20241104193825-ea623f7927d8 h1:pYYogd6Np4gEaWn/qkkJJT1KpBIhF/tWgqWNXin21+Q=
+github.com/pentops/j5build v0.0.0-20241104193825-ea623f7927d8/go.mod h1:DBC7nE6FVC0ebHINGwYF6L6qtDew2ypHtFrY3sl13WM=
 github.com/pentops/log.go v0.0.14 h1:SmAINCMCmOvx0YVyqmC6AmborXcJ1Koc5KlSc1PdXXc=
 github.com/pentops/log.go v0.0.14/go.mod h1:925Eobg9xBopcmy9rxefY5s+yp0rRFD+wm8xlFnlSQg=
 github.com/pentops/o5-deploy-aws v0.0.0-20241001174325-8631ab615ab3 h1:BU+tGGSiW1yKuUCB/lJ7Q1gtizo5WuIm7tYlqjHmRK4=
