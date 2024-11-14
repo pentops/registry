@@ -94,6 +94,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/pentops/bcl.go v0.0.0-20241106053808-87160f72331b // indirect
+	github.com/pentops/golib v0.0.0-20241112050940-7fef6c0232c2 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
