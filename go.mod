@@ -1,6 +1,6 @@
 module github.com/pentops/registry
 
-go 1.22.4
+go 1.23.2
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.1-20240920164238-5a7b106cbb87.1
@@ -13,12 +13,12 @@ require (
 	github.com/google/go-github/v58 v58.0.0
 	github.com/google/uuid v1.6.0
 	github.com/pentops/envconf.go v0.0.0-20241008010024-9864aef6219d
-	github.com/pentops/flowtest v0.0.0-20241005200401-85365de288f3
+	github.com/pentops/flowtest v0.0.0-20241110231021-42663ac00b63
 	github.com/pentops/go-grpc-helpers v0.0.0-20241017215039-49310e58e724
-	github.com/pentops/j5 v0.0.0-20241022210403-7bf86c63d6e6
-	github.com/pentops/j5build v0.0.0-20241104193825-ea623f7927d8
+	github.com/pentops/j5 v0.0.0-20241104203331-fb5a90a95412
+	github.com/pentops/j5build v0.0.0-20241113234237-e2fb2a2a4aa1
 	github.com/pentops/log.go v0.0.14
-	github.com/pentops/o5-deploy-aws v0.0.0-20241001174325-8631ab615ab3
+	github.com/pentops/o5-deploy-aws v0.0.0-20241104203441-356e3a7906dc
 	github.com/pentops/o5-messaging v0.0.0-20241022213149-9d093fed7feb
 	github.com/pentops/pgtest.go v0.0.0-20240806042712-cca5bdfe6542
 	github.com/pentops/protostate v0.0.0-20241026001302-29d9d32bab2c
@@ -91,7 +91,8 @@ require (
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
-	github.com/pentops/bcl.go v0.0.0-20241022210831-8de7dcd5c646 // indirect
+	github.com/pentops/bcl.go v0.0.0-20241106053808-87160f72331b // indirect
+	github.com/pentops/golib v0.0.0-20241112050940-7fef6c0232c2 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

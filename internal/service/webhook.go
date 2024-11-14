@@ -488,7 +488,6 @@ func (ww *WebhookWorker) j5Build(ctx context.Context, commit *github_pb.Commit) 
 			}
 			output.ProtoBuilds = append(output.ProtoBuilds, req)
 		}
-
 	}
 
 	return output, nil
