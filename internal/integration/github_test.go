@@ -17,6 +17,7 @@ import (
 	"github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/gen/j5/registry/github/v1/github_spb"
 	"github.com/pentops/registry/gen/j5/registry/github/v1/github_tpb"
+	"github.com/pentops/registry/gen/j5/registry/registry/v1/registry_tpb"
 	"github.com/pentops/registry/internal/integration/mocks"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
@@ -146,7 +147,7 @@ func TestJ5Trigger(t *testing.T) {
 
 	})
 
-	var buildRoot *builder_tpb.BuildAPIMessage
+	var buildRoot *registry_tpb.BuildAPIMessage
 	flow.Step("J5 Build", func(ctx context.Context, t flowtest.Asserter) {
 
 		uu.Github.TestPush("owner", "repo", mocks.GithubCommit{
@@ -190,12 +191,12 @@ func TestJ5Trigger(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		buildRoot = &builder_tpb.BuildAPIMessage{}
-		uu.Outbox.PopMessage(t, buildRoot, outboxtest.MessageBodyMatches(func(b *builder_tpb.BuildAPIMessage) bool {
+		buildRoot = &registry_tpb.BuildAPIMessage{}
+		uu.Outbox.PopMessage(t, buildRoot, outboxtest.MessageBodyMatches(func(b *registry_tpb.BuildAPIMessage) bool {
 			return b.Bundle == ""
 		}))
-		build2 := &builder_tpb.BuildAPIMessage{}
-		uu.Outbox.PopMessage(t, build2, outboxtest.MessageBodyMatches(func(b *builder_tpb.BuildAPIMessage) bool {
+		build2 := &registry_tpb.BuildAPIMessage{}
+		uu.Outbox.PopMessage(t, build2, outboxtest.MessageBodyMatches(func(b *registry_tpb.BuildAPIMessage) bool {
 			t.Logf("bundle: %q", b.Bundle)
 			return b.Bundle == "bundle2"
 		}))

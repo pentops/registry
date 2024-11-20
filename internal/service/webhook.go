@@ -18,6 +18,7 @@ import (
 	"github.com/pentops/registry/gen/j5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
 	"github.com/pentops/registry/gen/j5/registry/github/v1/github_tpb"
+	"github.com/pentops/registry/gen/j5/registry/registry/v1/registry_tpb"
 	"github.com/pentops/registry/internal/git"
 	"github.com/pentops/registry/internal/github"
 	"google.golang.org/grpc"
@@ -393,8 +394,8 @@ func (e CheckRunError) Error() string {
 }
 
 type j5Buildset struct {
-	APIBuilds   []*builder_tpb.BuildAPIMessage
-	ProtoBuilds []*builder_tpb.PublishMessage
+	APIBuilds   []*registry_tpb.BuildAPIMessage
+	ProtoBuilds []*registry_tpb.PublishMessage
 }
 
 var configPaths = []string{
@@ -473,7 +474,7 @@ func (ww *WebhookWorker) j5Build(ctx context.Context, commit *github_pb.Commit) 
 
 	for _, bundle := range bundles {
 		if bundle.registry != nil {
-			req := &builder_tpb.BuildAPIMessage{
+			req := &registry_tpb.BuildAPIMessage{
 				Commit: commitInfo,
 				Bundle: bundle.name,
 			}
@@ -481,7 +482,7 @@ func (ww *WebhookWorker) j5Build(ctx context.Context, commit *github_pb.Commit) 
 		}
 
 		for _, publish := range bundle.publish {
-			req := &builder_tpb.PublishMessage{
+			req := &registry_tpb.PublishMessage{
 				Commit: commitInfo,
 				Name:   publish.Name,
 				Bundle: bundle.name,

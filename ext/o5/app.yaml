@@ -53,7 +53,7 @@ runtimes:
       - name: "/j5.registry.github.v1.topic.WebhookTopic"
         port: 8080
         envName: webhook
-      - name: "/j5.registry.builder.v1.topic.BuilderRequestTopic"
+      - name: "/j5.registry.registry.v1.topic.BuilderRequestTopic"
         port: 8080
       - name: "/j5.registry.builder.v1.topic.BuilderReplyTopic"
         port: 8080

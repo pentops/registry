@@ -15,6 +15,7 @@ import (
 	"github.com/pentops/o5-messaging/o5msg"
 	"github.com/pentops/registry/gen/j5/registry/builder/v1/builder_tpb"
 	"github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
+	"github.com/pentops/registry/gen/j5/registry/registry/v1/registry_tpb"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -30,7 +31,7 @@ type Publisher interface {
 }
 
 type BuildWorker struct {
-	builder_tpb.UnimplementedBuilderRequestTopicServer
+	registry_tpb.UnimplementedBuilderRequestTopicServer
 
 	builder J5Builder
 	github  IGithub
@@ -60,7 +61,7 @@ func NewBuildWorker(builder J5Builder, github IGithub, store Storage, publisher 
 }
 
 func (bw *BuildWorker) RegisterGRPC(s *grpc.Server) {
-	builder_tpb.RegisterBuilderRequestTopicServer(s, bw)
+	registry_tpb.RegisterBuilderRequestTopicServer(s, bw)
 }
 
 func (bw *BuildWorker) replyStatus(ctx context.Context, request *messaging_j5pb.RequestMetadata, status builder_tpb.BuildStatus, output *builder_tpb.BuildOutput) error {
@@ -74,7 +75,7 @@ func (bw *BuildWorker) replyStatus(ctx context.Context, request *messaging_j5pb.
 	})
 }
 
-func (bw *BuildWorker) Publish(ctx context.Context, req *builder_tpb.PublishMessage) (*emptypb.Empty, error) {
+func (bw *BuildWorker) Publish(ctx context.Context, req *registry_tpb.PublishMessage) (*emptypb.Empty, error) {
 
 	if req.Request != nil {
 		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_IN_PROGRESS, nil); err != nil {
@@ -120,7 +121,7 @@ func (bw *BuildWorker) Publish(ctx context.Context, req *builder_tpb.PublishMess
 	return &emptypb.Empty{}, nil
 }
 
-func (bw *BuildWorker) runPublish(ctx context.Context, req *builder_tpb.PublishMessage, logBuffer io.Writer) error {
+func (bw *BuildWorker) runPublish(ctx context.Context, req *registry_tpb.PublishMessage, logBuffer io.Writer) error {
 
 	img, cfg, err := bw.BundleImageFromCommit(ctx, req.Commit, req.Bundle)
 	if err != nil {
@@ -176,7 +177,7 @@ func (bw *BuildWorker) runPublish(ctx context.Context, req *builder_tpb.PublishM
 	return nil
 }
 
-func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMessage) (*emptypb.Empty, error) {
+func (bw *BuildWorker) BuildAPI(ctx context.Context, req *registry_tpb.BuildAPIMessage) (*emptypb.Empty, error) {
 
 	if req.Request != nil {
 		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_IN_PROGRESS, nil); err != nil {
@@ -213,7 +214,7 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *builder_tpb.BuildAPIMe
 
 }
 
-func (bw *BuildWorker) buildAPI(ctx context.Context, commit *source_j5pb.CommitInfo, req *builder_tpb.BuildAPIMessage) error {
+func (bw *BuildWorker) buildAPI(ctx context.Context, commit *source_j5pb.CommitInfo, req *registry_tpb.BuildAPIMessage) error {
 
 	img, bundleConfig, err := bw.BundleImageFromCommit(ctx, commit, req.Bundle)
 	if err != nil {

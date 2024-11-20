@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package j5.registry.registry.v1.topic;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/empty.proto";
+import "j5/messaging/v1/annotations.proto";
+import "j5/messaging/v1/reqres.proto";
+import "j5/source/v1/image.proto";
+
+option go_package = "github.com/pentops/registry/gen/j5/registry/registry/v1/registry_tpb";
+
+service BuilderRequestTopic {
+  option (j5.messaging.v1.config).request.name = "registry-build";
+  rpc Publish(PublishMessage) returns (google.protobuf.Empty) {}
+  rpc BuildAPI(BuildAPIMessage) returns (google.protobuf.Empty) {}
+}
+
+message PublishMessage {
+  j5.messaging.v1.RequestMetadata request = 1;
+  j5.source.v1.CommitInfo commit = 2 [(buf.validate.field).required = true];
+  string bundle = 3;
+  string name = 4 [(buf.validate.field).required = true];
+}
+
+message BuildAPIMessage {
+  j5.messaging.v1.RequestMetadata request = 1;
+  j5.source.v1.CommitInfo commit = 2 [(buf.validate.field).required = true];
+  string bundle = 3;
+}
