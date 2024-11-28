@@ -41,23 +41,10 @@ runtimes:
         protocol: ROUTE_PROTOCOL_HTTP
         port: 8080
 
-      - prefix: "/registry/github/v1/"
-        protocol: ROUTE_PROTOCOL_HTTP
-        port: 8080
-
-      - prefix: "/trigger/v1/"
-        protocol: ROUTE_PROTOCOL_HTTP
-        port: 8080
-
     subscriptions:
-      - name: "/j5.registry.github.v1.topic.WebhookTopic"
+      - name: "/j5.registry.v1.topic.BuilderRequestTopic"
         port: 8080
-        envName: webhook
-      - name: "/j5.registry.registry.v1.topic.BuilderRequestTopic"
-        port: 8080
-      - name: "/j5.registry.builder.v1.topic.BuilderReplyTopic"
-        port: 8080
-      - name: "/o5.deployer.v1.topic.DeploymentReplyTopic"
+      - name: "/j5.registry.v1.topic.BuilderReplyTopic"
         port: 8080
 
     containers:

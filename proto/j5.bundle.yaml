@@ -5,8 +5,7 @@ options:
     - name: "topic"
 
 packages:
-  - name: j5.registry.registry.v1
-  - name: j5.registry.github.v1
+  - name: j5.registry.v1
 
 registry:
   owner: pentops

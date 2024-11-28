@@ -8,7 +8,7 @@ import (
 	"github.com/pentops/flowtest/jsontest"
 	"github.com/pentops/j5/gen/j5/source/v1/source_j5pb"
 	"github.com/pentops/j5build/gen/j5/config/v1/config_j5pb"
-	"github.com/pentops/registry/internal/gen/j5/registry/registry/v1/registry_spb"
+	"github.com/pentops/registry/internal/gen/j5/registry/v1/registry_spb"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/known/timestamppb"

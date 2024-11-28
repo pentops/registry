@@ -8,29 +8,22 @@ import (
 
 	"github.com/pentops/flowtest"
 	"github.com/pentops/log.go/log"
-	"github.com/pentops/o5-messaging/outbox"
 	"github.com/pentops/o5-messaging/outbox/outboxtest"
 	"github.com/pentops/pgtest.go/pgtest"
-	"github.com/pentops/registry/gen/j5/registry/builder/v1/builder_tpb"
-	"github.com/pentops/registry/gen/j5/registry/github/v1/github_spb"
-	"github.com/pentops/registry/gen/j5/registry/github/v1/github_tpb"
+	"github.com/pentops/registry/gen/j5/registry/v1/registry_tpb"
 	"github.com/pentops/registry/internal/anyfs"
-	"github.com/pentops/registry/internal/gen/j5/registry/registry/v1/registry_spb"
+	"github.com/pentops/registry/internal/gen/j5/registry/v1/registry_spb"
 	"github.com/pentops/registry/internal/gomodproxy"
 	"github.com/pentops/registry/internal/integration/mocks"
 	"github.com/pentops/registry/internal/packagestore"
 	"github.com/pentops/registry/internal/service"
-	"github.com/pentops/registry/internal/state"
 	"github.com/pentops/sqrlx.go/sqrlx"
 )
 
 type Universe struct {
 	Outbox *outboxtest.OutboxAsserter
 
-	RepoCommand      github_spb.RepoCommandServiceClient
-	RepoQuery        github_spb.RepoQueryServiceClient
-	WebhookTopic     github_tpb.WebhookTopicClient
-	BuilderReply     builder_tpb.BuilderReplyTopicClient
+	BuilderRequest   registry_tpb.BuilderRequestTopicClient
 	RegistryDownload registry_spb.DownloadServiceClient
 
 	PackageStore *packagestore.PackageStore
@@ -74,21 +67,6 @@ func setupUniverse(ctx context.Context, t flowtest.Asserter, uu *Universe) {
 
 	grpcPair := flowtest.NewGRPCPair(t, service.GRPCMiddleware()...)
 
-	outboxPub, err := outbox.NewDirectPublisher(db, outbox.DefaultSender)
-	if err != nil {
-		t.Fatalf("failed to create outbox publisher: %v", err)
-	}
-
-	states, err := state.NewStateMachines()
-	if err != nil {
-		t.Fatalf("failed to create state machines: %v", err)
-	}
-
-	refs, err := service.NewRefStore(db)
-	if err != nil {
-		t.Fatalf("failed to create ref store: %v", err)
-	}
-
 	tmpfs, err := anyfs.NewTempFS(ctx)
 	if err != nil {
 		t.Fatalf("failed to create temp fs: %v", err)
@@ -103,31 +81,10 @@ func setupUniverse(ctx context.Context, t flowtest.Asserter, uu *Universe) {
 
 	uu.HTTPHandler = gomodproxy.Handler(pkgStore)
 
-	webhookWorker, err := service.NewWebhookWorker(refs, uu.Github, outboxPub)
-	if err != nil {
-		t.Fatalf("failed to create webhook worker: %v", err)
-	}
-	webhookWorker.RegisterGRPC(grpcPair.Server)
-
-	commandService, err := service.NewGithubCommandService(db, states, webhookWorker)
-	if err != nil {
-		t.Fatalf("failed to create github command service: %v", err)
-	}
-	commandService.RegisterGRPC(grpcPair.Server)
-
-	queryService, err := service.NewGithubQueryService(db, states)
-	if err != nil {
-		t.Fatalf("failed to create github query service: %v", err)
-	}
-	queryService.RegisterGRPC(grpcPair.Server)
-
 	registryService := service.NewRegistryService(pkgStore)
 	registryService.RegisterGRPC(grpcPair.Server)
 
-	uu.WebhookTopic = github_tpb.NewWebhookTopicClient(grpcPair.Client)
-	uu.RepoCommand = github_spb.NewRepoCommandServiceClient(grpcPair.Client)
-	uu.RepoQuery = github_spb.NewRepoQueryServiceClient(grpcPair.Client)
-	uu.BuilderReply = builder_tpb.NewBuilderReplyTopicClient(grpcPair.Client)
+	uu.BuilderRequest = registry_tpb.NewBuilderRequestTopicClient(grpcPair.Client)
 	uu.RegistryDownload = registry_spb.NewDownloadServiceClient(grpcPair.Client)
 
 	grpcPair.ServeUntilDone(t, ctx)
