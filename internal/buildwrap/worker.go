@@ -13,9 +13,8 @@ import (
 	"github.com/pentops/j5build/gen/j5/config/v1/config_j5pb"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/o5-messaging/o5msg"
-	"github.com/pentops/registry/gen/j5/registry/builder/v1/builder_tpb"
-	"github.com/pentops/registry/gen/j5/registry/github/v1/github_pb"
-	"github.com/pentops/registry/gen/j5/registry/registry/v1/registry_tpb"
+	"github.com/pentops/registry/gen/j5/registry/v1/registry_tpb"
+	"github.com/pentops/registry/internal/github"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -47,8 +46,8 @@ type J5Builder interface {
 }
 
 type IGithub interface {
-	GetContent(ctx context.Context, ref *github_pb.Commit, intoDir string) error
-	GetCommit(ctx context.Context, ref *github_pb.Commit) (*source_j5pb.CommitInfo, error)
+	GetContent(ctx context.Context, ref *github.Commit, intoDir string) error
+	GetCommit(ctx context.Context, ref *github.Commit) (*source_j5pb.CommitInfo, error)
 }
 
 func NewBuildWorker(builder J5Builder, github IGithub, store Storage, publisher o5msg.Publisher) *BuildWorker {
@@ -64,11 +63,11 @@ func (bw *BuildWorker) RegisterGRPC(s *grpc.Server) {
 	registry_tpb.RegisterBuilderRequestTopicServer(s, bw)
 }
 
-func (bw *BuildWorker) replyStatus(ctx context.Context, request *messaging_j5pb.RequestMetadata, status builder_tpb.BuildStatus, output *builder_tpb.BuildOutput) error {
+func (bw *BuildWorker) replyStatus(ctx context.Context, request *messaging_j5pb.RequestMetadata, status registry_tpb.BuildStatus, output *registry_tpb.BuildOutput) error {
 	if request == nil {
 		return nil
 	}
-	return bw.publisher.Publish(ctx, &builder_tpb.BuildStatusMessage{
+	return bw.publisher.Publish(ctx, &registry_tpb.J5BuildStatusMessage{
 		Request: request,
 		Status:  status,
 		Output:  output,
@@ -78,7 +77,7 @@ func (bw *BuildWorker) replyStatus(ctx context.Context, request *messaging_j5pb.
 func (bw *BuildWorker) Publish(ctx context.Context, req *registry_tpb.PublishMessage) (*emptypb.Empty, error) {
 
 	if req.Request != nil {
-		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_IN_PROGRESS, nil); err != nil {
+		if err := bw.replyStatus(ctx, req.Request, registry_tpb.BuildStatus_IN_PROGRESS, nil); err != nil {
 			return nil, fmt.Errorf("reply status: %w", err)
 		}
 	}
@@ -92,7 +91,7 @@ func (bw *BuildWorker) Publish(ctx context.Context, req *registry_tpb.PublishMes
 
 		errorMessage := err.Error()
 		fullText := fmt.Sprintf("%s\n\n```%s```", errorMessage, logBuffer.String())
-		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutput{
+		if err := bw.replyStatus(ctx, req.Request, registry_tpb.BuildStatus_FAILURE, &registry_tpb.BuildOutput{
 			Title:   "proto build error",
 			Summary: errorMessage,
 			Text:    some(fullText),
@@ -109,7 +108,7 @@ func (bw *BuildWorker) Publish(ctx context.Context, req *registry_tpb.PublishMes
 	}
 
 	if req.Request != nil {
-		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_SUCCESS, &builder_tpb.BuildOutput{
+		if err := bw.replyStatus(ctx, req.Request, registry_tpb.BuildStatus_SUCCESS, &registry_tpb.BuildOutput{
 			Title: "proto build success",
 			Text:  some(logStr),
 		}); err != nil {
@@ -180,7 +179,7 @@ func (bw *BuildWorker) runPublish(ctx context.Context, req *registry_tpb.Publish
 func (bw *BuildWorker) BuildAPI(ctx context.Context, req *registry_tpb.BuildAPIMessage) (*emptypb.Empty, error) {
 
 	if req.Request != nil {
-		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_IN_PROGRESS, nil); err != nil {
+		if err := bw.replyStatus(ctx, req.Request, registry_tpb.BuildStatus_IN_PROGRESS, nil); err != nil {
 			return nil, fmt.Errorf("reply status: %w", err)
 		}
 	}
@@ -193,7 +192,7 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *registry_tpb.BuildAPIM
 			return nil, err
 		}
 		errorMessage := err.Error()
-		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_FAILURE, &builder_tpb.BuildOutput{
+		if err := bw.replyStatus(ctx, req.Request, registry_tpb.BuildStatus_FAILURE, &registry_tpb.BuildOutput{
 			Title:   "proto build error",
 			Summary: errorMessage,
 		}); err != nil {
@@ -203,7 +202,7 @@ func (bw *BuildWorker) BuildAPI(ctx context.Context, req *registry_tpb.BuildAPIM
 	}
 
 	if req.Request != nil {
-		if err := bw.replyStatus(ctx, req.Request, builder_tpb.BuildStatus_SUCCESS, &builder_tpb.BuildOutput{
+		if err := bw.replyStatus(ctx, req.Request, registry_tpb.BuildStatus_SUCCESS, &registry_tpb.BuildOutput{
 			Title: "API Build Success",
 		}); err != nil {
 			return nil, fmt.Errorf("update checkrun: completed: %w", err)

@@ -14,7 +14,6 @@ import (
 	"github.com/pentops/registry/internal/gomodproxy"
 	"github.com/pentops/registry/internal/packagestore"
 	"github.com/pentops/registry/internal/service"
-	"github.com/pentops/registry/internal/state"
 	"github.com/pentops/runner"
 	"github.com/pentops/runner/commander"
 	"github.com/pentops/sqrlx.go/sqrlx"
@@ -177,31 +176,6 @@ func runCombinedServer(ctx context.Context, cfg struct {
 
 	buildWorker := buildwrap.NewBuildWorker(j5Builder, githubClient, pkgStore, dbPublisher)
 
-	refStore, err := service.NewRefStore(db)
-	if err != nil {
-		return err
-	}
-
-	githubWorker, err := service.NewWebhookWorker(refStore, githubClient, dbPublisher)
-	if err != nil {
-		return err
-	}
-
-	stateMachines, err := state.NewStateMachines()
-	if err != nil {
-		return err
-	}
-
-	githubCommand, err := service.NewGithubCommandService(db, stateMachines, githubWorker)
-	if err != nil {
-		return err
-	}
-
-	githubQuery, err := service.NewGithubQueryService(db, stateMachines)
-	if err != nil {
-		return err
-	}
-
 	registryDownloadService := service.NewRegistryService(pkgStore)
 
 	runGroup := runner.NewGroup(runner.WithName("main"), runner.WithCancelOnSignals())
@@ -228,10 +202,7 @@ func runCombinedServer(ctx context.Context, cfg struct {
 			service.GRPCMiddleware()...,
 		))
 
-		githubWorker.RegisterGRPC(grpcServer)
 		buildWorker.RegisterGRPC(grpcServer)
-		githubCommand.RegisterGRPC(grpcServer)
-		githubQuery.RegisterGRPC(grpcServer)
 		registryDownloadService.RegisterGRPC(grpcServer)
 
 		reflection.Register(grpcServer)
