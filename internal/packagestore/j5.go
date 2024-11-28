@@ -14,6 +14,8 @@ import (
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/registry/internal/gen/j5/registry/v1/registry_pb"
 	"github.com/pentops/sqrlx.go/sqrlx"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -37,7 +39,7 @@ func (s *PackageStore) GetJ5Image(ctx context.Context, orgName, imageName, versi
 			}), pkg)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
+		return nil, status.Errorf(codes.NotFound, "image %s/%s:%s not found", orgName, imageName, version)
 	} else if err != nil {
 		return nil, err
 	}
