@@ -6,7 +6,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/pentops/go-grpc-helpers/protovalidatemw"
+	"github.com/pentops/grpc.go/protovalidatemw"
 	"github.com/pentops/log.go/grpc_log"
 	"github.com/pentops/log.go/log"
 	"github.com/pentops/realms/j5auth"
