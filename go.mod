@@ -15,8 +15,8 @@ require (
 	github.com/pentops/envconf.go v0.0.0-20241008010024-9864aef6219d
 	github.com/pentops/flowtest v0.0.0-20241110231021-42663ac00b63
 	github.com/pentops/grpc.go v0.0.0-20241223192458-01b89e273002
-	github.com/pentops/j5 v0.0.0-20250102182307-38d2136632f9
-	github.com/pentops/j5build v0.0.0-20250107200332-a37bb70247a0
+	github.com/pentops/j5 v0.0.0-20250117213400-3442a4bd233d
+	github.com/pentops/j5build v0.0.0-20250117214144-bb656dbe5f7c
 	github.com/pentops/log.go v0.0.14
 	github.com/pentops/o5-messaging v0.0.0-20241225175229-572d50427290
 	github.com/pentops/pgtest.go v0.0.0-20241223222214-7638cc50e15b
@@ -95,7 +95,7 @@ require (
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rogpeppe/go-internal v1.12.0 // indirect
+	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
