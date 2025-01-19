@@ -3,7 +3,7 @@ module github.com/pentops/registry
 go 1.23.2
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.0-20241127180247-a33202765966.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.3-20241127180247-a33202765966.1
 	buf.build/go/protoyaml v0.3.1
 	github.com/aws/aws-sdk-go-v2/config v1.28.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.66.0
@@ -14,21 +14,21 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/pentops/envconf.go v0.0.0-20241008010024-9864aef6219d
 	github.com/pentops/flowtest v0.0.0-20241110231021-42663ac00b63
-	github.com/pentops/grpc.go v0.0.0-20241223192458-01b89e273002
-	github.com/pentops/j5 v0.0.0-20250117213400-3442a4bd233d
-	github.com/pentops/j5build v0.0.0-20250117214144-bb656dbe5f7c
+	github.com/pentops/grpc.go v0.0.0-20250115183021-140eebdfadca
+	github.com/pentops/j5 v0.0.0-20250119172451-7a5fb5103413
+	github.com/pentops/j5build v0.0.0-20250119172652-8416c3e67e6a
 	github.com/pentops/log.go v0.0.14
-	github.com/pentops/o5-messaging v0.0.0-20241225175229-572d50427290
+	github.com/pentops/o5-messaging v0.0.0-20250117174607-e678e3d6220f
 	github.com/pentops/pgtest.go v0.0.0-20241223222214-7638cc50e15b
 	github.com/pentops/realms v0.0.0-20241028160728-d07031164df3
-	github.com/pentops/runner v0.0.0-20241117231504-8174ef5b83e7
-	github.com/pentops/sqrlx.go v0.0.0-20240806064322-33adc0ac5bd4
+	github.com/pentops/runner v0.0.0-20250116202335-8635b2a42547
+	github.com/pentops/sqrlx.go v0.0.0-20250107233303-36a524e154c7
 	github.com/pressly/goose v2.7.0+incompatible
 	golang.org/x/mod v0.22.0
 	golang.org/x/oauth2 v0.23.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20241223144023-3abc09e42ca8
-	google.golang.org/grpc v1.69.2
-	google.golang.org/protobuf v1.36.1
+	google.golang.org/genproto/googleapis/api v0.0.0-20250115164207-1a7da9e5054f
+	google.golang.org/grpc v1.69.4
+	google.golang.org/protobuf v1.36.3
 )
 
 require (
@@ -56,7 +56,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.32.2 // indirect
 	github.com/aws/smithy-go v1.22.0 // indirect
 	github.com/bufbuild/protocompile v0.14.1 // indirect
-	github.com/bufbuild/protovalidate-go v0.8.0 // indirect
+	github.com/bufbuild/protovalidate-go v0.8.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cloudflare/circl v1.5.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.3.4 // indirect
@@ -111,13 +111,13 @@ require (
 	go.opentelemetry.io/otel/metric v1.31.0 // indirect
 	go.opentelemetry.io/otel/trace v1.31.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67 // indirect
-	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/crypto v0.32.0 // indirect
+	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
+	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241223144023-3abc09e42ca8 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
