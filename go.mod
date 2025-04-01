@@ -17,11 +17,11 @@ require (
 	github.com/pentops/envconf.go v0.0.0-20241008010024-9864aef6219d
 	github.com/pentops/flowtest v0.0.0-20241110231021-42663ac00b63
 	github.com/pentops/grpc.go v0.0.0-20250326042738-bcdfc2b43fa9
-	github.com/pentops/j5 v0.0.0-20250326054942-7f4607c46779
+	github.com/pentops/j5 v0.0.0-20250327071644-781ea9870e8f
 	github.com/pentops/log.go v0.0.15
-	github.com/pentops/o5-messaging v0.0.0-20250317182016-de51c0e702a3
+	github.com/pentops/o5-messaging v0.0.0-20250401052720-1fac32f8ed9c
 	github.com/pentops/pgtest.go v0.0.0-20241223222214-7638cc50e15b
-	github.com/pentops/realms v0.0.0-20250305163009-613fe9868ed8
+	github.com/pentops/realms v0.0.0-20250327015025-d65dc0463c4e
 	github.com/pentops/runner v0.0.0-20250116202335-8635b2a42547
 	github.com/pentops/sqrlx.go v0.0.0-20250324231942-5f3ef6c21f8e
 	github.com/pressly/goose v2.7.0+incompatible
@@ -90,7 +90,7 @@ require (
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/pentops/golib v0.0.0-20250107012216-1b5307b3bfe0 // indirect
+	github.com/pentops/golib v0.0.0-20250326060930-8c83d58ddb63 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
