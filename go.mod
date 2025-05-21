@@ -15,15 +15,15 @@ require (
 	github.com/google/go-github/v58 v58.0.0
 	github.com/lib/pq v1.10.9
 	github.com/pentops/envconf.go v0.0.0-20241008010024-9864aef6219d
-	github.com/pentops/flowtest v0.0.0-20241110231021-42663ac00b63
+	github.com/pentops/flowtest v0.0.0-20250521181823-71b0be743b08
 	github.com/pentops/grpc.go v0.0.0-20250326042738-bcdfc2b43fa9
-	github.com/pentops/j5 v0.0.0-20250327071644-781ea9870e8f
-	github.com/pentops/log.go v0.0.15
-	github.com/pentops/o5-messaging v0.0.0-20250401052720-1fac32f8ed9c
+	github.com/pentops/j5 v0.0.0-20250521182003-b3096a0d1dd2
+	github.com/pentops/log.go v0.0.16-0.20250521181902-0b84b98a60de
+	github.com/pentops/o5-messaging v0.0.0-20250520213617-fba07334e9aa
 	github.com/pentops/pgtest.go v0.0.0-20241223222214-7638cc50e15b
 	github.com/pentops/realms v0.0.0-20250327015025-d65dc0463c4e
 	github.com/pentops/runner v0.0.0-20250116202335-8635b2a42547
-	github.com/pentops/sqrlx.go v0.0.0-20250324231942-5f3ef6c21f8e
+	github.com/pentops/sqrlx.go v0.0.0-20250520210217-2f46de329c7a
 	github.com/pressly/goose v2.7.0+incompatible
 	golang.org/x/mod v0.24.0
 	golang.org/x/oauth2 v0.25.0
@@ -111,12 +111,12 @@ require (
 	go.opentelemetry.io/otel/metric v1.35.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
-	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
-	golang.org/x/net v0.37.0 // indirect
-	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/net v0.40.0 // indirect
+	golang.org/x/sync v0.14.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/text v0.25.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250324211829-b45e905df463 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
