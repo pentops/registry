@@ -65,7 +65,7 @@ func ExtractGitMetadata(ctx context.Context, dir string) (*source_j5pb.CommitInf
 	// TODO: Tags, including latest match on /refs/tags/v* or whatever is
 	// configured
 
-	log.WithFields(ctx, map[string]interface{}{
+	log.WithFields(ctx, map[string]any{
 		"commitHash":    commitHash,
 		"commitTime":    commitTime,
 		"commitAliases": commitAliases,

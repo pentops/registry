@@ -34,7 +34,7 @@ func (src *PackageStore) getGomodVersion(ctx context.Context, packageName, versi
 			}), pkg)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		log.WithFields(ctx, map[string]interface{}{
+		log.WithFields(ctx, map[string]any{
 			"package": packageName,
 			"version": version,
 		}).Info("GoMod Version not found")
@@ -123,7 +123,7 @@ func (s *PackageStore) UploadGoModule(ctx context.Context, commitInfo *source_j5
 
 	canonicalVersion := module.PseudoVersion("", "", commitInfo.Time.AsTime(), commitHashPrefix)
 
-	log.WithFields(ctx, map[string]interface{}{
+	log.WithFields(ctx, map[string]any{
 		"package": packageName,
 		"version": canonicalVersion,
 	}).Info("uploading go module")
@@ -178,7 +178,7 @@ func (s *PackageStore) UploadGoModule(ctx context.Context, commitInfo *source_j5
 		return err
 	}
 
-	log.WithFields(ctx, map[string]interface{}{
+	log.WithFields(ctx, map[string]any{
 		"versions": aliases,
 	}).Info("Storing GoMod Version")
 

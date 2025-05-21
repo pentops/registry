@@ -107,7 +107,7 @@ func (uu *Universe) HTTPGet(ctx context.Context, path string) HTTPResponse {
 		StatusCode: res.Code,
 	}
 
-	log.WithFields(ctx, map[string]interface{}{
+	log.WithFields(ctx, map[string]any{
 		"status": res.Code,
 		//"body":   string(out.Body),
 		"path": path,
