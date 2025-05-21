@@ -57,14 +57,14 @@ func runReadonlyServer(ctx context.Context, cfg struct {
 	service.DBConfig
 	PackageStoreConfig
 }) error {
-	dbConn, err := cfg.DBConfig.OpenDatabase(ctx)
+	dbConn, err := cfg.OpenDatabase(ctx)
 	if err != nil {
 		return err
 	}
 
 	db := sqrlx.NewPostgres(dbConn)
 
-	pkgStore, err := cfg.PackageStoreConfig.OpenPackageStore(ctx, db)
+	pkgStore, err := cfg.OpenPackageStore(ctx, db)
 	if err != nil {
 		return err
 	}
@@ -146,14 +146,14 @@ func runCombinedServer(ctx context.Context, cfg struct {
 	PackageStoreConfig
 	service.DBConfig
 }) error {
-	dbConn, err := cfg.DBConfig.OpenDatabase(ctx)
+	dbConn, err := cfg.OpenDatabase(ctx)
 	if err != nil {
 		return err
 	}
 
 	db := sqrlx.NewPostgres(dbConn)
 
-	pkgStore, err := cfg.PackageStoreConfig.OpenPackageStore(ctx, db)
+	pkgStore, err := cfg.OpenPackageStore(ctx, db)
 	if err != nil {
 		return err
 	}
