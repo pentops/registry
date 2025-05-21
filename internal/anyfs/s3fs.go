@@ -13,7 +13,7 @@ import (
 	"github.com/pentops/log.go/log"
 )
 
-var NotFoundError = fmt.Errorf("not found")
+var ErrNotFound = fmt.Errorf("not found")
 
 type S3API interface {
 	GetObject(ctx context.Context, input *s3.GetObjectInput, options ...func(*s3.Options)) (*s3.GetObjectOutput, error)
@@ -103,7 +103,7 @@ func (s3fs *S3FS) Head(ctx context.Context, subPath string) (*FileInfo, error) {
 	if err != nil {
 		log.WithError(ctx, err).Error("s3 Head Error")
 		if strings.Contains(err.Error(), "NotFound") {
-			return nil, NotFoundError
+			return nil, ErrNotFound
 		}
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (s3fs *S3FS) GetReader(ctx context.Context, subPath string) (io.ReadCloser,
 	if err != nil {
 		log.WithError(ctx, err).Error("s3 Get Error")
 		if strings.Contains(err.Error(), "NoSuchKey") {
-			return nil, nil, NotFoundError
+			return nil, nil, ErrNotFound
 		}
 		return nil, nil, err
 	}

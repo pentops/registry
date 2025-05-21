@@ -19,9 +19,9 @@ type Info struct {
 	Time    time.Time
 }
 
-type VersionNotFoundError string
+var ErrNotImplemented = fmt.Errorf("not implemented")
 
-var NotImplementedError = fmt.Errorf("not implemented")
+type VersionNotFoundError string
 
 func (vnfe VersionNotFoundError) Error() string {
 	return fmt.Sprintf("version not found: %s", string(vnfe))
@@ -213,7 +213,7 @@ func Handler(mods ModProvider) http.Handler {
 		case LatestCommand:
 			info, err := mods.GoModLatest(ctx, parsed.PackageName)
 			if err != nil {
-				if errors.Is(err, NotImplementedError) {
+				if errors.Is(err, ErrNotImplemented) {
 					http.Error(w, err.Error(), http.StatusNotFound)
 					return
 				}
