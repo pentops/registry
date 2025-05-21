@@ -169,7 +169,7 @@ func ParseRequestPath(requestPath string) (ParsedRequest, error) {
 
 func Handler(mods ModProvider) http.Handler {
 
-	sendJSON := func(w http.ResponseWriter, code int, data interface{}) {
+	sendJSON := func(w http.ResponseWriter, code int, data any) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		dataJSON, err := json.Marshal(data)
 		if err != nil {
@@ -195,7 +195,7 @@ func Handler(mods ModProvider) http.Handler {
 			return
 		}
 		ctx := r.Context()
-		ctx = log.WithFields(ctx, map[string]interface{}{
+		ctx = log.WithFields(ctx, map[string]any{
 			"method": r.Method,
 			"host":   r.Host,
 			"path":   r.URL.Path,

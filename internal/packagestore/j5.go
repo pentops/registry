@@ -21,7 +21,7 @@ import (
 
 func (s *PackageStore) GetJ5Image(ctx context.Context, orgName, imageName, version string) (*source_j5pb.SourceImage, error) {
 
-	ctx = log.WithFields(ctx, map[string]interface{}{
+	ctx = log.WithFields(ctx, map[string]any{
 		"org":     orgName,
 		"image":   imageName,
 		"version": version,
@@ -64,7 +64,7 @@ func (s *PackageStore) UploadJ5Image(ctx context.Context, commitInfo *source_j5p
 
 	packageName := path.Join(registry.Owner, registry.Name)
 
-	log.WithFields(ctx, map[string]interface{}{
+	log.WithFields(ctx, map[string]any{
 		"package": packageName,
 		"owner":   commitInfo.Owner,
 		"repo":    commitInfo.Repo,
@@ -109,7 +109,7 @@ func (s *PackageStore) UploadJ5Image(ctx context.Context, commitInfo *source_j5p
 		return err
 	}
 
-	log.WithFields(ctx, map[string]interface{}{
+	log.WithFields(ctx, map[string]any{
 		"versions": versionDests,
 	}).Info("Storing J5 Version")
 

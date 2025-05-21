@@ -69,7 +69,7 @@ func (s3fs *S3FS) Join(paths ...string) string {
 
 func (s3fs *S3FS) Put(ctx context.Context, subPath string, body io.Reader, metadata map[string]string) error {
 	key := path.Join(s3fs.prefix, subPath)
-	ctx = log.WithFields(ctx, map[string]interface{}{
+	ctx = log.WithFields(ctx, map[string]any{
 		"s3Bucket": s3fs.bucket,
 		"s3Key":    key,
 	})
@@ -91,7 +91,7 @@ func (s3fs *S3FS) Put(ctx context.Context, subPath string, body io.Reader, metad
 
 func (s3fs *S3FS) Head(ctx context.Context, subPath string) (*FileInfo, error) {
 	key := path.Join(s3fs.prefix, subPath)
-	ctx = log.WithFields(ctx, map[string]interface{}{
+	ctx = log.WithFields(ctx, map[string]any{
 		"s3Bucket": s3fs.bucket,
 		"s3Key":    key,
 	})
@@ -119,7 +119,7 @@ func (s3fs *S3FS) Head(ctx context.Context, subPath string) (*FileInfo, error) {
 
 func (s3fs *S3FS) GetReader(ctx context.Context, subPath string) (io.ReadCloser, *FileInfo, error) {
 	key := path.Join(s3fs.prefix, subPath)
-	ctx = log.WithFields(ctx, map[string]interface{}{
+	ctx = log.WithFields(ctx, map[string]any{
 		"s3Bucket": s3fs.bucket,
 		"s3Key":    key,
 	})
@@ -169,7 +169,7 @@ type ListInfo struct {
 
 func (s3fs *S3FS) List(ctx context.Context, subPath string) ([]ListInfo, error) {
 	key := path.Join(s3fs.prefix, subPath)
-	ctx = log.WithFields(ctx, map[string]interface{}{
+	ctx = log.WithFields(ctx, map[string]any{
 		"s3Bucket": s3fs.bucket,
 		"s3Key":    key,
 	})
