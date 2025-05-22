@@ -209,6 +209,8 @@ github.com/pentops/grpc.go v0.0.0-20250326042738-bcdfc2b43fa9 h1:Vsx71KpYbOoL53/
 github.com/pentops/grpc.go v0.0.0-20250326042738-bcdfc2b43fa9/go.mod h1:kUYGdH/6jh6hHZzaevmPnDiRewzCHZXw3CTGk/4u5nM=
 github.com/pentops/j5 v0.0.0-20250521182003-b3096a0d1dd2 h1:tQY1L1nxRaT56SwAi/KQYeOZ1EE0EDNOKikEDLNmrEQ=
 github.com/pentops/j5 v0.0.0-20250521182003-b3096a0d1dd2/go.mod h1:4ZwjddB+Aw3RG+MlqHuPeq9Uq+3QvumLLN+TrPw0nvU=
+github.com/pentops/j5 v0.0.0-20250522211155-083e710f6a20 h1:vMMXC4w6Ru+pBIH3Q45k+uan9zQvQKTPiP8afd3CGms=
+github.com/pentops/j5 v0.0.0-20250522211155-083e710f6a20/go.mod h1:4ZwjddB+Aw3RG+MlqHuPeq9Uq+3QvumLLN+TrPw0nvU=
 github.com/pentops/log.go v0.0.16-0.20250521181902-0b84b98a60de h1:u3doaOfSDkyKVNoz0zf1lKH68wdM1OJuvkj9JCne11Q=
 github.com/pentops/log.go v0.0.16-0.20250521181902-0b84b98a60de/go.mod h1:yR34x8aMlvhdGvqgIU4+0MiLjJTKt0vpcgUnVN2nZV4=
 github.com/pentops/o5-messaging v0.0.0-20250520213617-fba07334e9aa h1:Sdnc9mrRSefBbbrwmpq/31ABuXBwtch2KGd68ORJS44=
