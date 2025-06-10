@@ -17,18 +17,18 @@ require (
 	github.com/pentops/envconf.go v0.0.0-20241008010024-9864aef6219d
 	github.com/pentops/flowtest v0.0.0-20250521181823-71b0be743b08
 	github.com/pentops/grpc.go v0.0.0-20250604193928-b45524df9c41
-	github.com/pentops/j5 v0.0.0-20250605002250-2add77d73a52
+	github.com/pentops/j5 v0.0.0-20250610001046-f1c2162a4508
 	github.com/pentops/log.go v0.0.16
 	github.com/pentops/o5-messaging v0.0.0-20250520213617-fba07334e9aa
 	github.com/pentops/pgtest.go v0.0.0-20241223222214-7638cc50e15b
-	github.com/pentops/realms v0.0.0-20250327015025-d65dc0463c4e
+	github.com/pentops/realms v0.0.0-20250606191936-7eed3530f945
 	github.com/pentops/runner v0.0.0-20250530005558-0b8e943f923e
 	github.com/pentops/sqrlx.go v0.0.0-20250520210217-2f46de329c7a
 	github.com/pressly/goose v2.7.0+incompatible
 	golang.org/x/mod v0.24.0
-	golang.org/x/oauth2 v0.25.0
+	golang.org/x/oauth2 v0.26.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822
-	google.golang.org/grpc v1.71.0
+	google.golang.org/grpc v1.72.2
 	google.golang.org/protobuf v1.36.6
 )
 
