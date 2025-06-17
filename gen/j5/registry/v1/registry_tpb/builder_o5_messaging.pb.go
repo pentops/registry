@@ -30,6 +30,56 @@ func (msg *BuildAPIMessage) GetJ5RequestMetadata() *messaging_j5pb.RequestMetada
 	return msg.Request
 }
 
+// Method: Publish
+
+func (msg *PublishMessage) O5MessageHeader() o5msg.Header {
+	header := o5msg.Header{
+		GrpcService:      "j5.registry.v1.topic.BuilderRequestTopic",
+		GrpcMethod:       "Publish",
+		Headers:          map[string]string{},
+		DestinationTopic: "registry-build_request",
+	}
+	if msg.Request != nil {
+		header.Extension = &messaging_pb.Message_Request_{
+			Request: &messaging_pb.Message_Request{
+				ReplyTo: msg.Request.ReplyTo,
+			},
+		}
+	} else {
+		header.Extension = &messaging_pb.Message_Request_{
+			Request: &messaging_pb.Message_Request{
+				ReplyTo: "",
+			},
+		}
+	}
+	return header
+}
+
+// Method: BuildAPI
+
+func (msg *BuildAPIMessage) O5MessageHeader() o5msg.Header {
+	header := o5msg.Header{
+		GrpcService:      "j5.registry.v1.topic.BuilderRequestTopic",
+		GrpcMethod:       "BuildAPI",
+		Headers:          map[string]string{},
+		DestinationTopic: "registry-build_request",
+	}
+	if msg.Request != nil {
+		header.Extension = &messaging_pb.Message_Request_{
+			Request: &messaging_pb.Message_Request{
+				ReplyTo: msg.Request.ReplyTo,
+			},
+		}
+	} else {
+		header.Extension = &messaging_pb.Message_Request_{
+			Request: &messaging_pb.Message_Request{
+				ReplyTo: "",
+			},
+		}
+	}
+	return header
+}
+
 type BuilderRequestTopicTxSender[C any] struct {
 	sender o5msg.TxSender[C]
 }
@@ -95,29 +145,6 @@ func NewBuilderRequestTopicPublisher(publisher o5msg.Publisher) *BuilderRequestT
 
 // Method: Publish
 
-func (msg *PublishMessage) O5MessageHeader() o5msg.Header {
-	header := o5msg.Header{
-		GrpcService:      "j5.registry.v1.topic.BuilderRequestTopic",
-		GrpcMethod:       "Publish",
-		Headers:          map[string]string{},
-		DestinationTopic: "registry-build_request",
-	}
-	if msg.Request != nil {
-		header.Extension = &messaging_pb.Message_Request_{
-			Request: &messaging_pb.Message_Request{
-				ReplyTo: msg.Request.ReplyTo,
-			},
-		}
-	} else {
-		header.Extension = &messaging_pb.Message_Request_{
-			Request: &messaging_pb.Message_Request{
-				ReplyTo: "",
-			},
-		}
-	}
-	return header
-}
-
 func (send BuilderRequestTopicTxSender[C]) Publish(ctx context.Context, sendContext C, msg *PublishMessage) error {
 	return send.sender.Send(ctx, sendContext, msg)
 }
@@ -131,29 +158,6 @@ func (publish BuilderRequestTopicPublisher) Publish(ctx context.Context, msg *Pu
 }
 
 // Method: BuildAPI
-
-func (msg *BuildAPIMessage) O5MessageHeader() o5msg.Header {
-	header := o5msg.Header{
-		GrpcService:      "j5.registry.v1.topic.BuilderRequestTopic",
-		GrpcMethod:       "BuildAPI",
-		Headers:          map[string]string{},
-		DestinationTopic: "registry-build_request",
-	}
-	if msg.Request != nil {
-		header.Extension = &messaging_pb.Message_Request_{
-			Request: &messaging_pb.Message_Request{
-				ReplyTo: msg.Request.ReplyTo,
-			},
-		}
-	} else {
-		header.Extension = &messaging_pb.Message_Request_{
-			Request: &messaging_pb.Message_Request{
-				ReplyTo: "",
-			},
-		}
-	}
-	return header
-}
 
 func (send BuilderRequestTopicTxSender[C]) BuildAPI(ctx context.Context, sendContext C, msg *BuildAPIMessage) error {
 	return send.sender.Send(ctx, sendContext, msg)
@@ -174,6 +178,25 @@ func (msg *J5BuildStatusMessage) SetJ5RequestMetadata(md *messaging_j5pb.Request
 }
 func (msg *J5BuildStatusMessage) GetJ5RequestMetadata() *messaging_j5pb.RequestMetadata {
 	return msg.Request
+}
+
+// Method: J5BuildStatus
+
+func (msg *J5BuildStatusMessage) O5MessageHeader() o5msg.Header {
+	header := o5msg.Header{
+		GrpcService:      "j5.registry.v1.topic.BuildReplyTopic",
+		GrpcMethod:       "J5BuildStatus",
+		Headers:          map[string]string{},
+		DestinationTopic: "registry-status_reply",
+	}
+	if msg.Request != nil {
+		header.Extension = &messaging_pb.Message_Reply_{
+			Reply: &messaging_pb.Message_Reply{
+				ReplyTo: msg.Request.ReplyTo,
+			},
+		}
+	}
+	return header
 }
 
 type BuildReplyTopicTxSender[C any] struct {
@@ -228,23 +251,6 @@ func NewBuildReplyTopicPublisher(publisher o5msg.Publisher) *BuildReplyTopicPubl
 }
 
 // Method: J5BuildStatus
-
-func (msg *J5BuildStatusMessage) O5MessageHeader() o5msg.Header {
-	header := o5msg.Header{
-		GrpcService:      "j5.registry.v1.topic.BuildReplyTopic",
-		GrpcMethod:       "J5BuildStatus",
-		Headers:          map[string]string{},
-		DestinationTopic: "registry-status_reply",
-	}
-	if msg.Request != nil {
-		header.Extension = &messaging_pb.Message_Reply_{
-			Reply: &messaging_pb.Message_Reply{
-				ReplyTo: msg.Request.ReplyTo,
-			},
-		}
-	}
-	return header
-}
 
 func (send BuildReplyTopicTxSender[C]) J5BuildStatus(ctx context.Context, sendContext C, msg *J5BuildStatusMessage) error {
 	return send.sender.Send(ctx, sendContext, msg)
