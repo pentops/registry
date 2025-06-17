@@ -15,14 +15,14 @@ require (
 	github.com/google/go-github/v58 v58.0.0
 	github.com/lib/pq v1.10.9
 	github.com/pentops/envconf.go v0.0.0-20241008010024-9864aef6219d
-	github.com/pentops/flowtest v0.0.0-20250521181823-71b0be743b08
+	github.com/pentops/flowtest v0.0.0-20250611222350-b5c7162d9db1
 	github.com/pentops/grpc.go v0.0.0-20250604193928-b45524df9c41
-	github.com/pentops/j5 v0.0.0-20250610212147-2223f91b4ad7
+	github.com/pentops/j5 v0.0.0-20250616213045-f84ab972ba04
 	github.com/pentops/log.go v0.0.16
 	github.com/pentops/o5-messaging v0.0.0-20250520213617-fba07334e9aa
 	github.com/pentops/pgtest.go v0.0.0-20241223222214-7638cc50e15b
 	github.com/pentops/realms v0.0.0-20250606191936-7eed3530f945
-	github.com/pentops/runner v0.0.0-20250530005558-0b8e943f923e
+	github.com/pentops/runner v0.0.0-20250611231407-9b7db4866899
 	github.com/pentops/sqrlx.go v0.0.0-20250520210217-2f46de329c7a
 	github.com/pressly/goose v2.7.0+incompatible
 	golang.org/x/mod v0.24.0
