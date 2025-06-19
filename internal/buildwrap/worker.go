@@ -41,7 +41,7 @@ type BuildWorker struct {
 
 type J5Builder interface {
 	RunPublishBuild(ctx context.Context, pc buildlib.PluginContext, input *source_j5pb.SourceImage, build *config_j5pb.PublishConfig) error
-	MutateImageWithMods(img *source_j5pb.SourceImage, mods []*config_j5pb.ImageMod) error
+	MutateImageWithMods(img *source_j5pb.SourceImage, mods []*config_j5pb.ProtoMod) error
 	SourceImage(ctx context.Context, fs fs.FS, bundleName string) (*source_j5pb.SourceImage, *config_j5pb.BundleConfigFile, error)
 }
 
