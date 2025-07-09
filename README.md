@@ -1,3 +1,5 @@
+> ARCHIVED - This code has moved to pentops/j5
+
 Registry
 ========
 
